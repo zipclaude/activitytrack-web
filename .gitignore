@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+/.venv/
+/var/
+/build/
+/dist/
+/debian/.debhelper/
+/debian/activitytrack-web/
+/debian/files
+/debian/*.substvars
+/debian/*.log
+/server/local_settings.ini
+/staticfiles/
+*.sqlite3
