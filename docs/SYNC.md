@@ -188,8 +188,10 @@ When a sync policy is in force the file in the data folder is ignored.
   after a change made by someone else (web, another phone) to one of the
   user's records, at most once per minute per device.
 
-FCM works only with the Firebase project built into the APK: a server
-without its credentials falls back to the periodic sync.
+One APK for everyone: it carries `firebase-messaging` but asks for a
+token only when Google Play services are present. FCM works only with the
+Firebase project built into the APK: a server without its credentials
+falls back to the periodic sync.
 
 ## 11. Conflicts that need a person
 
