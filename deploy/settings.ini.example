@@ -23,5 +23,8 @@ engine = sqlite
 
 [files]
 max_mb = 25
-; nginx serves the attachments (internal location of the nginx site)
-accel_location = /_files/
+; who sends the attachments: none (Django), nginx (X-Accel-Redirect to the
+; internal location below) or apache (X-Sendfile, needs libapache2-mod-xsendfile)
+offload = none
+;offload = nginx
+;accel_location = /_files/

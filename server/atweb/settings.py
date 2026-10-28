@@ -18,8 +18,12 @@ CSRF_TRUSTED_ORIGINS = [BASE_URL] if BASE_URL.startswith("https://") else []
 
 FILES_DIR = DATA_DIR / "files"
 FILES_MAX_MB = INI.getint("files", "max_mb", fallback=25)
-# nginx serves the attachments when set (X-Accel-Redirect to this internal location)
-FILES_ACCEL = INI.get("files", "accel_location", fallback="").strip()
+# who sends the attachments' bytes: Django itself, nginx (X-Accel-Redirect to an
+# internal location) or Apache with mod_xsendfile (X-Sendfile)
+FILES_OFFLOAD = INI.get("files", "offload", fallback="none").strip()
+if FILES_OFFLOAD not in ("none", "nginx", "apache"):
+	raise ValueError(f"[files] offload: {FILES_OFFLOAD!r}, expected none, nginx or apache")
+FILES_ACCEL_LOCATION = INI.get("files", "accel_location", fallback="/_files/").strip()
 
 INSTALLED_APPS = [
 	"django.contrib.admin",

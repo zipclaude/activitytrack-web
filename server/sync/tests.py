@@ -260,6 +260,25 @@ class FileTests(SyncTestCase):
 			intruder = self.pair(self.bob)
 			self.assertEqual(self.client.get(f"/api/v1/files/{att}", HTTP_AUTHORIZATION=f"Bearer {intruder}").status_code, 404)
 
+	def test_web_server_sends_the_file(self):
+		phone = self.pair(self.alice)
+		e, att = uid(), uid()
+		data = b"pdf"
+		self.push(phone, [
+			self.upsert("entry", e, entry_fields(), T0),
+			self.upsert("attachment", att, {"entryUid": e, "kind": "FILE", "mime": "application/pdf", "createdUtcMs": T0}, T0),
+		])
+		with self.settings(FILES_DIR=self.files):
+			self.client.put(f"/api/v1/files/{att}", data, content_type="application/pdf", HTTP_AUTHORIZATION=f"Bearer {phone}")
+			rel = f"{self.org.pk}/{att[:2]}/{att}"
+			with self.settings(FILES_OFFLOAD="nginx", FILES_ACCEL_LOCATION="/_files/"):
+				r = self.client.get(f"/api/v1/files/{att}", HTTP_AUTHORIZATION=f"Bearer {phone}")
+				self.assertEqual(r["X-Accel-Redirect"], f"/_files/{rel}")
+			with self.settings(FILES_OFFLOAD="apache"):
+				r = self.client.get(f"/api/v1/files/{att}", HTTP_AUTHORIZATION=f"Bearer {phone}")
+				self.assertEqual(r["X-Sendfile"], f"{self.files}/{rel}")
+				self.assertEqual(r.content, b"")
+
 	def test_has_file_is_read_only(self):
 		phone = self.pair(self.alice)
 		e, att = uid(), uid()

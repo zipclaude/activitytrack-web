@@ -3,7 +3,7 @@
 Until the Debian package exists (docs/ROADMAP.md phase 2), by hand:
 
 ```sh
-apt install nginx gunicorn python3-django python3-segno python3-argon2 \
+apt install gunicorn python3-django python3-segno python3-argon2 \
 	python3-cryptography gettext
 # PostgreSQL (optional; SQLite otherwise)
 apt install postgresql python3-psycopg
@@ -32,18 +32,46 @@ runuser -u activitytrack-web -- python3 manage.py collectstatic --noinput
 runuser -u activitytrack-web -- python3 manage.py setup --org "My company" --admin admin
 ```
 
-Services and web server:
+Services:
 
 ```sh
 cp deploy/activitytrack-web.service deploy/activitytrack-web.socket /etc/systemd/system/
 systemctl daemon-reload
 systemctl enable --now activitytrack-web.socket
+```
+
+## Web server: nginx
+
+```sh
+apt install nginx python3-certbot-nginx
 cp deploy/nginx-site.conf /etc/nginx/sites-available/activitytrack-web
 editor /etc/nginx/sites-available/activitytrack-web
 ln -s ../sites-available/activitytrack-web /etc/nginx/sites-enabled/
-apt install python3-certbot-nginx && certbot --nginx -d at.example.com
+certbot --nginx -d at.example.com
 systemctl reload nginx
 ```
+
+In `settings.ini`: `[files] offload = nginx` (the site's internal
+`/_files/` location sends the attachments).
+
+## Web server: Apache
+
+```sh
+apt install apache2 python3-certbot-apache
+# optional, for [files] offload = apache
+apt install libapache2-mod-xsendfile
+a2enmod ssl proxy proxy_http headers expires http2
+cp deploy/apache-site.conf /etc/apache2/sites-available/activitytrack-web.conf
+editor /etc/apache2/sites-available/activitytrack-web.conf
+a2ensite activitytrack-web
+certbot --apache -d at.example.com
+systemctl reload apache2
+```
+
+In `settings.ini`: `[files] offload = apache` with mod_xsendfile, else
+`none` (Django sends the attachments itself; fine for small installations).
+
+Both web servers run as `www-data`, the owner of gunicorn's socket.
 
 ## Self-signed certificate
 

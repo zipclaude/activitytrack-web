@@ -29,8 +29,8 @@ with profiles, and a graphical editor for the phones' policies.
 | Language | `python3` 3.13 | complete web stack packaged in Debian; Rust crates in Debian (`librust-*`) are incomplete for a web app with a database |
 | Framework | `python3-django` 4.2 LTS | users, permissions, sessions, CSRF, forms, migrations, i18n, admin; the phones' JSON API is plain Django views (no extra framework) |
 | App server | `gunicorn` 23 under systemd | |
-| Web server | `nginx` 1.26 | TLS, static files, attachments via `X-Accel-Redirect` |
-| TLS | `certbot` (`python3-certbot-nginx`) or own certificate | a self-signed certificate works too: the QR carries its fingerprint |
+| Web server | `nginx` 1.26 or `apache2` 2.4 | TLS, static files, attachments via `X-Accel-Redirect` (nginx) or `X-Sendfile` (Apache with `libapache2-mod-xsendfile`); without offload Django sends them |
+| TLS | `certbot` (`python3-certbot-nginx` / `python3-certbot-apache`) or own certificate | a self-signed certificate works too: the QR carries its fingerprint |
 | Database | `postgresql` 17 (`python3-psycopg` 3.2) or SQLite 3.46 | |
 | Passwords | `python3-argon2` | Argon2id hasher of Django |
 | QR codes | `python3-segno` | SVG QR codes, no image library |
@@ -49,7 +49,7 @@ repository: no npm, no bundler, no CDN.
 ```
  phone (ActivityTrack)                         server (one per organisation)
 ┌───────────────────────┐   HTTPS JSON   ┌─────────────────────────────────────────┐
-│ Room DB + triggers    │ ─────────────▶ │ nginx ─▶ gunicorn ─▶ Django             │
+│ Room DB + triggers    │ ─────────────▶ │ nginx/Apache ─▶ gunicorn ─▶ Django      │
 │ sync_change (outbox)  │ ◀───────────── │   api/v1/sync   push · pull · files     │
 │ SyncWorker            │   FCM "tickle" │   api/v1/pair   QR pairing               │
 │ plugins ⇄ mgmt system │ ◀───────────── │   web UI        same screens as the app  │
@@ -151,5 +151,6 @@ A Debian package `activitytrack-web` (built in CI on `debian:trixie`):
   attachments) in `/var/lib/activitytrack-web`;
 - a systemd unit for gunicorn (socket under `/run`), a timer for the
   nightly backup (`pg_dump` or SQLite `.backup` + attachments, 14 kept);
-- an nginx site to adapt (`/etc/nginx/sites-available/activitytrack-web`);
+- an nginx site and an Apache site to adapt (`deploy/nginx-site.conf`,
+  `deploy/apache-site.conf`): both proxy to gunicorn's Unix socket;
 - `activitytrack-web-manage setup` creates the organisation and the first admin.

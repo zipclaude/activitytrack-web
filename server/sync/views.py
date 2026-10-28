@@ -167,8 +167,12 @@ def files(request, uid):
 
 
 def serve_file(att, path):
-	if settings.FILES_ACCEL:
+	if settings.FILES_OFFLOAD == "nginx":
 		response = HttpResponse(content_type=att.mime)
-		response["X-Accel-Redirect"] = f"{settings.FILES_ACCEL.rstrip('/')}/{path.relative_to(settings.FILES_DIR)}"
+		response["X-Accel-Redirect"] = f"{settings.FILES_ACCEL_LOCATION.rstrip('/')}/{path.relative_to(settings.FILES_DIR)}"
+		return response
+	if settings.FILES_OFFLOAD == "apache":
+		response = HttpResponse(content_type=att.mime)
+		response["X-Sendfile"] = str(path)
 		return response
 	return FileResponse(open(path, "rb"), content_type=att.mime)
