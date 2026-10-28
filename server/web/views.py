@@ -16,53 +16,53 @@ from accounts.models import Device, PairingCode
 
 @login_required
 def home(request):
-	return render(request, "web/home.html")
+    return render(request, "web/home.html")
 
 
 def pair_link(code):
-	"""The QR code's content (docs/SYNC.md §9)."""
-	query = {"v": "1", "u": settings.BASE_URL, "c": code}
-	if settings.TLS_PIN:
-		query["f"] = settings.TLS_PIN
-	return "activitytrack://pair?" + urlencode(query)
+    """The QR code's content (docs/SYNC.md §9)."""
+    query = {"v": "1", "u": settings.BASE_URL, "c": code}
+    if settings.TLS_PIN:
+        query["f"] = settings.TLS_PIN
+    return "activitytrack://pair?" + urlencode(query)
 
 
 @login_required
 def phones(request):
-	if not request.user.syncs:
-		raise Http404
-	return render(request, "web/phones.html", {"devices": request.user.devices.order_by("-created")})
+    if not request.user.syncs:
+        raise Http404
+    return render(request, "web/phones.html", {"devices": request.user.devices.order_by("-created")})
 
 
 @login_required
 @require_POST
 def pair_new(request):
-	if not request.user.syncs:
-		raise Http404
-	pairing, code = PairingCode.issue(request.user)
-	link = pair_link(code)
-	qr = segno.make(link, error="m").svg_inline(scale=6, dark="#000", light="#fff")
-	return render(request, "web/pair.html", {"pairing": pairing, "link": link, "qr": qr})
+    if not request.user.syncs:
+        raise Http404
+    pairing, code = PairingCode.issue(request.user)
+    link = pair_link(code)
+    qr = segno.make(link, error="m").svg_inline(scale=6, dark="#000", light="#fff")
+    return render(request, "web/pair.html", {"pairing": pairing, "link": link, "qr": qr})
 
 
 @login_required
 def pair_status(request, pk):
-	pairing = get_object_or_404(PairingCode, pk=pk, user=request.user)
-	if pairing.device:
-		return JsonResponse({"state": "paired", "device": pairing.device.name})
-	if pairing.expires <= timezone.now():
-		return JsonResponse({"state": "expired"})
-	return JsonResponse({"state": "waiting"})
+    pairing = get_object_or_404(PairingCode, pk=pk, user=request.user)
+    if pairing.device:
+        return JsonResponse({"state": "paired", "device": pairing.device.name})
+    if pairing.expires <= timezone.now():
+        return JsonResponse({"state": "expired"})
+    return JsonResponse({"state": "waiting"})
 
 
 @login_required
 @require_POST
 def device_revoke(request, pk):
-	devices = Device.objects.filter(user__org=request.user.org) if request.user.is_admin else request.user.devices
-	device = get_object_or_404(devices, pk=pk, revoked__isnull=True)
-	device.revoked = timezone.now()
-	device.plugin_holder = False
-	device.save(update_fields=["revoked", "plugin_holder"])
-	messages.success(request, _("Associazione di «%(name)s» revocata.") % {"name": device.name})
-	return redirect("phones")
+    devices = Device.objects.filter(user__org=request.user.org) if request.user.is_admin else request.user.devices
+    device = get_object_or_404(devices, pk=pk, revoked__isnull=True)
+    device.revoked = timezone.now()
+    device.plugin_holder = False
+    device.save(update_fields=["revoked", "plugin_holder"])
+    messages.success(request, _("Associazione di «%(name)s» revocata.") % {"name": device.name})
+    return redirect("phones")
 

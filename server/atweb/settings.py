@@ -22,73 +22,73 @@ FILES_MAX_MB = INI.getint("files", "max_mb", fallback=25)
 # internal location) or Apache with mod_xsendfile (X-Sendfile)
 FILES_OFFLOAD = INI.get("files", "offload", fallback="none").strip()
 if FILES_OFFLOAD not in ("none", "nginx", "apache"):
-	raise ValueError(f"[files] offload: {FILES_OFFLOAD!r}, expected none, nginx or apache")
+    raise ValueError(f"[files] offload: {FILES_OFFLOAD!r}, expected none, nginx or apache")
 FILES_ACCEL_LOCATION = INI.get("files", "accel_location", fallback="/_files/").strip()
 
 INSTALLED_APPS = [
-	"django.contrib.admin",
-	"django.contrib.auth",
-	"django.contrib.contenttypes",
-	"django.contrib.sessions",
-	"django.contrib.messages",
-	"django.contrib.staticfiles",
-	"accounts",
-	"records",
-	"sync",
-	"web",
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+    "accounts",
+    "records",
+    "sync",
+    "web",
 ]
 
 MIDDLEWARE = [
-	"django.middleware.security.SecurityMiddleware",
-	"django.contrib.sessions.middleware.SessionMiddleware",
-	"django.middleware.locale.LocaleMiddleware",
-	"django.middleware.common.CommonMiddleware",
-	"django.middleware.csrf.CsrfViewMiddleware",
-	"django.contrib.auth.middleware.AuthenticationMiddleware",
-	"django.contrib.messages.middleware.MessageMiddleware",
-	"django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "django.middleware.security.SecurityMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.locale.LocaleMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
 ROOT_URLCONF = "atweb.urls"
 WSGI_APPLICATION = "atweb.wsgi.application"
 
 TEMPLATES = [
-	{
-		"BACKEND": "django.template.backends.django.DjangoTemplates",
-		"DIRS": [],
-		"APP_DIRS": True,
-		"OPTIONS": {
-			"context_processors": [
-				"django.template.context_processors.request",
-				"django.contrib.auth.context_processors.auth",
-				"django.contrib.messages.context_processors.messages",
-			],
-		},
-	},
+    {
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
+            ],
+        },
+    },
 ]
 
 
 def _database():
-	engine = INI.get("database", "engine", fallback="sqlite")
-	if engine == "sqlite":
-		return {
-			"ENGINE": "django.db.backends.sqlite3",
-			"NAME": INI.get("database", "name", fallback=str(DATA_DIR / "activitytrack.sqlite3")),
-			# writers wait instead of failing while another holds the lock
-			"OPTIONS": {"timeout": 20},
-		}
-	if engine == "postgresql":
-		return {
-			"ENGINE": "django.db.backends.postgresql",
-			"NAME": INI.get("database", "name", fallback="activitytrack"),
-			"USER": INI.get("database", "user", fallback="activitytrack"),
-			"PASSWORD": INI.get("database", "password", fallback=""),
-			# empty host = Unix socket, peer authentication
-			"HOST": INI.get("database", "host", fallback=""),
-			"PORT": INI.get("database", "port", fallback=""),
-			"CONN_MAX_AGE": 60,
-		}
-	raise ValueError(f"[database] engine: {engine!r}, expected sqlite or postgresql")
+    engine = INI.get("database", "engine", fallback="sqlite")
+    if engine == "sqlite":
+        return {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": INI.get("database", "name", fallback=str(DATA_DIR / "activitytrack.sqlite3")),
+            # writers wait instead of failing while another holds the lock
+            "OPTIONS": {"timeout": 20},
+        }
+    if engine == "postgresql":
+        return {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": INI.get("database", "name", fallback="activitytrack"),
+            "USER": INI.get("database", "user", fallback="activitytrack"),
+            "PASSWORD": INI.get("database", "password", fallback=""),
+            # empty host = Unix socket, peer authentication
+            "HOST": INI.get("database", "host", fallback=""),
+            "PORT": INI.get("database", "port", fallback=""),
+            "CONN_MAX_AGE": 60,
+        }
+    raise ValueError(f"[database] engine: {engine!r}, expected sqlite or postgresql")
 
 
 DATABASES = {"default": _database()}
@@ -96,13 +96,13 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "accounts.User"
 
 PASSWORD_HASHERS = [
-	"django.contrib.auth.hashers.Argon2PasswordHasher",
-	"django.contrib.auth.hashers.PBKDF2PasswordHasher",
+    "django.contrib.auth.hashers.Argon2PasswordHasher",
+    "django.contrib.auth.hashers.PBKDF2PasswordHasher",
 ]
 AUTH_PASSWORD_VALIDATORS = [
-	{"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
-	{"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator", "OPTIONS": {"min_length": 10}},
-	{"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
+    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
+    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator", "OPTIONS": {"min_length": 10}},
+    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
 ]
 LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "home"
@@ -125,8 +125,8 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = "DENY"
 
 LOGGING = {
-	"version": 1,
-	"disable_existing_loggers": False,
-	"handlers": {"console": {"class": "logging.StreamHandler"}},
-	"root": {"handlers": ["console"], "level": INI.get("server", "log_level", fallback="INFO")},
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {"console": {"class": "logging.StreamHandler"}},
+    "root": {"handlers": ["console"], "level": INI.get("server", "log_level", fallback="INFO")},
 }
