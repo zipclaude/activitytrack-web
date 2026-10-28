@@ -18,3 +18,8 @@ come on top.
 
 First milestone: phases 0–3 plus a minimal web page (one user, sync
 working, entries listed and editable), about 3–4 weeks.
+
+App-side work is tracked in the app's issues #111–#121 (index: #122).
+Server items they need: `pluginHolder` in the pair and head answers
+(#118), an entry field `needsReview` for overlapping segments (#119),
+FCM token updates (#120).
