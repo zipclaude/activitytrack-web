@@ -1,0 +1,12 @@
+{% extends "web/base.html" %}{% load i18n %}
+{% block content %}
+<h1>{% blocktranslate with name=user.get_full_name|default:user.username %}Ciao {{ name }}{% endblocktranslate %}</h1>
+<p>{% translate "Le schermate di lavoro (Home, Da fare, Agenda, Report) arrivano nelle prossime versioni." %}</p>
+{% if user.syncs and not user.devices.exists %}
+<section class="card">
+	<h2>{% translate "Associa il telefono" %}</h2>
+	<p>{% translate "Collega l'app ActivityTrack a questo server: i dati restano sincronizzati in entrambe le direzioni." %}</p>
+	<a class="button primary" href="{% url 'phones' %}">{% translate "Telefoni" %}</a>
+</section>
+{% endif %}
+{% endblock %}

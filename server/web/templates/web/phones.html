@@ -1,0 +1,22 @@
+{% extends "web/base.html" %}{% load i18n %}
+{% block title %}{% translate "Telefoni" %} · ActivityTrack{% endblock %}
+{% block content %}
+<h1>{% translate "Telefoni" %}</h1>
+<form method="post" action="{% url 'pair_new' %}">{% csrf_token %}<button class="primary">{% translate "Associa un telefono" %}</button></form>
+<table class="list">
+	<thead><tr><th>{% translate "Nome" %}</th><th>{% translate "Modello" %}</th><th>{% translate "App" %}</th><th>{% translate "Ultima sincronizzazione" %}</th><th></th></tr></thead>
+	<tbody>
+	{% for d in devices %}
+	<tr class="{% if d.revoked %}dim{% endif %}">
+		<td>{{ d.name }}{% if d.plugin_holder %} <span class="chip">{% translate "invia ai gestionali" %}</span>{% endif %}</td>
+		<td>{{ d.model }}</td>
+		<td>{{ d.app_version }}</td>
+		<td>{% if d.revoked %}{% translate "revocato" %} {{ d.revoked|date:"SHORT_DATETIME_FORMAT" }}{% else %}{{ d.last_seen|date:"SHORT_DATETIME_FORMAT"|default:"—" }}{% endif %}</td>
+		<td>{% if not d.revoked %}<form method="post" action="{% url 'device_revoke' d.pk %}">{% csrf_token %}<button class="danger">{% translate "Revoca" %}</button></form>{% endif %}</td>
+	</tr>
+	{% empty %}
+	<tr><td colspan="5">{% translate "Nessun telefono associato." %}</td></tr>
+	{% endfor %}
+	</tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,26 @@
+{% load static i18n %}<!doctype html>
+<html lang="{{ LANGUAGE_CODE|default:'it' }}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}ActivityTrack{% endblock %}</title>
+<link rel="stylesheet" href="{% static 'web/app.css' %}">
+</head>
+<body>
+{% if user.is_authenticated %}
+<header class="bar">
+	<a class="brand" href="{% url 'home' %}">ActivityTrack</a>
+	<nav>
+		{% if user.syncs %}<a href="{% url 'phones' %}">{% translate "Telefoni" %}</a>{% endif %}
+		{% if user.is_admin %}<a href="{% url 'admin:index' %}">{% translate "Amministrazione" %}</a>{% endif %}
+		<form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="link">{% translate "Esci" %}</button></form>
+	</nav>
+</header>
+{% endif %}
+<main>
+{% for m in messages %}<p class="note {{ m.tags }}">{{ m }}</p>{% endfor %}
+{% block content %}{% endblock %}
+</main>
+{% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,27 @@
+; /etc/activitytrack-web/settings.ini (docs/INSTALL.md)
+
+[server]
+; public address of the server, written in the pairing QR codes
+base_url = https://at.example.com
+allowed_hosts = at.example.com
+; database (SQLite), attachments, secret key
+data_dir = /var/lib/activitytrack-web
+static_root = /var/lib/activitytrack-web/static
+time_zone = Europe/Rome
+; sha256 of the server's public key, only for a certificate the phones do not
+; trust (self-signed); see docs/INSTALL.md
+;tls_pin =
+;debug = false
+
+[database]
+; sqlite (default) or postgresql
+engine = sqlite
+; for postgresql: empty host = Unix socket with peer authentication
+;engine = postgresql
+;name = activitytrack
+;user = activitytrack-web
+
+[files]
+max_mb = 25
+; nginx serves the attachments (internal location of the nginx site)
+accel_location = /_files/
