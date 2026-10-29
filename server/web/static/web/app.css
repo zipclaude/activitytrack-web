@@ -84,3 +84,5 @@ form.policy select, form.policy input { padding: 6px 8px; }
 label.check { flex-direction: row; gap: 8px; color: var(--text); }
 table.totals td, table.totals th { white-space: nowrap; }
 button[disabled] { opacity: .5; cursor: not-allowed; }
+.bar nav { flex-wrap: wrap; row-gap: 6px; }
+@media (max-width: 640px) { .bar nav { gap: 12px; font-size: 14px; } }

@@ -12,7 +12,7 @@
 	<a class="brand" href="{% url 'home' %}">ActivityTrack</a>
 	<nav>
 		{% if user.syncs %}
-		<a href="{% url 'home' %}">{% translate "Home" %}</a>
+		<a href="{% url 'home' %}">{% translate "Home" context "menu" %}</a>
 		<a href="{% url 'entries' %}">{% translate "Attività" %}</a>
 		<a href="{% url 'todos' %}">{% translate "Da fare" %}</a>
 		<a href="{% url 'masters_home' %}">{% translate "Anagrafiche" %}</a>
