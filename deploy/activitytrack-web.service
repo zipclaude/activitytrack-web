@@ -16,6 +16,8 @@ ProtectSystem=strict
 ProtectHome=true
 ReadWritePaths=/var/lib/activitytrack-web
 NoNewPrivileges=true
+# the database, the attachments and the secret key stay private
+UMask=0027
 
 [Install]
 WantedBy=multi-user.target
