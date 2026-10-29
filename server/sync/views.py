@@ -83,6 +83,7 @@ def pair(request):
             "token": token,
             "user": {"username": user.username, "name": user.get_full_name(), "profile": user.profile},
             "org": {"name": user.org.name},
+            "pluginHolder": device.plugin_holder,
             "serverTime": engine.now_ms(),
         }
     )
@@ -122,6 +123,8 @@ def head(request):
         "serverTime": engine.now_ms(),
         # attachments larger than this are refused (413): the phone does not try
         "filesMaxMb": settings.FILES_MAX_MB,
+        # this phone sends to the management systems (ARCHITECTURE.md §8)
+        "pluginHolder": request.device.plugin_holder,
     })
 
 

@@ -12,4 +12,5 @@ urlpatterns = [
     path("telefoni/associa/", views.pair_new, name="pair_new"),
     path("telefoni/associa/<int:pk>/stato/", views.pair_status, name="pair_status"),
     path("telefoni/<uuid:pk>/revoca/", views.device_revoke, name="device_revoke"),
+    path("telefoni/<uuid:pk>/gestionali/", views.device_holder, name="device_holder"),
 ]

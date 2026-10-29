@@ -88,6 +88,16 @@ class PairingTests(SyncTestCase):
         holders = [d.name for d in self.alice.devices.filter(plugin_holder=True)]
         self.assertEqual(holders, ["uno"])
 
+    def test_one_holder_per_user(self):
+        first = self.pair(self.alice, "uno")
+        second = self.pair(self.alice, "due")
+        head = lambda t: self.client.get("/api/v1/sync/head", HTTP_AUTHORIZATION=f"Bearer {t}").json()["pluginHolder"]
+        self.assertEqual((head(first), head(second)), (True, False))
+        self.client.force_login(self.alice)
+        due = self.alice.devices.get(name="due")
+        self.client.post(f"/telefoni/{due.pk}/gestionali/")
+        self.assertEqual((head(first), head(second)), (False, True))
+
     def test_head_names_the_file_limit(self):
         token = self.pair(self.alice)
         r = self.client.get("/api/v1/sync/head", HTTP_AUTHORIZATION=f"Bearer {token}").json()
