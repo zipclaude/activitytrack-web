@@ -117,7 +117,12 @@ def pull(request):
 @device_api
 @require_GET
 def head(request):
-    return JsonResponse({"rev": engine.head(request.device.user.org), "serverTime": engine.now_ms()})
+    return JsonResponse({
+        "rev": engine.head(request.device.user.org),
+        "serverTime": engine.now_ms(),
+        # attachments larger than this are refused (413): the phone does not try
+        "filesMaxMb": settings.FILES_MAX_MB,
+    })
 
 
 def file_path(att):

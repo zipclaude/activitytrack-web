@@ -113,8 +113,8 @@ phone's `sync_change` is not overwritten: the pending push will settle it.
 
 ### `GET sync/head`
 
-`{ "rev": 4711, "serverTime": … }`: cheap check while the app is in the
-foreground.
+`{ "rev": 4711, "serverTime": …, "filesMaxMb": 25 }`: cheap check while
+the app is in the foreground; the phone does not upload files above the limit.
 
 ### Files
 

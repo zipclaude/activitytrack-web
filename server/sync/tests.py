@@ -88,6 +88,11 @@ class PairingTests(SyncTestCase):
         holders = [d.name for d in self.alice.devices.filter(plugin_holder=True)]
         self.assertEqual(holders, ["uno"])
 
+    def test_head_names_the_file_limit(self):
+        token = self.pair(self.alice)
+        r = self.client.get("/api/v1/sync/head", HTTP_AUTHORIZATION=f"Bearer {token}").json()
+        self.assertEqual(r["filesMaxMb"], 25)
+
     def test_revoked_token(self):
         token = self.pair(self.alice)
         self.alice.devices.update(revoked=timezone.now())
