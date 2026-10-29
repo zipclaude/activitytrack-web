@@ -4,11 +4,13 @@ Until the Debian package exists (docs/ROADMAP.md phase 2), by hand:
 
 ```sh
 apt install gunicorn python3-django python3-segno python3-argon2 \
-	python3-cryptography gettext
+	python3-cryptography gettext libjs-jquery
 # PostgreSQL (optional; SQLite otherwise)
 apt install postgresql python3-psycopg
 
 adduser --system --group --home /var/lib/activitytrack-web activitytrack-web
+# the web server reads static/ only; files/ and the database stay private
+chmod 0711 /var/lib/activitytrack-web
 git clone https://github.com/zipclaude/activitytrack-web /usr/share/activitytrack-web
 install -d -m 0750 -o root -g activitytrack-web /etc/activitytrack-web
 install -m 0640 -g activitytrack-web deploy/settings.ini.example /etc/activitytrack-web/settings.ini
