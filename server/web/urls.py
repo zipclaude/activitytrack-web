@@ -2,10 +2,24 @@
 from django.contrib.auth import views as auth
 from django.urls import path
 
-from . import views
+from . import masters, reports, views, work
 
 urlpatterns = [
-    path("", views.home, name="home"),
+    path("", work.home, name="home"),
+    path("attivita/", work.entries, name="entries"),
+    path("attivita/nuova/", work.entry_new, name="entry_new"),
+    path("attivita/<uuid:uid>/", work.entry, name="entry"),
+    path("attivita/<uuid:uid>/comando/", work.quick, name="entry_quick"),
+    path("allegati/<uuid:uid>/", work.attachment, name="attachment"),
+    path("dafare/", work.todos, name="todos"),
+    path("dafare/nuova/", work.todo_edit, name="todo_new"),
+    path("dafare/<uuid:uid>/", work.todo_edit, name="todo_edit"),
+    path("anagrafiche/", masters.index, name="masters_home"),
+    path("anagrafiche/<str:kind>/", masters.index, name="masters"),
+    path("anagrafiche/<str:kind>/nuova/", masters.edit, name="master_new"),
+    path("anagrafiche/<str:kind>/<uuid:uid>/", masters.edit, name="master_edit"),
+    path("report/", reports.report, name="report"),
+    path("report/csv/", reports.report_csv, name="report_csv"),
     path("login/", auth.LoginView.as_view(template_name="web/login.html"), name="login"),
     path("logout/", auth.LogoutView.as_view(), name="logout"),
     path("telefoni/", views.phones, name="phones"),

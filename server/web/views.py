@@ -14,11 +14,6 @@ from django.views.decorators.http import require_POST
 from accounts.models import Device, PairingCode
 
 
-@login_required
-def home(request):
-    return render(request, "web/home.html")
-
-
 def pair_link(code):
     """The QR code's content (docs/SYNC.md §9)."""
     query = {"v": "1", "u": settings.BASE_URL, "c": code}

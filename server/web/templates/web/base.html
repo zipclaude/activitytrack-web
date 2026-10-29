@@ -11,6 +11,13 @@
 <header class="bar">
 	<a class="brand" href="{% url 'home' %}">ActivityTrack</a>
 	<nav>
+		{% if user.syncs %}
+		<a href="{% url 'home' %}">{% translate "Home" %}</a>
+		<a href="{% url 'entries' %}">{% translate "Attività" %}</a>
+		<a href="{% url 'todos' %}">{% translate "Da fare" %}</a>
+		<a href="{% url 'masters_home' %}">{% translate "Anagrafiche" %}</a>
+		{% endif %}
+		<a href="{% url 'report' %}">{% translate "Report" %}</a>
 		{% if user.syncs %}<a href="{% url 'phones' %}">{% translate "Telefoni" %}</a>{% endif %}
 		{% if user.is_admin %}<a href="{% url 'policies:index' %}">{% translate "Policy" %}</a><a href="{% url 'admin:index' %}">{% translate "Amministrazione" %}</a>{% endif %}
 		<form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="link">{% translate "Esci" %}</button></form>

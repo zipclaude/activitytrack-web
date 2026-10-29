@@ -1,0 +1,17 @@
+{% extends "web/base.html" %}{% load i18n at %}
+{% block title %}{% translate "Attività" %} · ActivityTrack{% endblock %}
+{% block content %}
+<div class="head"><h1>{% translate "Attività" %}</h1>{% if user.syncs %}<a class="button primary" href="{% url 'entry_new' %}">▶ {% translate "Nuova" %}</a>{% endif %}</div>
+<form class="filters" method="get">
+	<label>{% translate "Dal" %}<input type="date" name="from" value="{{ since|date:'Y-m-d' }}"></label>
+	<label>{% translate "Al" %}<input type="date" name="to" value="{{ until|date:'Y-m-d' }}"></label>
+	<label>{% translate "Azienda" %}<select name="company"><option value="">{% translate "tutte" %}</option>{% for c in companies %}<option value="{{ c.uid }}" {% if f.company == c.uid|stringformat:"s" %}selected{% endif %}>{{ c.name }}</option>{% endfor %}</select></label>
+	<label>{% translate "Stato" %}<select name="status"><option value="">{% translate "tutti" %}</option>{% for v, l in statuses %}<option value="{{ v }}" {% if f.status == v %}selected{% endif %}>{{ l }}</option>{% endfor %}</select></label>
+	{% if people %}<label>{% translate "Persona" %}<select name="person"><option value="">{% translate "tutte" %}</option>{% for p in people %}<option value="{{ p.pk }}" {% if f.person == p.pk|stringformat:"s" %}selected{% endif %}>{{ p.get_full_name|default:p.username }}</option>{% endfor %}</select></label>{% endif %}
+	<button>{% translate "Filtra" %}</button>
+</form>
+{% for day, rows in days %}
+<h3 class="sec">{{ day|date:"l j F Y" }}</h3>
+{% for r in rows %}{% include "web/_entry_row.html" with show_owner=people %}{% endfor %}
+{% empty %}<p class="muted">{% translate "Nessuna attività nel periodo." %}</p>{% endfor %}
+{% endblock %}

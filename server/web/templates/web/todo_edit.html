@@ -1,0 +1,23 @@
+{% extends "web/base.html" %}{% load i18n %}
+{% block title %}{% translate "Da fare" %} · ActivityTrack{% endblock %}
+{% block content %}
+<p><a href="{% url 'todos' %}">← {% translate "Da fare" %}</a></p>
+<h1>{% if t %}{{ t.title }}{% else %}{% translate "Nuova voce" %}{% endif %}</h1>
+{% if t and t.external_key %}<p class="note">{% blocktranslate with k=t.external_key %}Dal gestionale ({{ k }}).{% endblocktranslate %}</p>{% endif %}
+<form method="post" class="card narrowform">{% csrf_token %}
+	<label>{% translate "Titolo" %}<input name="title" value="{{ t.title|default:'' }}" required></label>
+	<label>{% translate "Cliente" %}<select name="client"><option value="">—</option>{% regroup clients by company as groups %}{% for g in groups %}<optgroup label="{{ g.grouper.name|default:'—' }}">{% for c in g.list %}<option value="{{ c.uid }}" {% if t.client_id == c.uid %}selected{% endif %}>{{ c.name }}</option>{% endfor %}</optgroup>{% endfor %}</select></label>
+	<label>{% translate "Azienda (senza cliente)" %}<select name="company"><option value="">—</option>{% for c in companies %}<option value="{{ c.uid }}" {% if t.company_id == c.uid and not t.client_id %}selected{% endif %}>{{ c.name }}</option>{% endfor %}</select></label>
+	<div class="pair"><label>{% translate "Scadenza" %}<input type="date" name="due_date" value="{{ t.due_date|date:'Y-m-d' }}"></label><label>{% translate "ora" %}<input type="time" name="due_time" value="{{ due_time }}"></label></div>
+	<div class="pair"><label>{% translate "Pianificata il" %}<input type="date" name="plan_date" value="{{ t.plan_date|date:'Y-m-d' }}"></label><label>{% translate "alle" %}<input type="time" name="plan_time" value="{{ plan_time }}"></label><label>{% translate "durata (min)" %}<input type="number" name="duration" min="5" step="5" value="{{ t.duration_min|default:'' }}"></label></div>
+	<label>{% translate "Priorità" %}<select name="priority"><option value="">—</option>{% for p in "123" %}<option {% if t.priority|stringformat:"s" == p %}selected{% endif %}>{{ p }}</option>{% endfor %}</select></label>
+	<label>{% translate "Note" %}<textarea name="notes" rows="3">{{ t.notes|default:'' }}</textarea></label>
+	<button class="primary">{% translate "Salva" %}</button>
+</form>
+{% if t %}<form method="post" class="actions">{% csrf_token %}
+	<a class="button" href="{% url 'entry_new' %}?todo={{ t.uid }}">▶ {% translate "Avvia" %}</a>
+	{% if not t.done %}<button name="state" value="done">{% translate "Fatta" %}</button>{% endif %}
+	{% if not t.ignored_utc and not t.done %}<button name="state" value="ignored">{% translate "Ignora" %}</button>{% endif %}
+	{% if t.done or t.ignored_utc %}<button name="state" value="open">{% translate "Riapri" %}</button>{% endif %}
+</form>{% endif %}
+{% endblock %}
