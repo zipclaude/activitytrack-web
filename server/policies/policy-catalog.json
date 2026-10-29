@@ -1,0 +1,726 @@
+{
+  "format": "activitytrack-policy-catalog",
+  "schema": 1,
+  "policySchema": 1,
+  "features": [
+    {
+      "key": "entries",
+      "essential": true,
+      "doc": "essential: starting and stopping activities"
+    },
+    {
+      "key": "dayReport",
+      "essential": true,
+      "doc": "essential: the day report"
+    },
+    {
+      "key": "autoBackup",
+      "essential": true,
+      "doc": "essential: the automatic backup"
+    },
+    {
+      "key": "todos",
+      "essential": false,
+      "doc": "the to-dos (Home section, More → To-dos)"
+    },
+    {
+      "key": "planning",
+      "essential": false,
+      "doc": "planning to-dos (planned slot, agenda free-slot taps)"
+    },
+    {
+      "key": "ignoreTodos",
+      "essential": false,
+      "doc": "ignoring to-dos (swipe, button)"
+    },
+    {
+      "key": "deleteTodos",
+      "essential": false,
+      "doc": "deleting to-dos made by hand"
+    },
+    {
+      "key": "deleteEntries",
+      "essential": false,
+      "doc": "deleting activities"
+    },
+    {
+      "key": "concurrentEntries",
+      "essential": false,
+      "doc": "leaving an activity running when another starts (it is closed or suspended)"
+    },
+    {
+      "key": "travel",
+      "essential": false,
+      "doc": "travels (start buttons, \"+ Travel\")"
+    },
+    {
+      "key": "expenses",
+      "essential": false,
+      "doc": "expenses"
+    },
+    {
+      "key": "materials",
+      "essential": false,
+      "doc": "consumables"
+    },
+    {
+      "key": "attachments",
+      "essential": false,
+      "doc": "photos and files"
+    },
+    {
+      "key": "voiceNotes",
+      "essential": false,
+      "doc": "voice notes"
+    },
+    {
+      "key": "dictation",
+      "essential": false,
+      "doc": "dictation (microphone in text fields; its settings)"
+    },
+    {
+      "key": "location",
+      "essential": false,
+      "doc": "location tracking (its settings)"
+    },
+    {
+      "key": "calls",
+      "essential": false,
+      "doc": "call recognition (its settings)"
+    },
+    {
+      "key": "calendar",
+      "essential": false,
+      "doc": "the external calendar (its settings, sync)"
+    },
+    {
+      "key": "import",
+      "essential": false,
+      "doc": "importing files"
+    },
+    {
+      "key": "export",
+      "essential": false,
+      "doc": "exporting"
+    },
+    {
+      "key": "restore",
+      "essential": false,
+      "doc": "restoring a backup"
+    },
+    {
+      "key": "widgets",
+      "essential": false,
+      "doc": "widgets (they show a note; a tap opens the app)"
+    },
+    {
+      "key": "quickTile",
+      "essential": false,
+      "doc": "the quick settings tile (shown unavailable)"
+    },
+    {
+      "key": "gestures",
+      "essential": false,
+      "doc": "swipe gestures (cards keep their buttons; Settings → Gestures hidden)"
+    }
+  ],
+  "fields": [
+    {
+      "key": "company",
+      "essential": false,
+      "doc": "company; hidden = use without companies (clients and to-dos of no company)"
+    },
+    {
+      "key": "client",
+      "essential": true,
+      "doc": "client; essential, may be hidden only while the company stays (which then becomes required)"
+    },
+    {
+      "key": "role",
+      "essential": false,
+      "doc": "role"
+    },
+    {
+      "key": "quickPick",
+      "essential": false,
+      "doc": "quick pick"
+    },
+    {
+      "key": "description",
+      "essential": true,
+      "doc": "description; essential"
+    },
+    {
+      "key": "contact",
+      "essential": false,
+      "doc": "contact of the client"
+    },
+    {
+      "key": "locality",
+      "essential": false,
+      "doc": "locality"
+    },
+    {
+      "key": "place",
+      "essential": false,
+      "doc": "where (client, company, home, elsewhere)"
+    },
+    {
+      "key": "notes",
+      "essential": false,
+      "doc": "notes"
+    },
+    {
+      "key": "tags",
+      "essential": false,
+      "doc": "tags"
+    },
+    {
+      "key": "refs",
+      "essential": false,
+      "doc": "external references"
+    },
+    {
+      "key": "km",
+      "essential": false,
+      "doc": "km of a travel"
+    },
+    {
+      "key": "date",
+      "essential": false,
+      "doc": "date in New activity"
+    },
+    {
+      "key": "times",
+      "essential": true,
+      "doc": "start and end; essential"
+    },
+    {
+      "key": "todoPriority",
+      "essential": false,
+      "doc": "to-do priority"
+    },
+    {
+      "key": "todoDue",
+      "essential": false,
+      "doc": "to-do due date"
+    },
+    {
+      "key": "todoPlan",
+      "essential": false,
+      "doc": "to-do planned slot"
+    }
+  ],
+  "settings": [
+    {
+      "key": "editableTimes",
+      "kind": "BOOLEAN",
+      "doc": "true/false"
+    },
+    {
+      "key": "confirmIntervalMin",
+      "kind": "INT",
+      "min": 10,
+      "max": 240,
+      "doc": "minutes — 10–240"
+    },
+    {
+      "key": "maxConfirmations",
+      "kind": "INT",
+      "min": 0,
+      "max": 100,
+      "doc": "number — 0–100 (0 = unlimited)"
+    },
+    {
+      "key": "pauseIntervalMin",
+      "kind": "INT",
+      "min": 10,
+      "max": 120,
+      "doc": "minutes — 10–120"
+    },
+    {
+      "key": "dayStartDelayMin",
+      "kind": "INT",
+      "min": 0,
+      "max": 240,
+      "doc": "minutes — 0–240"
+    },
+    {
+      "key": "planLeadMin",
+      "kind": "INT",
+      "min": 0,
+      "max": 240,
+      "doc": "minutes — 0–240"
+    },
+    {
+      "key": "planSnoozeMin",
+      "kind": "INT",
+      "min": 10,
+      "max": 240,
+      "doc": "minutes — 10–240"
+    },
+    {
+      "key": "carryOverMin",
+      "kind": "INT",
+      "min": 0,
+      "max": 720,
+      "doc": "minutes after midnight — 0–720"
+    },
+    {
+      "key": "movementThresholdM",
+      "kind": "INT",
+      "min": 50,
+      "max": 5000,
+      "doc": "metres — 50–5000"
+    },
+    {
+      "key": "backupRetention",
+      "kind": "INT",
+      "min": 1,
+      "max": 365,
+      "doc": "backups kept — 1–365"
+    },
+    {
+      "key": "backupEveryHours",
+      "kind": "INT",
+      "allowed": [
+        6,
+        12,
+        24,
+        168
+      ],
+      "doc": "hours — 6, 12, 24, 168"
+    },
+    {
+      "key": "backupHour",
+      "kind": "INT",
+      "min": 0,
+      "max": 23,
+      "doc": "hour — 0–23"
+    },
+    {
+      "key": "todoWindowHours",
+      "kind": "INT",
+      "allowed": [
+        0,
+        24,
+        72,
+        168,
+        720
+      ],
+      "doc": "hours — 0 (all), 24, 72, 168, 720"
+    },
+    {
+      "key": "homeTodoWindowHours",
+      "kind": "INT",
+      "allowed": [
+        0,
+        24,
+        72,
+        168,
+        720
+      ],
+      "doc": "hours — 0 (all), 24, 72, 168, 720 (before 0.8.0; the Home uses `homeWindow`)"
+    },
+    {
+      "key": "widgetTodoWindowHours",
+      "kind": "INT",
+      "allowed": [
+        24,
+        72,
+        168,
+        720
+      ],
+      "doc": "hours — 24, 72, 168, 720"
+    },
+    {
+      "key": "roundingWorkMin",
+      "kind": "INT",
+      "allowed": [
+        1,
+        5,
+        15,
+        30,
+        60
+      ],
+      "doc": "minutes — 1, 5, 15, 30, 60 (the quantum only)"
+    },
+    {
+      "key": "roundingTravelMin",
+      "kind": "INT",
+      "allowed": [
+        1,
+        5,
+        15,
+        30,
+        60
+      ],
+      "doc": "minutes — 1, 5, 15, 30, 60"
+    },
+    {
+      "key": "roundingPauseMin",
+      "kind": "INT",
+      "allowed": [
+        1,
+        5,
+        15,
+        30,
+        60
+      ],
+      "doc": "minutes — 1, 5, 15, 30, 60"
+    },
+    {
+      "key": "dictationLanguage",
+      "kind": "STRING",
+      "allowed": [
+        "it-IT",
+        "en-US",
+        "de-DE",
+        "es-ES"
+      ],
+      "doc": "text — it-IT, en-US, de-DE, es-ES"
+    },
+    {
+      "key": "compactDisplay",
+      "kind": "BOOLEAN",
+      "doc": "true/false"
+    },
+    {
+      "key": "callsIncoming",
+      "kind": "BOOLEAN",
+      "doc": "true/false"
+    },
+    {
+      "key": "callsOutgoing",
+      "kind": "BOOLEAN",
+      "doc": "true/false"
+    },
+    {
+      "key": "callAutoPause",
+      "kind": "BOOLEAN",
+      "doc": "true/false"
+    },
+    {
+      "key": "callProposeEntry",
+      "kind": "BOOLEAN",
+      "doc": "true/false"
+    },
+    {
+      "key": "callsAlways",
+      "kind": "BOOLEAN",
+      "doc": "true/false"
+    },
+    {
+      "key": "nominatimEnabled",
+      "kind": "BOOLEAN",
+      "doc": "true/false"
+    },
+    {
+      "key": "osrmEnabled",
+      "kind": "BOOLEAN",
+      "doc": "true/false"
+    },
+    {
+      "key": "tilesEnabled",
+      "kind": "BOOLEAN",
+      "doc": "true/false"
+    },
+    {
+      "key": "stationaryRadiusM",
+      "kind": "INT",
+      "min": 25,
+      "max": 1000,
+      "doc": "metres — 25–1000"
+    },
+    {
+      "key": "stationaryMin",
+      "kind": "INT",
+      "min": 5,
+      "max": 120,
+      "doc": "minutes — 5–120"
+    },
+    {
+      "key": "kmFactor",
+      "kind": "DOUBLE",
+      "min": 1.0,
+      "max": 3.0,
+      "doc": "number — 1.0–3.0 (road km per straight-line km)"
+    },
+    {
+      "key": "nominatimEndpoint",
+      "kind": "STRING",
+      "doc": "text — an `https://` URL"
+    },
+    {
+      "key": "osrmEndpoint",
+      "kind": "STRING",
+      "doc": "text — an `https://` URL"
+    },
+    {
+      "key": "tilesEndpoint",
+      "kind": "STRING",
+      "doc": "text — an `https://` URL with `{z}`, `{x}`, `{y}`"
+    },
+    {
+      "key": "roundingWorkMode",
+      "kind": "STRING",
+      "allowed": [
+        "CEIL_TOLERANT",
+        "CEIL",
+        "FLOOR"
+      ],
+      "doc": "text — CEIL_TOLERANT, CEIL, FLOOR"
+    },
+    {
+      "key": "roundingTravelMode",
+      "kind": "STRING",
+      "allowed": [
+        "CEIL_TOLERANT",
+        "CEIL",
+        "FLOOR"
+      ],
+      "doc": "text — CEIL_TOLERANT, CEIL, FLOOR"
+    },
+    {
+      "key": "roundingPauseMode",
+      "kind": "STRING",
+      "allowed": [
+        "CEIL_TOLERANT",
+        "CEIL",
+        "FLOOR"
+      ],
+      "doc": "text — CEIL_TOLERANT, CEIL, FLOOR"
+    },
+    {
+      "key": "roundingWorkMinimumMin",
+      "kind": "INT",
+      "min": 0,
+      "max": 60,
+      "doc": "minutes — 0–60"
+    },
+    {
+      "key": "roundingTravelMinimumMin",
+      "kind": "INT",
+      "min": 0,
+      "max": 60,
+      "doc": "minutes — 0–60"
+    },
+    {
+      "key": "roundingPauseMinimumMin",
+      "kind": "INT",
+      "min": 0,
+      "max": 60,
+      "doc": "minutes — 0–60"
+    },
+    {
+      "key": "gestureTodoToStart",
+      "kind": "STRING",
+      "allowed": [
+        "START",
+        "START_OR_DONE",
+        "POSTPONE_OR_IGNORE",
+        "POSTPONE",
+        "IGNORE",
+        "DONE",
+        "REPLAN",
+        "NONE"
+      ],
+      "doc": "text — START, START_OR_DONE, POSTPONE_OR_IGNORE, POSTPONE, IGNORE, DONE, REPLAN, NONE"
+    },
+    {
+      "key": "gestureTodoToEnd",
+      "kind": "STRING",
+      "allowed": [
+        "START",
+        "START_OR_DONE",
+        "POSTPONE_OR_IGNORE",
+        "POSTPONE",
+        "IGNORE",
+        "DONE",
+        "REPLAN",
+        "NONE"
+      ],
+      "doc": "text — as above"
+    },
+    {
+      "key": "gestureEntryToStart",
+      "kind": "STRING",
+      "allowed": [
+        "PAUSE_RESUME",
+        "STOP_OR_SUSPEND",
+        "STOP",
+        "SUSPEND",
+        "NONE"
+      ],
+      "doc": "text — PAUSE_RESUME, STOP_OR_SUSPEND, STOP, SUSPEND, NONE"
+    },
+    {
+      "key": "gestureEntryToEnd",
+      "kind": "STRING",
+      "allowed": [
+        "PAUSE_RESUME",
+        "STOP_OR_SUSPEND",
+        "STOP",
+        "SUSPEND",
+        "NONE"
+      ],
+      "doc": "text — as above"
+    },
+    {
+      "key": "gesturePastToStart",
+      "kind": "STRING",
+      "allowed": [
+        "COMPLETE",
+        "REOPEN",
+        "NONE"
+      ],
+      "doc": "text — COMPLETE, REOPEN, NONE (stopped entries on the Home list)"
+    },
+    {
+      "key": "gesturePastToEnd",
+      "kind": "STRING",
+      "allowed": [
+        "COMPLETE",
+        "REOPEN",
+        "NONE"
+      ],
+      "doc": "text — as above"
+    },
+    {
+      "key": "gestureFullSwipe",
+      "kind": "BOOLEAN",
+      "doc": "true/false — a long swipe runs the first action"
+    },
+    {
+      "key": "homeWindow",
+      "kind": "INT",
+      "allowed": [
+        -1,
+        24,
+        72,
+        168,
+        720,
+        0
+      ],
+      "doc": "hours — -1 (today), 24, 72, 168, 720, 0 (all)"
+    },
+    {
+      "key": "homeShow",
+      "kind": "STRING",
+      "allowed": [
+        "TODO",
+        "MISSING",
+        "DONE",
+        "IGNORED"
+      ],
+      "multiple": true,
+      "doc": "text — comma list of TODO, MISSING, DONE, IGNORED"
+    },
+    {
+      "key": "homeFilterEntries",
+      "kind": "BOOLEAN",
+      "doc": "true/false — the company filter hides the entries too"
+    },
+    {
+      "key": "todoShowIgnored",
+      "kind": "BOOLEAN",
+      "doc": "true/false"
+    },
+    {
+      "key": "agendaView",
+      "kind": "STRING",
+      "allowed": [
+        "LIST",
+        "DAY",
+        "WEEK",
+        "MONTH"
+      ],
+      "doc": "text — LIST, DAY, WEEK, MONTH"
+    },
+    {
+      "key": "orderCompanies",
+      "kind": "STRING",
+      "allowed": [
+        "ALPHABETICAL",
+        "LAST_USE",
+        "MANUAL"
+      ],
+      "doc": "text — ALPHABETICAL, LAST_USE, MANUAL"
+    },
+    {
+      "key": "orderClients",
+      "kind": "STRING",
+      "allowed": [
+        "ALPHABETICAL",
+        "LAST_USE",
+        "MANUAL"
+      ],
+      "doc": "text — as above"
+    },
+    {
+      "key": "orderRoles",
+      "kind": "STRING",
+      "allowed": [
+        "ALPHABETICAL",
+        "LAST_USE",
+        "MANUAL"
+      ],
+      "doc": "text — as above"
+    },
+    {
+      "key": "orderPresets",
+      "kind": "STRING",
+      "allowed": [
+        "ALPHABETICAL",
+        "LAST_USE",
+        "MANUAL"
+      ],
+      "doc": "text — as above"
+    }
+  ],
+  "behaviours": [
+    {
+      "key": "askTravelDone",
+      "kind": "BOOLEAN",
+      "default": true,
+      "doc": "true — false: a running travel is closed when another activity starts, without asking"
+    },
+    {
+      "key": "closeCompleteOnStop",
+      "kind": "BOOLEAN",
+      "default": true,
+      "doc": "true — false: Stop always leaves the activity \"to complete\""
+    },
+    {
+      "key": "minDurationSec",
+      "kind": "INT",
+      "default": 60,
+      "doc": "60 — shorter activities, travels and segments are an error (0 = no limit)"
+    },
+    {
+      "key": "exportMaxDays",
+      "kind": "INT",
+      "default": 366,
+      "doc": "366 — longest export period in days"
+    }
+  ],
+  "entriesSource": [
+    "free",
+    "todosOnly"
+  ],
+  "masterDataSource": [
+    "user",
+    "importOnly"
+  ],
+  "exportFormats": [
+    "csv",
+    "json",
+    "xml"
+  ],
+  "languages": [
+    "de",
+    "en",
+    "es",
+    "it"
+  ]
+}

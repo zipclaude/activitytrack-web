@@ -1,0 +1,26 @@
+{% extends "web/base.html" %}{% load i18n %}
+{% block title %}{% translate "Policy" %} · ActivityTrack{% endblock %}
+{% block content %}
+<h1>{% translate "Policy dei telefoni" %}</h1>
+<p>{% blocktranslate %}Ogni telefono riceve la policy dell'organizzazione, poi quella del profilo dell'utente, poi quella dell'utente: chiave per chiave, la più specifica vince.{% endblocktranslate %}</p>
+<table class="list">
+	<thead><tr><th>{% translate "Ambito" %}</th><th>{% translate "Stato" %}</th><th></th></tr></thead>
+	<tbody>
+	{% for scope, label, p in scopes %}
+	<tr>
+		<td>{{ label }}</td>
+		<td>{% if p %}{% blocktranslate with r=p.revision d=p.updated|date:"SHORT_DATETIME_FORMAT" %}revisione {{ r }}, {{ d }}{% endblocktranslate %}{% else %}—{% endif %}</td>
+		<td><a class="button" href="{% url 'policies:edit' scope %}">{% if p %}{% translate "Modifica" %}{% else %}{% translate "Crea" %}{% endif %}</a></td>
+	</tr>
+	{% endfor %}
+	</tbody>
+</table>
+{% if users %}
+<form method="get" onsubmit="location.href=this.dataset.base.replace('0', this.u.value); return false" data-base="{% url 'policies:edit' 'user-0' %}" class="card">
+	<label>{% translate "Policy per un utente" %}
+		<select name="u">{% for u in users %}<option value="{{ u.pk }}">{{ u.get_full_name|default:u.username }}</option>{% endfor %}</select>
+	</label>
+	<button class="primary">{% translate "Crea" %}</button>
+</form>
+{% endif %}
+{% endblock %}

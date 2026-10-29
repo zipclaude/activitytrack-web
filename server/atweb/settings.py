@@ -32,6 +32,12 @@ if FILES_OFFLOAD not in ("none", "nginx", "apache"):
     raise ValueError(f"[files] offload: {FILES_OFFLOAD!r}, expected none, nginx or apache")
 FILES_ACCEL_LOCATION = INI.get("files", "accel_location", fallback="/_files/").strip()
 
+# optional: phone policies signed with this certificate (the app's policy.json.sig);
+# needed only for phones whose policy CN is already pinned
+POLICY_KEY = INI.get("policy", "key", fallback="").strip()
+POLICY_CERT = INI.get("policy", "cert", fallback="").strip()
+POLICY_CHAIN = INI.get("policy", "chain", fallback="").strip()
+
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -42,6 +48,7 @@ INSTALLED_APPS = [
     "accounts",
     "records",
     "sync",
+    "policies",
     "web",
 ]
 

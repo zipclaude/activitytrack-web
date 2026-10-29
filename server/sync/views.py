@@ -117,6 +117,17 @@ def pull(request):
 
 @device_api
 @require_GET
+def policy(request):
+    """The phone's policy (docs/SYNC.md §8): text and optional signature, or nulls."""
+    from policies.effective import effective, fingerprint, sign
+
+    text = effective(request.device.user)
+    signature = sign(text) if text else None
+    return JsonResponse({"policy": text, "signature": signature, "fingerprint": fingerprint(text, signature) if text else None})
+
+
+@device_api
+@require_GET
 def head(request):
     return JsonResponse({
         "rev": engine.head(request.device.user.org),

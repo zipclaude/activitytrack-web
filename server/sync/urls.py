@@ -8,5 +8,6 @@ urlpatterns = [
     path("sync/push", views.push),
     path("sync/pull", views.pull),
     path("sync/head", views.head),
+    path("policy", views.policy),
     path("files/<str:uid>", views.files),
 ]

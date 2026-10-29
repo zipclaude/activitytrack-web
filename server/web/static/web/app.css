@@ -45,3 +45,11 @@ code.wrap { word-break: break-all; font-size: 12px; }
 	table.list td { display: block; border: 0; padding: 2px 8px; }
 	table.list tr { display: block; border-bottom: 1px solid var(--line); padding: 8px 0; }
 }
+.doc { color: var(--muted); font-size: 13px; }
+.err { color: var(--danger); font-size: 13px; }
+.muted { color: var(--muted); }
+details > summary { cursor: pointer; list-style: revert; }
+details > summary h2 { display: inline; }
+label.inline { display: inline-flex; flex-direction: row; gap: 4px; margin: 0 12px 0 0; color: var(--text); }
+pre.json { background: var(--surface); padding: 12px; border-radius: 8px; overflow-x: auto; font-size: 12px; }
+form.policy select, form.policy input { padding: 6px 8px; }
