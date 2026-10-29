@@ -162,7 +162,9 @@ def apply(user, change, offset_ms=0, now=None, central=False):
         if new:
             rec.owner_id = _owner_of_new(user, model, rec, central)
         elif model.PARENT and getattr(rec, model.PARENT + "_id") != old_parent:
-            raise ChangeError("invalid", f"{model.PARENT} cannot change")
+            # moved under another parent (a personal client merged into a
+            # central one): owned as a new child of that parent
+            rec.owner_id = _owner_of_new(user, model, rec, False)
         try:
             rec.full_clean(exclude=["org", "owner", "uid"], validate_unique=False)
         except ValidationError as e:

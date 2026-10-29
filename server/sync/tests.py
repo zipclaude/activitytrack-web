@@ -11,7 +11,7 @@ from django.test import TestCase, override_settings
 from django.utils import timezone
 
 from accounts.models import Organization, PairingCode, Profile, User
-from records.models import Company, Entry, Segment
+from records.models import Company, Contact, Entry, Segment
 from sync import engine
 
 T0 = 1761600000000  # 2025-10-27T21:20:00Z
@@ -215,6 +215,22 @@ class MasterDataTests(SyncTestCase):
         root = self.pair(self.admin)
         res = self.push(root, [self.upsert("company", str(c.uid), {"name": "Acme S.p.A."}, T0)])
         self.assertEqual(res[0]["status"], "applied")
+
+    def test_a_personal_contact_moves_to_a_central_client(self):
+        c = self.central_company()
+        central = uid()
+        engine.apply(self.admin, self.upsert("client", central, {"companyUid": str(c.uid), "name": "Banca"}, T0), central=True)
+        a = self.pair(self.alice)
+        mine, ct = uid(), uid()
+        self.push(a, [
+            self.upsert("client", mine, {"companyUid": str(c.uid), "name": "Banca"}, T0),
+            self.upsert("contact", ct, {"clientUid": mine, "name": "Rossi"}, T0),
+        ])
+        res = self.push(a, [self.upsert("contact", ct, {"clientUid": central}, T0 + 1), {"type": "client", "uid": mine, "op": "delete", "time": T0 + 2}])
+        self.assertEqual([r["status"] for r in res], ["applied", "applied"])
+        self.assertEqual(res[0]["record"]["fields"]["clientUid"], central)
+        self.assertFalse(res[0]["record"]["central"])
+        self.assertFalse(Contact.objects.get(uid=ct).deleted)
 
     def test_only_managers_create_central_records(self):
         with self.assertRaises(engine.ChangeError):
