@@ -73,7 +73,42 @@ In `settings.ini`: `[files] offload = apache` with mod_xsendfile, else
 
 Both web servers run as `www-data`, the owner of gunicorn's socket.
 
+## Under a path of an existing site
+
+For a host that already serves a site: `base_url` with the path
+(`https://www.example.com/activitytrack`), `allowed_hosts` with every name
+and address the server is reached by. Apache: `deploy/apache-path.conf`
+included in the site's `<VirtualHost *:443>`. nginx, in the site's
+`server` block:
+
+```nginx
+location /activitytrack/static/ { alias /var/lib/activitytrack-web/static/; }
+location /activitytrack/_files/ { internal; alias /var/lib/activitytrack-web/files/; }
+location /activitytrack/ {
+	client_max_body_size 30m;
+	proxy_pass http://unix:/run/activitytrack-web.sock:/;
+	proxy_set_header Host $host;
+	proxy_set_header X-Forwarded-Proto $scheme;
+}
+```
+
+(with `[files] accel_location = /activitytrack/_files/` for nginx offload).
+
 ## Self-signed certificate
+
+The certificate must be fit for a TLS server: key usage
+`digitalSignature`, extended key usage `serverAuth`, not a CA, the host
+names in subjectAltName. A certificate made as a CA (key usage
+`keyCertSign, cRLSign` only) works with TLS 1.3 only and is refused by many
+clients:
+
+```sh
+openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:P-256 -nodes -days 825 \
+	-subj "/CN=at.example.com" -addext "subjectAltName=DNS:at.example.com" \
+	-addext "basicConstraints=critical,CA:FALSE" -addext "keyUsage=critical,digitalSignature" \
+	-addext "extendedKeyUsage=serverAuth" -keyout key.pem -out cert.pem
+```
+
 
 Phones do not trust it: put its key's fingerprint in `[server] tls_pin`,
 and the pairing QR code makes the app pin it:

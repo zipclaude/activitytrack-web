@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from . import config
 
@@ -14,7 +15,13 @@ ALLOWED_HOSTS = [h.strip() for h in INI.get("server", "allowed_hosts", fallback=
 BASE_URL = INI.get("server", "base_url", fallback="http://localhost:8000").rstrip("/")
 # sha256 of the server's public key, for a certificate the phones do not trust (docs/SYNC.md §9)
 TLS_PIN = INI.get("server", "tls_pin", fallback="").strip()
-CSRF_TRUSTED_ORIGINS = [BASE_URL] if BASE_URL.startswith("https://") else []
+# installed under a path (https://host/activitytrack): the proxy strips it,
+# Django writes it back into every URL
+_base = urlsplit(BASE_URL)
+URL_PREFIX = _base.path.rstrip("/")
+FORCE_SCRIPT_NAME = URL_PREFIX or None
+# forms posted from any of the server's names over https
+CSRF_TRUSTED_ORIGINS = sorted({f"{_base.scheme}://{_base.netloc}"} | {f"https://{h}" for h in ALLOWED_HOSTS if not h.startswith(".")})
 
 FILES_DIR = DATA_DIR / "files"
 FILES_MAX_MB = INI.getint("files", "max_mb", fallback=25)
@@ -115,11 +122,14 @@ TIME_ZONE = INI.get("server", "time_zone", fallback="Europe/Rome")
 USE_I18N = True
 USE_TZ = True
 
-STATIC_URL = "static/"
+STATIC_URL = f"{URL_PREFIX}/static/"
 STATIC_ROOT = INI.get("server", "static_root", fallback=str(DATA_DIR / "static"))
 
 SESSION_COOKIE_SECURE = BASE_URL.startswith("https://")
 CSRF_COOKIE_SECURE = SESSION_COOKIE_SECURE
+# other applications under the same host keep their own cookies
+SESSION_COOKIE_PATH = URL_PREFIX or "/"
+CSRF_COOKIE_PATH = SESSION_COOKIE_PATH
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = "DENY"

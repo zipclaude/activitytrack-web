@@ -1,7 +1,8 @@
 ; /etc/activitytrack-web/settings.ini (docs/INSTALL.md)
 
 [server]
-; public address of the server, written in the pairing QR codes
+; public address of the server, written in the pairing QR codes; with a
+; path (https://www.example.com/activitytrack) the application lives there
 base_url = https://at.example.com
 allowed_hosts = at.example.com
 ; database (SQLite), attachments, secret key
