@@ -230,6 +230,8 @@ class Entry(Synced):
     planned_end_utc = models.DateTimeField(null=True, blank=True)
     plugin_fields = models.JSONField(null=True, blank=True)
     tags = models.JSONField(default=list, blank=True)
+    # segments overlap after merging two nodes' changes: a person checks (SYNC.md §11)
+    needs_review = models.BooleanField(default=False)
     created_utc = models.DateTimeField()
     updated_utc = models.DateTimeField()
 
