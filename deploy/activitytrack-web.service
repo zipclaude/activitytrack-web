@@ -1,0 +1,23 @@
+[Unit]
+Description=ActivityTrack Web (gunicorn)
+After=network.target postgresql.service
+Requires=activitytrack-web.socket
+
+[Service]
+Type=notify
+User=activitytrack-web
+Group=activitytrack-web
+WorkingDirectory=/usr/share/activitytrack-web/server
+Environment=ATWEB_CONFIG=/etc/activitytrack-web/settings.ini
+ExecStart=/usr/bin/gunicorn --workers 3 --threads 4 --timeout 60 atweb.wsgi
+ExecReload=/bin/kill -s HUP $MAINPID
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/activitytrack-web
+NoNewPrivileges=true
+# the database, the attachments and the secret key stay private
+UMask=0027
+
+[Install]
+WantedBy=multi-user.target

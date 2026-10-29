@@ -1,0 +1,82 @@
+{% extends "web/base.html" %}{% load i18n policy_tags %}
+{% block title %}{{ label }} · {% translate "Policy" %}{% endblock %}
+{% block content %}
+<p><a href="{% url 'policies:index' %}">← {% translate "Policy" %}</a></p>
+<h1>{{ label }}</h1>
+<p class="muted">{% translate "Ciò che resta «non impostato» segue l'ambito più generale, o l'app così com'è." %}</p>
+{% if errors %}<p class="note error">{% translate "Correggi i campi segnati." %}</p>{% endif %}
+<form method="post" class="policy">{% csrf_token %}
+
+<details open><summary><h2>{% translate "Funzioni" %}</h2></summary>
+<table class="list">
+{% for f in c.features %}{% with k="feature:"|add:f.key %}
+<tr><td><b>{{ f.key }}</b><div class="doc">{{ f.doc }}</div>{% if errors|get:k %}<div class="err">{{ errors|get:k }}</div>{% endif %}</td>
+<td><select name="{{ k }}">
+	<option value="">{% translate "non impostato" %}</option>
+	<option value="on" {% if v|get:k == "on" %}selected{% endif %}>{% translate "attiva" %}</option>
+	{% if not f.essential %}<option value="off" {% if v|get:k == "off" %}selected{% endif %}>{% translate "disattivata" %}</option>{% endif %}
+</select></td></tr>
+{% endwith %}{% endfor %}
+</table></details>
+
+<details><summary><h2>{% translate "Campi" %}</h2></summary>
+<table class="list">
+<thead><tr><th></th><th>{% translate "Visibile" %}</th><th>{% translate "Modificabile" %}</th><th>{% translate "Obbligatorio" %}</th><th>{% translate "Etichetta it / en" %}</th></tr></thead>
+{% for f in c.fields %}
+<tr><td><b>{{ f.key }}</b><div class="doc">{{ f.doc }}</div>{% with k="field:"|add:f.key %}{% if errors|get:k %}<div class="err">{{ errors|get:k }}</div>{% endif %}{% endwith %}</td>
+{% with kv="field:"|add:f.key|add:":visible" ke="field:"|add:f.key|add:":enabled" kr="field:"|add:f.key|add:":required" %}
+<td><select name="{{ kv }}"><option value="">—</option><option value="yes" {% if v|get:kv == "yes" %}selected{% endif %}>{% translate "sì" %}</option>{% if not f.essential %}<option value="no" {% if v|get:kv == "no" %}selected{% endif %}>{% translate "no" %}</option>{% endif %}</select></td>
+<td><select name="{{ ke }}"><option value="">—</option><option value="yes" {% if v|get:ke == "yes" %}selected{% endif %}>{% translate "sì" %}</option>{% if not f.essential %}<option value="no" {% if v|get:ke == "no" %}selected{% endif %}>{% translate "no" %}</option>{% endif %}</select></td>
+<td><select name="{{ kr }}"><option value="">—</option><option value="yes" {% if v|get:kr == "yes" %}selected{% endif %}>{% translate "sì" %}</option>{% if not f.essential %}<option value="no" {% if v|get:kr == "no" %}selected{% endif %}>{% translate "no" %}</option>{% endif %}</select></td>
+{% endwith %}
+{% with li="field:"|add:f.key|add:":label:it" le="field:"|add:f.key|add:":label:en" %}
+<td><input name="{{ li }}" value="{{ v|get:li }}" placeholder="it" size="10"> <input name="{{ le }}" value="{{ v|get:le }}" placeholder="en" size="10"></td>
+{% endwith %}</tr>
+{% endfor %}
+</table></details>
+
+<details open><summary><h2>{% translate "Impostazioni" %}</h2></summary>
+<p class="doc">{% translate "Valore iniziale: l'utente lo può cambiare. Bloccato: grigio con il lucchetto. Nascosto: non compare." %}</p>
+<table class="list">
+{% for s in c.settings %}{% with k="setting:"|add:s.key km="setting:"|add:s.key|add:":mode" %}
+<tr><td><b>{{ s.key }}</b><div class="doc">{{ s.doc }}</div>{% if errors|get:k %}<div class="err">{{ errors|get:k }}</div>{% endif %}</td>
+<td><select name="{{ km }}">
+	<option value="">{% translate "non impostato" %}</option>
+	<option value="value" {% if v|get:km == "value" %}selected{% endif %}>{% translate "valore iniziale" %}</option>
+	<option value="locked" {% if v|get:km == "locked" %}selected{% endif %}>{% translate "bloccato" %}</option>
+	<option value="hidden" {% if v|get:km == "hidden" %}selected{% endif %}>{% translate "nascosto" %}</option>
+</select></td>
+<td>
+{% if s.kind == "BOOLEAN" %}
+	<select name="{{ k }}"><option value="true" {% if v|get:k|same:"True" %}selected{% endif %}>{% translate "sì" %}</option><option value="false" {% if v|get:k|same:"False" %}selected{% endif %}>{% translate "no" %}</option></select>
+{% elif s.multiple %}
+	{% for a in s.allowed %}<label class="inline"><input type="checkbox" name="{{ k }}" value="{{ a }}" {% if v|get:k|has:a %}checked{% endif %}> {{ a }}</label>{% endfor %}
+{% elif s.allowed %}
+	<select name="{{ k }}">{% for a in s.allowed %}<option value="{{ a }}" {% if v|get:k|same:a %}selected{% endif %}>{{ a }}</option>{% endfor %}</select>
+{% elif s.kind == "STRING" %}
+	<input name="{{ k }}" value="{{ v|get:k }}" size="30">
+{% else %}
+	<input name="{{ k }}" value="{{ v|get:k }}" type="number" {% if s.kind == "DOUBLE" %}step="0.1"{% endif %} min="{{ s.min }}" max="{{ s.max }}">
+{% endif %}
+</td></tr>
+{% endwith %}{% endfor %}
+</table></details>
+
+<details><summary><h2>{% translate "Comportamenti e altro" %}</h2></summary>
+<table class="list">
+{% for b in c.behaviours %}{% with k="behaviour:"|add:b.key %}
+<tr><td><b>{{ b.key }}</b><div class="doc">{{ b.doc }}</div>{% if errors|get:k %}<div class="err">{{ errors|get:k }}</div>{% endif %}</td>
+<td>{% if b.kind == "BOOLEAN" %}<select name="{{ k }}"><option value="">{% translate "non impostato" %}</option><option value="true" {% if v|get:k|same:"True" %}selected{% endif %}>{% translate "sì" %}</option><option value="false" {% if v|get:k|same:"False" %}selected{% endif %}>{% translate "no" %}</option></select>
+{% else %}<input name="{{ k }}" value="{{ v|get:k }}" type="number" placeholder="{{ b.default }}">{% endif %}</td></tr>
+{% endwith %}{% endfor %}
+<tr><td><b>entries.source</b><div class="doc">{% translate "da dove partono le attività" %}</div></td><td><select name="entries"><option value="">{% translate "non impostato" %}</option>{% for o in c.entriesSource %}<option {% if v.entries == o %}selected{% endif %}>{{ o }}</option>{% endfor %}</select></td></tr>
+<tr><td><b>masterData.source</b><div class="doc">{% translate "chi crea le anagrafiche: importOnly = solo centrali, import e plugin" %}</div></td><td><select name="masterData"><option value="">{% translate "non impostato" %}</option>{% for o in c.masterDataSource %}<option {% if v.masterData == o %}selected{% endif %}>{{ o }}</option>{% endfor %}</select></td></tr>
+<tr><td><b>export.formats</b><div class="doc">{% translate "nessuno selezionato = tutti" %}</div></td><td>{% for o in c.exportFormats %}<label class="inline"><input type="checkbox" name="export" value="{{ o }}" {% if v.export|has:o %}checked{% endif %}> {{ o }}</label>{% endfor %}</td></tr>
+<tr><td><b>ui.language</b><div class="doc">{% translate "lingua dell'app, imposta" %}</div></td><td><select name="language"><option value="">{% translate "non impostato" %}</option>{% for o in c.languages %}<option {% if v.language == o %}selected{% endif %}>{{ o }}</option>{% endfor %}</select></td></tr>
+</table></details>
+
+<p><button class="primary">{% translate "Salva" %}</button>
+{% if policy %}<button name="delete" value="1" class="danger" onclick="return confirm('{% translate "Eliminare la policy di questo ambito?" %}')">{% translate "Elimina" %}</button>{% endif %}</p>
+</form>
+{% if preview %}<details><summary>{% translate "JSON di questo ambito" %}</summary><pre class="json">{{ preview }}</pre></details>{% endif %}
+{% endblock %}

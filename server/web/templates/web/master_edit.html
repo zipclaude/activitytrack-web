@@ -1,0 +1,17 @@
+{% extends "web/base.html" %}{% load i18n %}
+{% block title %}{{ title }} · ActivityTrack{% endblock %}
+{% block content %}
+<p><a href="{% url 'masters' kind %}">← {{ title }}</a></p>
+<h1>{% if r %}{% firstof r.name r.text %}{% else %}{{ title }}: {% translate "nuova" %}{% endif %}</h1>
+<form method="post" class="card narrowform">{% csrf_token %}
+	{% if model == "Preset" %}<label>{% translate "Testo" %}<input name="text" value="{{ r.text|default:'' }}" required></label>
+	{% else %}<label>{% translate "Nome" %}<input name="name" value="{{ r.name|default:'' }}" required></label>{% endif %}
+	{% if model == "Client" %}<label>{% translate "Azienda" %}<select name="company"><option value="">—</option>{% for c in companies %}<option value="{{ c.uid }}" {% if r.company_id == c.uid %}selected{% endif %}>{{ c.name }}</option>{% endfor %}</select></label>{% endif %}
+	{% if model == "Company" or model == "Client" %}<label>{% translate "Codice nel gestionale" %}<input name="external_code" value="{{ r.external_code|default:'' }}"></label>{% endif %}
+	{% if model == "Material" %}<div class="pair"><label>{% translate "Unità" %}<input name="unit" value="{{ r.unit|default:'' }}" size="6"></label><label>{% translate "Costo unitario (€)" %}<input name="unit_cost" inputmode="decimal" value="{% if r.unit_cost_cents %}{% widthratio r.unit_cost_cents 100 1 %}{% endif %}"></label></div>{% endif %}
+	{% if model != "Preset" %}<label class="check"><input type="checkbox" name="archived" {% if r.archived %}checked{% endif %}> {% translate "Archiviata" %}</label>{% endif %}
+	{% if can_central %}<label class="check"><input type="checkbox" name="central" checked> {% translate "Centrale: la vedono tutti, la modificano amministratori e responsabili" %}</label>{% endif %}
+	<button class="primary">{% translate "Salva" %}</button>
+	{% if r %}<button name="delete" value="1" class="danger" onclick="return confirm('{% translate "Eliminare? Si elimina anche sui telefoni." %}')">{% translate "Elimina" %}</button>{% endif %}
+</form>
+{% endblock %}

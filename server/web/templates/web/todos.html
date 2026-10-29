@@ -1,0 +1,11 @@
+{% extends "web/base.html" %}{% load i18n at %}
+{% block title %}{% translate "Da fare" %} · ActivityTrack{% endblock %}
+{% block content %}
+<div class="head"><h1>{% translate "Da fare" %}</h1><a class="button primary" href="{% url 'todo_new' %}">+ {% translate "Nuova voce" %}</a></div>
+<p class="tabs">
+	<a href="?show=open" class="{% if show == 'open' %}on{% endif %}">{% translate "Aperte" %}</a>
+	<a href="?show=done" class="{% if show == 'done' %}on{% endif %}">{% translate "Fatte" %}</a>
+	<a href="?show=ignored" class="{% if show == 'ignored' %}on{% endif %}">{% translate "Ignorate" %}</a>
+	<a href="?show=all" class="{% if show == 'all' %}on{% endif %}">{% translate "Tutte" %}</a></p>
+{% for t, state in items %}{% include "web/_todo_row.html" %}{% empty %}<p class="muted">{% translate "Nessuna voce." %}</p>{% endfor %}
+{% endblock %}

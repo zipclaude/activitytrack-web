@@ -1,0 +1,10 @@
+{% load i18n %}<label>{% translate "Cliente" %}<select name="client"><option value="">—</option>
+	{% regroup clients by company as groups %}{% for g in groups %}<optgroup label="{{ g.grouper.name|default:'—' }}">{% for c in g.list %}<option value="{{ c.uid }}" {% if e and e.client_id == c.uid or not e and initial.client == c.uid|stringformat:"s" %}selected{% endif %}>{{ c.name }}</option>{% endfor %}</optgroup>{% endfor %}
+</select></label>
+<label>{% translate "Azienda (senza cliente)" %}<select name="company"><option value="">—</option>
+	{% for c in companies %}<option value="{{ c.uid }}" {% if e and e.company_id == c.uid and not e.client_id or not e and initial.company == c.uid|stringformat:"s" %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
+</select></label>
+<label>{% translate "Ruolo" %}<select name="role"><option value="">—</option>
+	{% for r in roles %}<option value="{{ r.uid }}" {% if e and e.role_id == r.uid %}selected{% endif %}>{{ r.name }}</option>{% endfor %}
+</select></label>
+<label>{% translate "Descrizione" %}<textarea name="activity" rows="2">{% if e %}{{ e.activity|default:"" }}{% else %}{{ initial.activity }}{% endif %}</textarea></label>

@@ -1,0 +1,136 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+from django.test import TestCase, override_settings
+from django.urls import clear_script_prefix, reverse, set_script_prefix
+
+from accounts.models import Organization, User
+
+
+class PathTests(TestCase):
+    """Installed under a path: the proxy strips it, URLs carry it (docs/INSTALL.md)."""
+
+    def setUp(self):
+        org = Organization.objects.create(name="Infra")
+        User.objects.create_user("alice", password="x-x-x-x-x-x", org=org)
+
+    @override_settings(FORCE_SCRIPT_NAME="/activitytrack", BASE_URL="https://at.example.com/activitytrack")
+    def test_links_and_pairing_code_carry_the_path(self):
+        set_script_prefix("/activitytrack")
+        self.addCleanup(clear_script_prefix)
+        self.assertEqual(reverse("phones"), "/activitytrack/telefoni/")
+        r = self.client.get("/telefoni/")
+        self.assertEqual(r.status_code, 302)
+        self.assertTrue(r["Location"].startswith("/activitytrack/login/"), r["Location"])
+        self.client.login(username="alice", password="x-x-x-x-x-x")
+        page = self.client.post("/telefoni/associa/").content.decode()
+        self.assertIn("u=https%3A%2F%2Fat.example.com%2Factivitytrack&amp;", page)
+
+
+class WorkTests(TestCase):
+    """The browser's work goes through the sync engine: phones see it as any other change."""
+
+    def setUp(self):
+        from records.models import Company
+        from sync import engine
+
+        self.org = Organization.objects.create(name="Infra")
+        self.alice = User.objects.create_user("alice", password="x-x-x-x-x-x", org=self.org)
+        self.boss = User.objects.create_user("boss", password="x-x-x-x-x-x", org=self.org, profile="manager")
+        self.alice.manager = self.boss
+        self.alice.save()
+        self.client.force_login(self.alice)
+        engine.apply(self.boss, {"type": "company", "uid": "11111111-1111-4111-8111-111111111111", "fields": {"name": "Acme"}}, central=True)
+        self.acme = Company.objects.get(name="Acme")
+        engine.apply(self.boss, {"type": "client", "uid": "22222222-2222-4222-8222-222222222222", "fields": {"name": "Banca", "companyUid": str(self.acme.uid)}}, central=True)
+
+    def entry(self):
+        from records.models import Entry
+
+        return Entry.objects.filter(owner=self.alice, deleted=False).latest("created_utc")
+
+    def test_pages_render(self):
+        for url in ["/", "/attivita/", "/attivita/nuova/", "/dafare/", "/dafare/nuova/", "/anagrafiche/", "/anagrafiche/clienti/", "/report/", "/telefoni/"]:
+            self.assertEqual(self.client.get(url).status_code, 200, url)
+
+    def test_an_activity_from_start_to_closed(self):
+        from records.models import EntryStatus, Segment
+
+        r = self.client.post("/attivita/nuova/", {"when": "now", "client": "22222222-2222-4222-8222-222222222222"})
+        e = self.entry()
+        self.assertRedirects(r, f"/attivita/{e.uid}/")
+        self.assertEqual((e.status, e.mode, e.company_id), (EntryStatus.ACTIVE, "WORK", self.acme.uid))
+        self.assertGreater(e.rev, 0)
+        self.client.post(f"/attivita/{e.uid}/comando/", {"action": "pause"})
+        self.assertEqual(self.entry().mode, "PAUSE")
+        self.assertEqual(Segment.objects.filter(entry=e, end_utc__isnull=True).count(), 1)
+        r = self.client.post(f"/attivita/{e.uid}/comando/", {"action": "stop"})
+        # no description: details missing, to the entry
+        self.assertRedirects(r, f"/attivita/{e.uid}/")
+        self.assertEqual(self.entry().status, EntryStatus.TO_COMPLETE)
+        self.assertFalse(Segment.objects.filter(entry=e, end_utc__isnull=True).exists())
+        self.client.post(f"/attivita/{e.uid}/", {"action": "save", "client": "22222222-2222-4222-8222-222222222222", "activity": "Patch", "tags": "#Rete urgente"})
+        e = self.entry()
+        self.assertEqual((e.status, e.activity, e.tags), (EntryStatus.CLOSED, "Patch", ["rete", "urgente"]))
+        page = self.client.get(f"/attivita/{e.uid}/").content.decode()
+        self.assertIn("Banca", page)
+
+    def test_a_past_activity_and_its_times(self):
+        from records.models import EntryStatus, Segment
+
+        self.client.post("/attivita/nuova/", {"when": "past", "client": "22222222-2222-4222-8222-222222222222", "activity": "Riunione", "start": "2026-10-27T09:00", "end": "2026-10-27T11:30"})
+        e = self.entry()
+        self.assertEqual(e.status, EntryStatus.CLOSED)
+        seg = Segment.objects.get(entry=e)
+        self.assertEqual((seg.end_utc - seg.start_utc).total_seconds(), 9000)
+        self.client.post(f"/attivita/{e.uid}/", {"action": "segment", "segment": str(seg.uid), "kind": "WORK", "start": "2026-10-27T09:00", "end": "2026-10-27T10:00"})
+        seg.refresh_from_db()
+        self.assertEqual((seg.end_utc - seg.start_utc).total_seconds(), 3600)
+        self.client.post(f"/attivita/{e.uid}/", {"action": "expense", "description": "Parcheggio", "amount": "4,50"})
+        r = self.client.get("/report/?from=2026-10-01&to=2026-10-31").content.decode()
+        self.assertIn("1:00", r)
+        self.assertIn("4,50 €", r)
+        csv = self.client.get("/report/csv/?from=2026-10-01&to=2026-10-31").content.decode()
+        self.assertIn(";Acme;Banca;;Riunione;CLOSED;2026-10-27 09:00;2026-10-27 10:00;60;0;0;4.50;", csv)
+
+    def test_todos_and_starting_one(self):
+        from records.models import Todo
+
+        self.client.post("/dafare/nuova/", {"title": "Rinnovo certificati", "client": "22222222-2222-4222-8222-222222222222", "plan_date": "2026-10-30", "plan_time": "10:00"})
+        t = Todo.objects.get(title="Rinnovo certificati")
+        self.assertEqual((t.plan_start_min, t.company_id, t.owner_id), (600, self.acme.uid, self.alice.pk))
+        self.assertContains(self.client.get(f"/attivita/nuova/?todo={t.uid}"), "Rinnovo certificati")
+        self.client.post("/attivita/nuova/", {"when": "now", "todo": str(t.uid), "client": "22222222-2222-4222-8222-222222222222", "activity": "Rinnovo"})
+        self.assertEqual(self.entry().todo_id, t.uid)
+        self.client.post(f"/dafare/{t.uid}/", {"state": "done"})
+        t.refresh_from_db()
+        self.assertTrue(t.done and t.done_utc)
+
+    def test_central_master_data_are_read_only_for_users(self):
+        from records.models import Role
+
+        self.assertEqual(self.client.get(f"/anagrafiche/aziende/{self.acme.uid}/").status_code, 403)
+        self.client.post("/anagrafiche/ruoli/nuova/", {"name": "Sistemista", "central": "on"})
+        self.assertIsNotNone(Role.objects.get(name="Sistemista").owner_id)
+        self.client.force_login(self.boss)
+        self.assertEqual(self.client.get(f"/anagrafiche/aziende/{self.acme.uid}/").status_code, 200)
+        self.client.post("/anagrafiche/ruoli/nuova/", {"name": "Formatore", "central": "on"})
+        self.assertIsNone(Role.objects.get(name="Formatore").owner_id)
+
+    def test_manager_reads_the_team_reader_the_closed_entries_of_its_companies(self):
+        from accounts.models import Profile
+
+        self.client.post("/attivita/nuova/", {"when": "past", "client": "22222222-2222-4222-8222-222222222222", "activity": "Chiusa", "start": "2026-10-27T09:00", "end": "2026-10-27T10:00"})
+        self.client.post("/attivita/nuova/", {"when": "now", "client": "22222222-2222-4222-8222-222222222222", "activity": "Aperta"})
+        closed = self.entry().__class__.objects.get(activity="Chiusa")
+        self.client.force_login(self.boss)
+        page = self.client.get("/attivita/?from=2026-10-01").content.decode()
+        self.assertIn("Chiusa", page)
+        self.assertIn("Aperta", page)
+        self.assertNotIn('name="action" value="save"', self.client.get(f"/attivita/{closed.uid}/").content.decode())
+        reader = User.objects.create_user("acme", password="x-x-x-x-x-x", org=self.org, profile=Profile.READER)
+        reader.companies.add(self.acme)
+        self.client.force_login(reader)
+        self.assertRedirects(self.client.get("/"), "/report/")
+        page = self.client.get("/report/?from=2026-10-01").content.decode()
+        self.assertIn("Chiusa", page)
+        self.assertNotIn("Aperta", page)
+        self.assertEqual(self.client.get("/dafare/").status_code, 403)

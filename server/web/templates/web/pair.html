@@ -1,0 +1,18 @@
+{% extends "web/base.html" %}{% load i18n static %}
+{% block title %}{% translate "Associa un telefono" %} · ActivityTrack{% endblock %}
+{% block content %}
+<section class="card narrow" id="pairing" data-status="{% url 'pair_status' pairing.pk %}">
+	<h1>{% translate "Associa un telefono" %}</h1>
+	<ol>
+		<li>{% translate "Nell'app apri Impostazioni → Sincronizzazione → Associa a un server." %}</li>
+		<li>{% translate "Inquadra il codice." %}</li>
+	</ol>
+	<div class="qr">{{ qr|safe }}</div>
+	<p class="state" data-waiting>{% blocktranslate with time=pairing.expires|time:"H:i" %}In attesa del telefono… il codice vale fino alle {{ time }}.{% endblocktranslate %}</p>
+	<p class="state note success" data-paired hidden>{% translate "Telefono associato:" %} <b></b></p>
+	<p class="state note error" data-expired hidden>{% translate "Codice scaduto." %}</p>
+	<details><summary>{% translate "Non riesci a inquadrarlo?" %}</summary><p>{% translate "Copia questo collegamento nell'app:" %}</p><code class="wrap">{{ link }}</code></details>
+	<p><a href="{% url 'phones' %}">{% translate "Torna ai telefoni" %}</a></p>
+</section>
+{% endblock %}
+{% block scripts %}<script src="{% static 'web/pair.js' %}"></script>{% endblock %}

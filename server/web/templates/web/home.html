@@ -1,0 +1,31 @@
+{% extends "web/base.html" %}{% load i18n at %}
+{% block content %}
+<div class="head"><h1>{% blocktranslate with name=user.first_name|default:user.username %}Ciao {{ name }}{% endblocktranslate %}</h1>
+<a class="button primary" href="{% url 'entry_new' %}">▶ {% translate "Nuova attività" %}</a></div>
+{% if first %}<section class="card"><h2>{% translate "Associa il telefono" %}</h2><p>{% translate "Collega l'app ActivityTrack a questo server: i dati restano sincronizzati nei due sensi." %}</p><a class="button" href="{% url 'phones' %}">{% translate "Telefoni" %}</a></section>{% endif %}
+
+{% for r in running %}
+<section class="card running" style="--band: {{ r.e.client.color|color|default:'var(--accent)' }}">
+	<div class="head"><div><div class="sub">{{ r.e.company.name }}</div><h2><a href="{% url 'entry' r.e.uid %}">{{ r.e.client.name|default:_("Senza cliente") }}</a></h2>
+	<div>{{ r.e.activity|default:_("senza descrizione") }}</div></div>
+	<div class="big"><span class="pill s-{{ r.e.status|lower }}">{{ r.e|status }}</span><div>{{ r.work }}</div></div></div>
+	<form method="post" action="{% url 'entry_quick' r.e.uid %}" class="actions">{% csrf_token %}
+		{% if r.e.status == "ACTIVE" and r.e.mode != "PAUSE" %}<button name="action" value="pause" class="c-pause">{% translate "Pausa" %}</button>{% else %}<button name="action" value="work" class="c-work">{% translate "Riprendi" %}</button>{% endif %}
+		{% if r.e.mode != "TRAVEL" %}<button name="action" value="travel" class="c-travel">{% translate "Viaggio" %}</button>{% endif %}
+		{% if r.e.status == "ACTIVE" %}<button name="action" value="suspend" class="c-suspend">{% translate "Sospendi" %}</button>{% endif %}
+		<button name="action" value="stop" class="c-stop">{% translate "Stop" %}</button>
+	</form>
+</section>
+{% empty %}
+<section class="card muted">{% translate "Nessuna attività in corso." %}</section>
+{% endfor %}
+
+{% if overdue %}<h3 class="sec late">{% translate "In ritardo" %}</h3>
+{% for t in overdue %}{% include "web/_todo_row.html" with state="overdue" %}{% endfor %}{% endif %}
+{% if today_todos %}<h3 class="sec">{% translate "Da fare oggi" %}</h3>
+{% for t in today_todos %}{% include "web/_todo_row.html" with state="planned" %}{% endfor %}{% endif %}
+{% if missing %}<h3 class="sec late">{% translate "Dettagli mancanti" %}</h3>
+{% for r in missing %}{% include "web/_entry_row.html" %}{% endfor %}{% endif %}
+{% if closed_today %}<h3 class="sec">{% translate "Fatte oggi" %}</h3>
+{% for r in closed_today %}{% include "web/_entry_row.html" %}{% endfor %}{% endif %}
+{% endblock %}

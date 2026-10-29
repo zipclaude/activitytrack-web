@@ -1,0 +1,14 @@
+{% extends "web/base.html" %}{% load i18n at %}
+{% block title %}{{ title }} · ActivityTrack{% endblock %}
+{% block content %}
+<h1>{% translate "Anagrafiche" %}</h1>
+<p class="tabs">{% for k, v in kinds.items %}<a href="{% url 'masters' k %}" class="{% if k == kind %}on{% endif %}">{{ v.2 }}</a>{% endfor %}</p>
+<div class="head"><h2>{{ title }}</h2><a class="button primary" href="{% url 'master_new' kind %}">+ {% translate "Nuova" %}</a></div>
+{% for r in items %}
+<a class="row" href="{% url 'master_edit' kind r.uid %}" style="--band: {{ r.color|color|default:'var(--line)' }}">
+	<span class="main"><b>{% firstof r.name r.text %}</b><span class="sub">{% if r.company %}{{ r.company.name }}{% endif %}{% if r.external_code %} · {{ r.external_code }}{% endif %}{% if r.unit_cost_cents %} · {{ r.unit_cost_cents|eur }}{% if r.unit %}/{{ r.unit }}{% endif %}{% endif %}</span></span>
+	{% if r.archived %}<span class="pill">{% translate "archiviata" %}</span>{% endif %}
+	<span class="pill {% if r.owner_id %}personal{% else %}central{% endif %}">{% if r.owner_id %}{% translate "personale" %}{% else %}{% translate "centrale" %}{% endif %}</span>
+</a>
+{% empty %}<p class="muted">{% translate "Nessun elemento." %}</p>{% endfor %}
+{% endblock %}

@@ -1,0 +1,66 @@
+{% extends "web/base.html" %}{% load i18n at %}
+{% block title %}{{ e.client.name|default:_("Attività") }} · ActivityTrack{% endblock %}
+{% block content %}
+<p><a href="{% url 'entries' %}">← {% translate "Attività" %}</a></p>
+<section class="card running" style="--band: {{ e.client.color|color|default:'var(--accent)' }}">
+	{% if e.needs_review %}<p class="note error">{% translate "Da verificare: dopo una sincronizzazione due periodi si sovrappongono. Correggi gli orari." %}</p>{% endif %}
+	<div class="head"><div><div class="sub">{{ e.company.name }}{% if not can %} · {{ e.owner.get_full_name|default:e.owner.username }}{% endif %}</div>
+		<h1>{{ e.client.name|default:_("Senza cliente") }}</h1><div>{{ e.activity|default:_("senza descrizione") }}</div></div>
+		<div class="big"><span class="pill s-{{ e.status|lower }}">{{ e|status }}</span><div>{% translate "Lavoro" %} {{ d.WORK }}{% if d.TRAVEL != "0:00" %} · {% translate "Viaggio" %} {{ d.TRAVEL }}{% endif %}{% if d.PAUSE != "0:00" %} · {% translate "Pausa" %} {{ d.PAUSE }}{% endif %}</div></div></div>
+	{% if can %}<form method="post" class="actions">{% csrf_token %}
+		{% if e.status == "ACTIVE" or e.status == "SUSPENDED" %}
+			{% if e.status == "ACTIVE" and e.mode != "PAUSE" %}<button name="action" value="pause" class="c-pause">{% translate "Pausa" %}</button>{% else %}<button name="action" value="work" class="c-work">{% translate "Riprendi" %}</button>{% endif %}
+			{% if e.mode != "TRAVEL" %}<button name="action" value="travel" class="c-travel">{% translate "Viaggio" %}</button>{% endif %}
+			{% if e.status == "ACTIVE" %}<button name="action" value="suspend" class="c-suspend">{% translate "Sospendi" %}</button>{% endif %}
+			<button name="action" value="stop" class="c-stop">{% translate "Stop" %}</button>
+		{% elif e.status == "TO_COMPLETE" %}<button name="action" value="complete" class="primary" {% if not complete %}disabled title="{% translate 'Servono cliente e descrizione' %}"{% endif %}>{% translate "Completa" %}</button>
+		<button name="action" value="reopen">{% translate "Riapri" %}</button>
+		{% else %}<button name="action" value="reopen">{% translate "Riapri" %}</button>{% endif %}
+	</form>{% endif %}
+</section>
+
+{% if can %}
+<form method="post" class="card">{% csrf_token %}<input type="hidden" name="action" value="save">
+	<h2>{% translate "Dettagli" %}</h2>
+	{% include "web/_entry_fields.html" %}
+	<label>{% translate "Località" %}<input name="locality" value="{{ e.locality|default:'' }}"></label>
+	<label>{% translate "Note" %}<textarea name="notes" rows="2">{{ e.notes|default:"" }}</textarea></label>
+	<label>{% translate "Tag" %}<input name="tags" value="{{ e.tags|join:' ' }}" placeholder="rete urgente"></label>
+	<button class="primary">{% translate "Salva" %}</button>
+</form>
+{% else %}
+<section class="card"><h2>{% translate "Dettagli" %}</h2>
+	<p>{% translate "Ruolo" %}: {{ e.role.name|default:"—" }}</p><p>{% translate "Note" %}: {{ e.notes|default:"—" }}</p><p>{% translate "Tag" %}: {{ e.tags|join:" "|default:"—" }}</p>
+</section>
+{% endif %}
+
+<section class="card"><h2>{% translate "Orari" %}</h2>
+<table class="list"><thead><tr><th>{% translate "Tipo" %}</th><th>{% translate "Inizio" %}</th><th>{% translate "Fine" %}</th><th></th></tr></thead><tbody>
+{% for s in segments %}
+<tr>{% if can %}<td colspan="4"><form method="post" class="inline-form">{% csrf_token %}<input type="hidden" name="action" value="segment"><input type="hidden" name="segment" value="{{ s.uid }}">
+	<select name="kind">{% for k in kinds %}<option value="{{ k }}" {% if s.kind == k %}selected{% endif %}>{{ k|kind }}</option>{% endfor %}</select>
+	<input type="datetime-local" name="start" value="{{ s.start_utc|date:'Y-m-d\TH:i' }}">
+	<input type="datetime-local" name="end" value="{% if s.end_utc %}{{ s.end_utc|date:'Y-m-d\TH:i' }}{% endif %}" {% if not s.end_utc %}placeholder="{% translate 'in corso' %}"{% endif %}>
+	<button>{% translate "Salva" %}</button> <button name="remove" value="1" class="danger">✕</button></form></td>
+{% else %}<td>{{ s.kind|kind }}</td><td>{{ s.start_utc|date:"d/m H:i" }}</td><td>{{ s.end_utc|date:"d/m H:i"|default:_("in corso") }}</td><td></td>{% endif %}</tr>
+{% endfor %}
+</tbody></table>
+{% if can %}<form method="post" class="inline-form">{% csrf_token %}<input type="hidden" name="action" value="add_segment">
+	<select name="kind">{% for k in kinds %}<option value="{{ k }}">{{ k|kind }}</option>{% endfor %}</select>
+	<input type="datetime-local" name="start" required> <input type="datetime-local" name="end" required> <button>+ {% translate "Aggiungi" %}</button></form>{% endif %}
+</section>
+
+<section class="card"><h2>{% translate "Spese" %}</h2>
+{% for x in expenses %}<div class="line">{{ x.description }} · <b>{{ x.amount_cents|eur }}</b>{% if can %} <form method="post" class="inline-form">{% csrf_token %}<input type="hidden" name="action" value="remove_expense"><input type="hidden" name="expense" value="{{ x.uid }}"><button class="danger">✕</button></form>{% endif %}</div>
+{% empty %}<p class="muted">—</p>{% endfor %}
+{% if can %}<form method="post" class="inline-form">{% csrf_token %}<input type="hidden" name="action" value="expense">
+	<input name="description" placeholder="{% translate 'Parcheggio' %}" required> <input name="amount" inputmode="decimal" placeholder="0,00" size="7" required> € <button>+ {% translate "Aggiungi" %}</button></form>{% endif %}
+</section>
+
+<section class="card"><h2>{% translate "Allegati" %}</h2>
+{% for a in attachments %}<div class="line">{% if a.has_file %}<a href="{% url 'attachment' a.uid %}">{{ a.kind|lower }} · {{ a.mime }}</a>{% else %}{{ a.kind|lower }} · {% translate "file in arrivo" %}{% endif %}{% if a.size %} · {{ a.size|filesizeformat }}{% endif %}</div>
+{% empty %}<p class="muted">{% translate "Si aggiungono dall'app." %}</p>{% endfor %}
+</section>
+
+{% if can %}<form method="post" onsubmit="return confirm('{% translate "Eliminare questa attività? Si elimina anche sui telefoni." %}')">{% csrf_token %}<input type="hidden" name="action" value="delete"><button class="danger">{% translate "Elimina l'attività" %}</button></form>{% endif %}
+{% endblock %}

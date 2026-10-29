@@ -1,0 +1,10 @@
+[Unit]
+Description=ActivityTrack Web socket
+
+[Socket]
+ListenStream=/run/activitytrack-web.sock
+SocketUser=www-data
+SocketMode=0600
+
+[Install]
+WantedBy=sockets.target

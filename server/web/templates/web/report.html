@@ -1,0 +1,23 @@
+{% extends "web/base.html" %}{% load i18n at %}
+{% block title %}{% translate "Report" %} · ActivityTrack{% endblock %}
+{% block content %}
+<h1>{% translate "Report" %}</h1>
+{% if reader %}<p class="muted">{% translate "Le attività chiuse delle aziende assegnate a questo account." %}</p>{% endif %}
+<form class="filters" method="get">
+	<label>{% translate "Dal" %}<input type="date" name="from" value="{{ since|date:'Y-m-d' }}"></label>
+	<label>{% translate "Al" %}<input type="date" name="to" value="{{ until|date:'Y-m-d' }}"></label>
+	<label>{% translate "Azienda" %}<select name="company"><option value="">{% translate "tutte" %}</option>{% for c in companies %}<option value="{{ c.uid }}" {% if f.company == c.uid|stringformat:"s" %}selected{% endif %}>{{ c.name }}</option>{% endfor %}</select></label>
+	{% if people %}<label>{% translate "Persona" %}<select name="person"><option value="">{% translate "tutte" %}</option>{% for p in people %}<option value="{{ p.pk }}" {% if f.person == p.pk|stringformat:"s" %}selected{% endif %}>{{ p.get_full_name|default:p.username }}</option>{% endfor %}</select></label>{% endif %}
+	<button>{% translate "Aggiorna" %}</button>
+	<a class="button" href="{% url 'report_csv' %}?{{ request.GET.urlencode }}">CSV</a>
+</form>
+<table class="list totals">
+	<thead><tr><th>{% translate "Azienda" %}</th><th>{% translate "Cliente" %}</th><th>{% translate "Attività" %}</th><th>{% translate "Lavoro" %}</th><th>{% translate "Viaggio" %}</th><th>{% translate "Pause" %}</th><th>{% translate "Spese" %}</th></tr></thead>
+	<tbody>{% for t in table %}<tr><td>{{ t.company }}</td><td>{{ t.client }}</td><td>{{ t.count }}</td><td><b>{{ t.work }}</b></td><td>{{ t.travel }}</td><td>{{ t.pause }}</td><td>{{ t.expenses|eur }}</td></tr>
+	{% empty %}<tr><td colspan="7" class="muted">{% translate "Nessuna attività nel periodo." %}</td></tr>{% endfor %}</tbody>
+	{% if table %}<tfoot><tr><th colspan="3">{% translate "Totale" %}</th><th>{{ whole.work }}</th><th>{{ whole.travel }}</th><th>{{ whole.pause }}</th><th>{{ expenses|eur }}</th></tr></tfoot>{% endif %}
+</table>
+<p class="muted">{% translate "Tempi registrati, senza arrotondamenti: gli arrotondamenti del report dell'app arrivano in una prossima versione." %}</p>
+<h3 class="sec">{% translate "Dettaglio" %}</h3>
+{% for r in rows %}{% include "web/_entry_row.html" with show_owner=people %}{% endfor %}
+{% endblock %}
