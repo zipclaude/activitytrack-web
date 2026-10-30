@@ -48,6 +48,8 @@ with the settings (`activitytrack-web-manage migrate`,
 
 The package keeps the tarball's layout in `/usr/share/activitytrack-web`
 (`$AT` below): the examples for the web server are in `$AT/deploy/`.
+The 0.9.0 packages leave out `$AT/packaging/` (#8); they need nothing
+from it, `activitytrack-web-manage` is already in `/usr/bin`.
 
 ## 2. Tarball or clone of the repository
 
