@@ -83,7 +83,7 @@ ActivityTrack Web.
 |---|---|
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | requirements, stack, components, profiles, central and personal master data, policies, plugins |
 | [docs/SYNC.md](docs/SYNC.md) | sync protocol v1: records, change log, clocks, revisions, endpoints, first sync, pairing, conflicts |
-| [docs/INSTALL.md](docs/INSTALL.md) | installation on Debian 13 with nginx or Apache, at a host's root or under a path |
+| [docs/INSTALL.md](docs/INSTALL.md) | installation: packages for Debian 13/14 and Ubuntu 24.04/26.04, tarball or clone for those and RHEL / Oracle Linux, Arch, FreeBSD; nginx or Apache, at a host's root or under a path |
 | [docs/ROADMAP.md](docs/ROADMAP.md) | phases and their state |
 
 Until the first release these documents are on the development branch

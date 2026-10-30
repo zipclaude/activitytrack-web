@@ -27,7 +27,7 @@ jobs:
       - name: Build tools
         run: |
           apt-get update
-          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ca-certificates git curl debhelper dpkg-dev
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ca-certificates git curl build-essential debhelper dpkg-dev
       - uses: actions/checkout@v4
       - name: Version
         run: |
