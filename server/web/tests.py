@@ -134,3 +134,64 @@ class WorkTests(TestCase):
         self.assertIn("Chiusa", page)
         self.assertNotIn("Aperta", page)
         self.assertEqual(self.client.get("/dafare/").status_code, 403)
+
+
+class TimesPolicyTests(TestCase):
+    """Times locked by the policy: the owner only adds travel and pauses; an admin or the manager fixes them."""
+
+    def setUp(self):
+        from datetime import datetime, timezone
+
+        from policies.models import Policy
+        from web import ops
+
+        self.org = Organization.objects.create(name="Infra")
+        self.boss = User.objects.create_user("boss", password="x-x-x-x-x-x", org=self.org, profile="manager")
+        self.alice = User.objects.create_user("alice", password="x-x-x-x-x-x", org=self.org, manager=self.boss)
+        self.bob = User.objects.create_user("bob", password="x-x-x-x-x-x", org=self.org, profile="manager")
+        Policy.objects.create(org=self.org, data={"settings": {"editableTimes": {"value": False, "locked": True}}}, revision=1)
+        t = lambda h: datetime(2026, 10, 30, h, 0, tzinfo=timezone.utc)
+        self.e = ops.record_past(self.alice, start_at=t(8), end_at=t(12), activity="Rete")
+        # a closed segment from another device inside the first one: to review
+        ops.put(self.alice, "segment", ops.new_uid(), {"entryUid": str(self.e.uid), "kind": "WORK", "startUtcMs": ops.ms(t(9)), "endUtcMs": ops.ms(t(10)), "zoneId": "UTC", "source": "MANUAL"})
+        ops.put(self.alice, "entry", self.e.uid, {"needsReview": True})
+        self.t = t
+
+    def segs(self):
+        from records.models import Segment
+
+        return list(Segment.objects.filter(entry=self.e, deleted=False).order_by("start_utc"))
+
+    def post(self, data):
+        return self.client.post(f"/attivita/{self.e.uid}/", data)
+
+    def test_owner_cannot_edit_locked_times(self):
+        self.client.force_login(self.alice)
+        seg = self.segs()[1]
+        self.assertEqual(self.post({"action": "segment", "segment": seg.uid, "remove": "1"}).status_code, 403)
+        self.assertEqual(self.post({"action": "add_segment", "kind": "WORK", "start": "2026-10-30T14:00", "end": "2026-10-30T15:00"}).status_code, 403)
+        # forgotten travel and pauses can always be added
+        self.assertEqual(self.post({"action": "add_segment", "kind": "TRAVEL", "start": "2026-10-30T14:00", "end": "2026-10-30T15:00"}).status_code, 302)
+        page = self.client.get(f"/attivita/{self.e.uid}/").content.decode()
+        self.assertIn("La policy blocca gli orari", page)
+        self.assertNotIn('value="segment"', page)
+        # a new activity starts now only
+        self.assertNotIn('value="past"', self.client.get("/attivita/nuova/").content.decode())
+        r = self.client.post("/attivita/nuova/", {"when": "past", "start": "2026-10-29T08:00", "end": "2026-10-29T09:00", "activity": "x"})
+        self.assertContains(r, "la policy non consente")
+
+    def test_manager_fixes_the_overlap(self):
+        from records.models import Entry
+
+        self.client.force_login(self.boss)
+        seg = self.segs()[1]
+        self.assertEqual(self.post({"action": "segment", "segment": seg.uid, "remove": "1"}).status_code, 302)
+        self.assertEqual(len(self.segs()), 1)
+        e = Entry.objects.get(pk=self.e.pk)
+        # the record stays the owner's, the mark goes
+        self.assertEqual(e.owner, self.alice)
+        self.assertFalse(e.needs_review)
+
+    def test_another_manager_cannot(self):
+        self.client.force_login(self.bob)
+        self.assertEqual(self.client.post(f"/attivita/{self.e.uid}/", {"action": "segment", "segment": self.segs()[1].uid, "remove": "1"}).status_code, 404)

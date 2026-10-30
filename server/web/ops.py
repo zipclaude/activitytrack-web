@@ -169,18 +169,35 @@ def edit_entry(user, entry, fields):
     return record
 
 
+def overlapping(entry):
+    """Two of the entry's segments overlap (an open one runs to infinity)."""
+    segs = list(Segment.objects.filter(entry=entry, deleted=False).order_by("start_utc"))
+    return any(a.end_utc is None or a.end_utc > b.start_utc for a, b in zip(segs, segs[1:]))
+
+
+def _review(user, entry):
+    """The "to review" mark follows the segments, as the phones' (SYNC.md §11)."""
+    entry.refresh_from_db()
+    _touch(user, entry, {"needsReview": overlapping(entry)} if entry.needs_review or overlapping(entry) else {})
+
+
 def edit_segment(user, segment, *, start_at, end_at, kind):
     if end_at is not None and end_at <= start_at:
         raise OpError("end before start")
     put(user, "segment", segment.uid, {"startUtcMs": ms(start_at), "endUtcMs": ms(end_at) if end_at else None, "kind": kind})
-    _touch(user, segment.entry, {})
+    _review(user, segment.entry)
+
+
+def remove_segment(user, segment):
+    delete(user, "segment", segment.uid)
+    _review(user, segment.entry)
 
 
 def add_segment(user, entry, *, start_at, end_at, kind):
     if end_at <= start_at:
         raise OpError("end before start")
     put(user, "segment", new_uid(), {"entryUid": str(entry.uid), "kind": kind, "startUtcMs": ms(start_at), "endUtcMs": ms(end_at), "zoneId": entry.zone_id, "source": "MANUAL"})
-    _touch(user, entry, {})
+    _review(user, entry)
 
 
 def add_expense(user, entry, *, cents, description):

@@ -33,6 +33,22 @@ def layers(user):
     return [p for p in (q.filter(profile="", user__isnull=True).first(), q.filter(profile=user.profile, user__isnull=True).first(), q.filter(user=user).first()) if p]
 
 
+def merged(user):
+    """The merged policy body of the user's scopes ({} without any)."""
+    out = {}
+    for p in layers(user):
+        out = merge(out, p.data)
+    return out
+
+
+def fixed_setting(user, key):
+    """The value of a setting the policy locks or hides on the user's phones, else None."""
+    s = merged(user).get("settings", {}).get(key)
+    if isinstance(s, dict) and (s.get("locked") or s.get("hidden")):
+        return s.get("value")
+    return None
+
+
 def effective(user):
     """The policy text for the user's phones, or None when no scope has one."""
     found = layers(user)

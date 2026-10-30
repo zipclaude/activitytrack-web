@@ -37,7 +37,7 @@
 <section class="card"><h2>{% translate "Orari" %}</h2>
 <table class="list"><thead><tr><th>{% translate "Tipo" %}</th><th>{% translate "Inizio" %}</th><th>{% translate "Fine" %}</th><th></th></tr></thead><tbody>
 {% for s in segments %}
-<tr>{% if can %}<td colspan="4"><form method="post" class="inline-form">{% csrf_token %}<input type="hidden" name="action" value="segment"><input type="hidden" name="segment" value="{{ s.uid }}">
+<tr>{% if fix %}<td colspan="4"><form method="post" class="inline-form">{% csrf_token %}<input type="hidden" name="action" value="segment"><input type="hidden" name="segment" value="{{ s.uid }}">
 	<select name="kind">{% for k in kinds %}<option value="{{ k }}" {% if s.kind == k %}selected{% endif %}>{{ k|kind }}</option>{% endfor %}</select>
 	<input type="datetime-local" name="start" value="{{ s.start_utc|date:'Y-m-d\TH:i' }}">
 	<input type="datetime-local" name="end" value="{% if s.end_utc %}{{ s.end_utc|date:'Y-m-d\TH:i' }}{% endif %}" {% if not s.end_utc %}placeholder="{% translate 'in corso' %}"{% endif %}>
@@ -45,7 +45,8 @@
 {% else %}<td>{{ s.kind|kind }}</td><td>{{ s.start_utc|date:"d/m H:i" }}</td><td>{{ s.end_utc|date:"d/m H:i"|default:_("in corso") }}</td><td></td>{% endif %}</tr>
 {% endfor %}
 </tbody></table>
-{% if can %}<form method="post" class="inline-form">{% csrf_token %}<input type="hidden" name="action" value="add_segment">
+{% if can and not fix %}<p class="note">{% translate "La policy blocca gli orari: si possono aggiungere viaggi e pause; li corregge un amministratore o il responsabile." %}</p>{% endif %}
+{% if fix or can %}<form method="post" class="inline-form">{% csrf_token %}<input type="hidden" name="action" value="add_segment">
 	<select name="kind">{% for k in kinds %}<option value="{{ k }}">{{ k|kind }}</option>{% endfor %}</select>
 	<input type="datetime-local" name="start" required> <input type="datetime-local" name="end" required> <button>+ {% translate "Aggiungi" %}</button></form>{% endif %}
 </section>
