@@ -174,7 +174,7 @@ revision): the phones then drop the locks they had.
 2. The app (Settings → Sync → "Associa a un server") reads the QR code with
    the camera (ZXing; no Google services needed) or accepts the link
    pasted by hand.
-3. `POST api/v1/pair { code, deviceName, model, appVersion, fcmToken? }` →
+3. `POST api/v1/pair { code, deviceName, model, appVersion }` →
    `{ deviceId, token, user, org }`. The token (256 random bits) is stored
    hashed on the server and in the app's `SecretStore` on the phone.
 4. The page that showed the QR code reports the paired phone; the admin
@@ -186,16 +186,13 @@ revision): the phones then drop the locks they had.
 - a few seconds after any local change (WorkManager, network required);
 - when the app comes to the foreground, then `sync/head` every 30 s while it
   stays there;
-- every 15 minutes in the background (WorkManager's minimum);
-- at once on an FCM data message `{ "sync": "1" }`, when the app has Google
-  Play services and the server has FCM credentials. The server sends it
-  after a change made by someone else (web, another phone) to one of the
-  user's records, at most once per minute per device.
+- every 15 minutes in the background (WorkManager's minimum; a run missed
+  without network goes as soon as the network is back).
 
-One APK for everyone: it carries `firebase-messaging` but asks for a
-token only when Google Play services are present. FCM works only with the
-Firebase project built into the APK: a server without its credentials
-falls back to the periodic sync.
+No push (owner, 2026-10-30): no Firebase or other wake-up service, as the
+app depends on no Google service (app A4). A change made on the web or on
+another phone reaches a phone within 15 minutes, at once while the app is
+open.
 
 ## 11. Conflicts that need a person
 

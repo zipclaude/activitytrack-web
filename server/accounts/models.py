@@ -73,7 +73,6 @@ class Device(models.Model):
     model = models.CharField(_("modello"), max_length=100, blank=True)
     app_version = models.CharField(_("versione app"), max_length=40, blank=True)
     token_hash = models.CharField(max_length=64, unique=True)
-    fcm_token = models.TextField(blank=True)
     # the one phone of the user that sends to the management systems (ARCHITECTURE.md §8)
     plugin_holder = models.BooleanField(_("invia ai gestionali"), default=False)
     created = models.DateTimeField(auto_now_add=True)
