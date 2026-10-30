@@ -205,4 +205,6 @@ shown instead (web: banner on the entry; app: notification):
   phone was offline and started another): both kept; the phone applies
   its usual rule for a second start (`features.concurrentEntries`);
 - **segments overlapping** after a merge: both kept, the entry is marked
-  "da verificare".
+  "da verificare". Commands on it keep working; the mark goes when the
+  segments no longer overlap (phone or web). With the times locked by the
+  policy only an admin or the owner's manager fixes them, on the web.

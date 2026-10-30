@@ -7,8 +7,8 @@
 	{% if todo %}<input type="hidden" name="todo" value="{{ todo.uid }}">{% endif %}
 	<div class="seg" role="radiogroup">
 		<label><input type="radio" name="when" value="now" checked> {% translate "Adesso" %}</label>
-		<label><input type="radio" name="when" value="started"> {% translate "Già iniziata" %}</label>
-		<label><input type="radio" name="when" value="past"> {% translate "Passata" %}</label>
+		{% if not fixed %}<label><input type="radio" name="when" value="started"> {% translate "Già iniziata" %}</label>
+		<label><input type="radio" name="when" value="past"> {% translate "Passata" %}</label>{% endif %}
 	</div>
 	{% include "web/_entry_fields.html" with e=None %}
 	<div class="when-started when-past" hidden><label>{% translate "Inizio" %}<input type="datetime-local" name="start"></label></div>
