@@ -6,6 +6,8 @@ from datetime import date, datetime, timedelta
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
+from django.db.models import Q
+from django.http import QueryDict
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.urls import reverse
@@ -16,7 +18,7 @@ from django.views.decorators.http import require_POST
 from accounts.models import Profile
 from records.models import Attachment, Client, Company, Entry, EntryStatus, Expense, Role, Segment, tag_name
 
-from . import data, ops
+from . import data, homelist, ops, reporting
 
 
 def _parse_dt(text):
@@ -75,22 +77,63 @@ def _todo_state(t, today):
 
 @login_required
 def home(request):
+    """Running activities, then one list of to-dos and stopped entries with the app's filters (manual §3)."""
     user = request.user
     if user.profile == Profile.READER:
         return redirect("report")
-    today = timezone.localdate()
-    start, end = data.day_bounds(today)
+    g = request.GET
+    now = timezone.now()
+    from policies.effective import merged
+
+    todos_on = merged(user).get("features", {}).get("todos", True) is not False
+    offered = [s for s in homelist.SHOWS if todos_on or s not in (homelist.TODO, homelist.IGNORED)]
+    # the choices are remembered (app: homeWindow, homeShow); "f" marks a submitted form
+    saved = request.session.get("home_filters", {})
+    if g.get("f"):
+        try:
+            window = int(g.get("period", -1))
+        except ValueError:
+            window = -1
+        f = {"period": window if window in homelist.WINDOWS else -1, "show": [x for x in g.getlist("show") if x in homelist.SHOWS],
+             "company": g.get("company", ""), "tag": g.get("tag", "")}
+        request.session["home_filters"] = f
+    else:
+        f = {"period": -1, "show": list(homelist.DEFAULT_SHOW), "company": "", "tag": "", **saved}
+    show = [x for x in f["show"] if x in offered]
+    company = data.companies(user).filter(uid=f["company"]).first() if f["company"] else None
+
     mine = Entry.objects.filter(org=user.org, owner=user, deleted=False).select_related("company", "client", "role")
     running = _rows(list(mine.filter(status__in=[EntryStatus.ACTIVE, EntryStatus.SUSPENDED]).order_by("-created_utc")))
-    missing = _rows(list(mine.filter(status=EntryStatus.TO_COMPLETE).order_by("-created_utc")[:20]))
-    closed_today = [r for r in _rows(list(mine.filter(status=EntryStatus.CLOSED, updated_utc__gte=start - timedelta(days=1)).order_by("-updated_utc")[:30])) if r["end"] and r["end"] >= start]
-    open_todos = [t for t in data.todos(user).filter(done=False, ignored_utc__isnull=True)]
-    working = {r["e"].todo_id for r in running}
-    overdue = [t for t in open_todos if _todo_state(t, today) == "overdue" and t.uid not in working]
-    today_todos = [t for t in open_todos if t not in overdue and t.uid not in working and (t.plan_date == today or t.due_date == today)]
+    window = f["period"]
+    stopped_q = mine.filter(status__in=[EntryStatus.TO_COMPLETE, EntryStatus.CLOSED])
+    if window != 0:
+        since = now - timedelta(hours=window if window > 0 else 36)
+        stopped_q = stopped_q.filter(Q(status=EntryStatus.TO_COMPLETE) | Q(updated_utc__gte=since))
+    rows = {r["e"].uid: r for r in _rows(list(stopped_q.order_by("-updated_utc")[:300]))}
+    stopped = [(r["e"], r["end"] or r["e"].updated_utc) for r in rows.values()]
+    working = {r["e"].todo_id for r in running} | {e.todo_id for e, _ in stopped if e.status == EntryStatus.TO_COMPLETE}
+    todos = list(data.todos(user).select_related("company", "client")) if todos_on else []
+    carry = reporting.rules_for(user).carry_over_min
+    tag = f["tag"] if (homelist.MISSING in show or homelist.DONE in show) else ""
+    sections = homelist.sections(todos, stopped, show, window, company=company.uid if company else None, tag=tag or None,
+                                 carry_over_min=carry, now=now, working=working)
+    tags = sorted({t for e, _ in stopped for t in (e.tags or [])})
+    listed = [(name, [(kind, obj, extra, rows.get(obj.uid) if kind == "entry" else None) for kind, obj, extra in items]) for name, items in sections]
+
+    def link(**kw):
+        q = QueryDict(mutable=True)
+        q.update({"f": "1", "period": f["period"], "company": f["company"], "tag": f["tag"]})
+        for x in kw.pop("show", show):
+            q.appendlist("show", x)
+        q.update(kw)
+        return "?" + q.urlencode()
+
     return render(request, "web/home.html", {
-        "running": running, "missing": missing, "closed_today": closed_today,
-        "overdue": overdue, "today_todos": today_todos, "first": not user.devices.exists() if user.syncs else False,
+        "running": running, "sections": listed, "first": not user.devices.exists() if user.syncs else False,
+        "f": f, "show": show, "offered": offered, "windows": homelist.WINDOWS, "companies": data.companies(user), "company": company,
+        "tags": tags, "tag": tag, "todos_on": todos_on, "today": timezone.localdate(),
+        "show_changed": set(show) != set(homelist.DEFAULT_SHOW) & set(offered),
+        "only_todo": link(show=[homelist.TODO]), "only_done": link(show=[homelist.DONE]), "show_all": link(show=offered),
     })
 
 

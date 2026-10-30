@@ -1,0 +1,12 @@
+{% load i18n at %}{% if kind == "todo" %}<div class="row hrow{% if extra == 'done' or extra == 'ignored' %} over{% endif %}" style="--band: {{ obj.company.color|color|default:'var(--line)' }}">
+	<span class="mark m-{{ extra }}" title="{{ extra|todo_state }}">{% if extra == "overdue" %}!{% elif extra == "planned" %}{% icon "agenda" %}{% elif extra == "done" %}✓{% elif extra == "ignored" %}–{% else %}○{% endif %}</span>
+	<a class="main" href="{% url 'todo_edit' obj.uid %}"><b>{{ obj.title }}</b>
+		<span class="sub">{% firstof obj.client.name obj.company.name %}{% if obj.client or obj.company %} · {% endif %}{% translate "da fare" %} · {{ extra|todo_state }}</span></a>
+	<span class="side">{% if extra == "done" %}{{ obj.done_utc|date:"D j/m H:i" }}{% elif obj.plan_date %}{{ obj.plan_date|date:"D j/m" }}{% if obj.plan_start_min is not None %} {{ obj.plan_start_min|minutes_hm }}{% endif %}{% elif obj.due_date %}{% translate "scad." %} {{ obj.due_date|date:"D j/m" }}{% if obj.due_time_min is not None %} {{ obj.due_time_min|minutes_hm }}{% endif %}{% endif %}{% if obj.priority %}<span class="sub">P{{ obj.priority }}</span>{% endif %}</span>
+	{% if extra != "done" and extra != "ignored" %}<a class="button tonal" href="{% url 'entry_new' %}?todo={{ obj.uid }}" title="{% translate 'Avvia' %}">{% icon "play" _("Avvia") %}</a>{% endif %}
+</div>{% else %}<a class="row hrow{% if obj.status == 'CLOSED' %} over{% endif %}" href="{% url 'entry' obj.uid %}" style="--band: {{ obj.company.color|color|default:'var(--line)' }}">{% tag_dots obj.tags tag_colors %}
+	<span class="mark m-{{ obj.status|lower }}" title="{{ obj|status }}">{% if obj.status == "TO_COMPLETE" %}✎{% else %}■{% endif %}</span>
+	<span class="main"><b>{% firstof obj.client.name obj.company.name _("Senza cliente") %}</b>
+		<span class="sub">{% if obj.client and obj.company %}{{ obj.company.name }} · {% endif %}{{ obj.activity|default:_("senza descrizione") }} · {{ obj|status }}</span></span>
+	<span class="side">{% if r.start|date:"Ymd" != today|date:"Ymd" %}{{ r.start|date:"D j/m" }} {% endif %}{{ r.start|time:"H:i" }}{% if r.end %}–{{ r.end|time:"H:i" }}{% endif %}<span class="sub">{{ r.work }}{% if r.travel %} · ✈ {{ r.travel }}{% endif %}</span></span>
+</a>{% endif %}

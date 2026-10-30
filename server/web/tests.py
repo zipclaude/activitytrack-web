@@ -385,3 +385,73 @@ class AgendaTests(WorkTests):
         csv = self.client.get("/report/csv/?from=2026-10-01&to=2026-10-31").content.decode()
         self.assertIn(";67;0;0;0.00;;", csv)
         self.assertTrue(csv.strip().endswith(";75;0;0"), csv)
+
+
+class HomeListTests(WorkTests):
+    """The Home list and its filters (app manual §3, HomeTabs.kt homeSections)."""
+
+    def test_sections_and_filters(self):
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        today = timezone.localdate()
+        self.client.post("/dafare/nuova/", {"title": "Scaduta", "due_date": str(today - timedelta(days=2))})
+        self.client.post("/dafare/nuova/", {"title": "Domani", "plan_date": str(today + timedelta(days=1)), "plan_time": "10:00"})
+        self.client.post("/dafare/nuova/", {"title": "Fra un mese", "plan_date": str(today + timedelta(days=40))})
+        self.client.post("/dafare/nuova/", {"title": "Senza data"})
+        start = timezone.localtime() - timedelta(hours=3)
+        self.client.post("/attivita/nuova/", {"when": "past", "client": "22222222-2222-4222-8222-222222222222", "activity": "Chiusa ora",
+                                              "start": start.strftime("%Y-%m-%dT%H:%M"), "end": (start + timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M")})
+        self.client.post(f"/attivita/{self.entry().uid}/", {"action": "save", "client": "22222222-2222-4222-8222-222222222222", "activity": "Chiusa ora", "tags": "remoto"})
+        self.client.post("/attivita/nuova/", {"when": "past", "client": "22222222-2222-4222-8222-222222222222",
+                                              "start": start.strftime("%Y-%m-%dT%H:%M"), "end": (start + timedelta(minutes=30)).strftime("%Y-%m-%dT%H:%M")})
+        # default: today, to-dos and details missing
+        page = self.client.get("/").content.decode()
+        self.assertIn("In ritardo", page)
+        self.assertIn("Scaduta", page)
+        self.assertIn("Dettagli mancanti", page)
+        self.assertNotIn("Domani", page)
+        self.assertIn("Senza data", page)
+        self.assertNotIn("Chiusa ora", page)
+        # 7 days and the done ones too; remembered afterwards
+        page = self.client.get("/?f=1&period=168&show=todo&show=missing&show=done").content.decode()
+        self.assertIn("Prossimi giorni", page)
+        self.assertIn("Domani", page)
+        self.assertNotIn("Fra un mese", page)
+        self.assertIn("Chiusa ora", page)
+        self.assertIn("Chiusa ora", self.client.get("/").content.decode())
+        # a tag keeps the entries with it and hides the to-dos
+        page = self.client.get("/?f=1&period=168&show=todo&show=done&tag=remoto").content.decode()
+        self.assertIn("Chiusa ora", page)
+        self.assertNotIn("Scaduta", page)
+        # only done
+        page = self.client.get("/?f=1&period=0&show=done").content.decode()
+        self.assertNotIn("Scaduta", page)
+        self.assertNotIn("Fra un mese", page)
+
+    def test_a_started_todo_leaves_the_list(self):
+        from records.models import Todo
+
+        self.client.post("/dafare/nuova/", {"title": "Avviata", "due_date": "2026-01-01"})
+        t = Todo.objects.get(title="Avviata")
+        self.assertIn("Avviata", self.client.get("/").content.decode())
+        self.client.post("/attivita/nuova/", {"when": "now", "todo": str(t.uid), "client": "22222222-2222-4222-8222-222222222222"})
+        page = self.client.get("/").content.decode()
+        self.assertNotIn('<b>Avviata</b>', page)
+
+    def test_overdue_rules(self):
+        from datetime import date, datetime
+        from types import SimpleNamespace as S
+        from zoneinfo import ZoneInfo
+
+        from web.homelist import state
+
+        tz = ZoneInfo("Europe/Rome")
+        t = lambda **k: S(**{"done": False, "ignored_utc": None, "plan_date": None, "plan_start_min": None, "duration_min": None, "due_date": None, "due_time_min": None, **k})  # noqa: E731
+        now = datetime(2026, 10, 30, 12, 0, tzinfo=tz)
+        self.assertEqual(state(t(due_date=date(2026, 10, 30)), now, tz), "open")
+        self.assertEqual(state(t(due_date=date(2026, 10, 30), due_time_min=600), now, tz), "overdue")
+        self.assertEqual(state(t(plan_date=date(2026, 10, 30)), now, tz), "planned")
+        self.assertEqual(state(t(plan_date=date(2026, 10, 30), plan_start_min=600, duration_min=60), now, tz), "overdue")
+        self.assertEqual(state(t(plan_date=date(2026, 10, 30), plan_start_min=660, duration_min=90), now, tz), "planned")
