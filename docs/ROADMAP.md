@@ -14,6 +14,7 @@ come on top.
 | 6 | Policy editor, signing, delivery through the sync | 4–5 | done (app #117) |
 | 7 | Management-system records (tested with the SDP plugin) | 2–3 | done (app #118); test with SDP pending |
 | 8 | ~~FCM tickle~~ | — | dropped 2026-10-30: no Firebase; periodic sync (SYNC.md §10) |
+| 5b | User management on the web (instead of Django's admin) | 1 | done |
 | 9 | Hardening, security review, admin manual it/en, beta | 4–5 | |
 
 First milestone: phases 0–3 plus a minimal web page (one user, sync

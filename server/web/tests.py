@@ -533,3 +533,61 @@ class ManagerCompaniesTests(WorkTests):
         # read only: the admin is not in the manager's team
         page = self.client.get(f"/attivita/{entry.uid}/").content.decode()
         self.assertNotIn('name="action" value="segment"', page)
+
+
+class UsersTests(WorkTests):
+    """Users managed on the web by an admin; everyone changes their own password."""
+
+    def setUp(self):
+        from accounts.models import Profile
+
+        super().setUp()
+        self.root = User.objects.create_user("root", password="x-x-x-x-x-x", org=self.org, profile=Profile.ADMIN)
+
+    def test_only_admins(self):
+        self.assertEqual(self.client.get("/utenti/").status_code, 403)
+        self.client.force_login(self.boss)
+        self.assertEqual(self.client.get(f"/utenti/{self.alice.pk}/").status_code, 403)
+
+    def test_create_edit_and_password(self):
+        self.client.force_login(self.root)
+        self.assertIn("alice", self.client.get("/utenti/").content.decode())
+        base = {"username": "erika", "first_name": "Erika", "profile": "user", "manager": str(self.boss.pk), "active": "on"}
+        r = self.client.post("/utenti/nuovo/", {**base, "password": "corta", "password2": "corta"})
+        self.assertContains(r, "Correggi i campi")
+        self.assertFalse(User.objects.filter(username="erika").exists())
+        r = self.client.post("/utenti/nuovo/", {**base, "password": "una-password-lunga", "password2": "una-password-lunga"})
+        erika = User.objects.get(username="erika")
+        self.assertRedirects(r, f"/utenti/{erika.pk}/", fetch_redirect_response=False)
+        self.assertEqual((erika.org, erika.manager, erika.is_active), (self.org, self.boss, True))
+        self.assertTrue(erika.check_password("una-password-lunga"))
+        # a manager responsible for a company; a duplicate name refused
+        self.client.post(f"/utenti/{self.boss.pk}/", {"username": "boss", "profile": "manager", "active": "on", "companies": [str(self.acme.uid)]})
+        self.assertEqual(list(self.boss.companies.all()), [self.acme])
+        r = self.client.post(f"/utenti/{erika.pk}/", {**base, "username": "ALICE"})
+        self.assertContains(r, "esiste già")
+        # deactivated: no web login, no sync
+        self.client.post(f"/utenti/{erika.pk}/", {**{k: v for k, v in base.items() if k != "active"}})
+        erika.refresh_from_db()
+        self.assertFalse(erika.is_active)
+        self.client.post(f"/utenti/{erika.pk}/password/", {"password": "altra-password-lunga", "password2": "altra-password-lunga"})
+        erika.refresh_from_db()
+        self.assertTrue(erika.check_password("altra-password-lunga"))
+
+    def test_an_admin_does_not_lock_themselves_out(self):
+        self.client.force_login(self.root)
+        r = self.client.post(f"/utenti/{self.root.pk}/", {"username": "root", "profile": "user"})
+        self.assertContains(r, "Non puoi toglierti il profilo")
+        self.assertContains(r, "Non puoi disattivare")
+        self.root.refresh_from_db()
+        self.assertTrue(self.root.is_admin and self.root.is_active)
+
+    def test_own_password(self):
+        r = self.client.post("/password/", {"old": "sbagliata", "password": "nuova-password-lunga", "password2": "nuova-password-lunga"})
+        self.assertContains(r, "non è corretta")
+        r = self.client.post("/password/", {"old": "x-x-x-x-x-x", "password": "nuova-password-lunga", "password2": "nuova-password-lunga"})
+        self.assertRedirects(r, "/", fetch_redirect_response=False)
+        self.alice.refresh_from_db()
+        self.assertTrue(self.alice.check_password("nuova-password-lunga"))
+        # still logged in
+        self.assertEqual(self.client.get("/dafare/").status_code, 200)

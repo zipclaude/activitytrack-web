@@ -27,11 +27,11 @@
 		{% endif %}
 		{% if user.is_admin %}
 		<a class="{% nav_on 'policies:index' 'policies:edit' %}" href="{% url 'policies:index' %}">{% icon "tune" %}{% translate "Policy" %}</a>
-		<a href="{% url 'admin:index' %}">{% icon "settings" %}{% translate "Amministrazione" %}</a>
+		<a class="{% nav_on 'users' 'user_new' 'user_edit' %}" href="{% url 'users' %}">{% icon "settings" %}{% translate "Utenti" %}</a>
 		{% endif %}
 	</nav>
 	<div class="me">
-		<span class="who">{% icon "person" %}<span>{{ user.get_full_name|default:user.username }}<small>{{ user.get_profile_display }}</small></span></span>
+		<a class="who" href="{% url 'my_password' %}" title="{% translate 'Cambia password' %}">{% icon "person" %}<span>{{ user.get_full_name|default:user.username }}<small>{{ user.get_profile_display }}</small></span></a>
 		<form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="icon-button" title="{% translate 'Esci' %}">{% icon "logout" _("Esci") %}</button></form>
 	</div>
 </aside>
@@ -42,13 +42,14 @@
 	<a class="{% nav_on 'agenda' %}" href="{% url 'agenda' %}">{% icon "agenda" %}<span>{% translate "Agenda" %}</span></a>
 	<a class="{% nav_on 'report' %}" href="{% url 'report' %}">{% icon "report" %}<span>{% translate "Report" %}</span></a>
 	<details class="more">
-		<summary class="{% nav_on 'entries' 'entry' 'entry_new' 'masters_home' 'masters' 'master_new' 'master_edit' 'phones' 'pair_new' 'policies:index' 'policies:edit' %}">{% icon "more" %}<span>{% translate "Altro" %}</span></summary>
+		<summary class="{% nav_on 'entries' 'entry' 'entry_new' 'masters_home' 'masters' 'master_new' 'master_edit' 'phones' 'pair_new' 'policies:index' 'policies:edit' 'users' 'user_new' 'user_edit' 'my_password' %}">{% icon "more" %}<span>{% translate "Altro" %}</span></summary>
 		<div class="sheet">
 			<a href="{% url 'entries' %}">{% icon "list" %}{% translate "Attività" %}</a>
 			<a href="{% url 'masters_home' %}">{% icon "folder" %}{% translate "Anagrafiche" %}</a>
 			<a href="{% url 'phones' %}">{% icon "phone" %}{% translate "Telefoni" %}</a>
 			{% if user.is_admin %}<a href="{% url 'policies:index' %}">{% icon "tune" %}{% translate "Policy" %}</a>
-			<a href="{% url 'admin:index' %}">{% icon "settings" %}{% translate "Amministrazione" %}</a>{% endif %}
+			<a href="{% url 'users' %}">{% icon "settings" %}{% translate "Utenti" %}</a>{% endif %}
+			<a href="{% url 'my_password' %}">{% icon "person" %}{% translate "Cambia password" %}</a>
 			<form method="post" action="{% url 'logout' %}">{% csrf_token %}<button>{% icon "logout" %}{% translate "Esci" %} · {{ user.get_full_name|default:user.username }}</button></form>
 		</div>
 	</details>

@@ -71,5 +71,6 @@ def device_revoke(request, pk):
     device.plugin_holder = False
     device.save(update_fields=["revoked", "plugin_holder"])
     messages.success(request, _("Associazione di «%(name)s» revocata.") % {"name": device.name})
-    return redirect("phones")
-
+    back = request.POST.get("next", "")
+    # from a user's sheet: back there
+    return redirect(back if back.startswith("/") and not back.startswith("//") else "phones")
