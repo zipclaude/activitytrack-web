@@ -257,6 +257,14 @@ class MasterDataTests(SyncTestCase):
         self.assertFalse(res[0]["record"]["central"])
         self.assertEqual(self.pull(b)["records"], [])
 
+    def test_long_texts_are_kept(self):
+        # the app has no length limits: a long name from the phone must not be refused
+        a = self.pair(self.alice)
+        name = "N" * 1000
+        res = self.push(a, [self.upsert("company", uid(), {"name": name}, T0)])
+        self.assertEqual(res[0]["status"], "applied")
+        self.assertEqual(res[0]["record"]["fields"]["name"], name)
+
     def test_personal_contact_of_a_central_client(self):
         c = self.central_company()
         cl = uid()

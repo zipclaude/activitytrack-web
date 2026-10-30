@@ -58,10 +58,10 @@ class Company(Synced):
     SYNC_TYPE = "company"
     SCOPE = Scope.MASTER
 
-    name = models.CharField(max_length=200)
+    name = models.TextField()
     archived = models.BooleanField(default=False)
     color = models.IntegerField(null=True, blank=True)
-    external_code = models.CharField(max_length=200, null=True, blank=True)
+    external_code = models.TextField(null=True, blank=True)
     position = models.IntegerField(null=True, blank=True)
 
     class Meta(Synced.Meta):
@@ -72,11 +72,11 @@ class Company(Synced):
 
 
 class Site(Synced):
-    label = models.CharField(max_length=200)
+    label = models.TextField()
     lat = models.FloatField()
     lon = models.FloatField()
     radius_m = models.IntegerField(default=100)
-    address = models.CharField(max_length=500, null=True, blank=True)
+    address = models.TextField(null=True, blank=True)
 
     class Meta(Synced.Meta):
         abstract = True
@@ -96,10 +96,10 @@ class Client(Synced):
 
     # null when the policy hides the companies
     company = _fk(Company)
-    name = models.CharField(max_length=200)
+    name = models.TextField()
     archived = models.BooleanField(default=False)
     color = models.IntegerField(null=True, blank=True)
-    external_code = models.CharField(max_length=200, null=True, blank=True)
+    external_code = models.TextField(null=True, blank=True)
     position = models.IntegerField(null=True, blank=True)
 
     def __str__(self):
@@ -120,9 +120,9 @@ class Contact(Synced):
     PARENT = "client"
 
     client = _fk(Client, null=False)
-    name = models.CharField(max_length=200)
-    email = models.CharField(max_length=254, null=True, blank=True)
-    external_key = models.CharField(max_length=200, null=True, blank=True)
+    name = models.TextField()
+    email = models.TextField(null=True, blank=True)
+    external_key = models.TextField(null=True, blank=True)
     # numbers as dialled (the app's contact_phone rows)
     phones = models.JSONField(default=list, blank=True)
 
@@ -134,7 +134,7 @@ class Role(Synced):
     SYNC_TYPE = "role"
     SCOPE = Scope.MASTER
 
-    name = models.CharField(max_length=200)
+    name = models.TextField()
     archived = models.BooleanField(default=False)
     position = models.IntegerField(null=True, blank=True)
 
@@ -146,7 +146,7 @@ class Preset(Synced):
     SYNC_TYPE = "preset"
     SCOPE = Scope.MASTER
 
-    text = models.CharField(max_length=500)
+    text = models.TextField()
     default_role = _fk(Role)
     company = _fk(Company)
     position = models.IntegerField(null=True, blank=True)
@@ -156,8 +156,8 @@ class Material(Synced):
     SYNC_TYPE = "material"
     SCOPE = Scope.MASTER
 
-    name = models.CharField(max_length=200)
-    unit = models.CharField(max_length=40, null=True, blank=True)
+    name = models.TextField()
+    unit = models.TextField(null=True, blank=True)
     unit_cost_cents = models.BigIntegerField(null=True, blank=True)
     company = _fk(Company)
     archived = models.BooleanField(default=False)
@@ -167,7 +167,7 @@ class Place(Synced):
     SYNC_TYPE = "place"
 
     kind = models.CharField(max_length=16, choices=[("HOME", "HOME"), ("OTHER", "OTHER")])
-    label = models.CharField(max_length=200)
+    label = models.TextField()
     lat = models.FloatField()
     lon = models.FloatField()
     radius_m = models.IntegerField(default=100)
@@ -179,8 +179,8 @@ class Todo(Synced):
     company = _fk(Company)
     client = _fk(Client)
     # key in the management system; null for to-dos made by hand
-    external_key = models.CharField(max_length=200, null=True, blank=True)
-    title = models.CharField(max_length=500)
+    external_key = models.TextField(null=True, blank=True)
+    title = models.TextField()
     notes = models.TextField(null=True, blank=True)
     # external references, one per line
     refs = models.TextField(default="", blank=True)
@@ -223,7 +223,7 @@ class Entry(Synced):
     status = models.CharField(max_length=16, choices=EntryStatus.choices)
     # kind of the open segment while ACTIVE
     mode = models.CharField(max_length=16, choices=SEGMENT_KINDS, null=True, blank=True)
-    locality = models.CharField(max_length=200, null=True, blank=True)
+    locality = models.TextField(null=True, blank=True)
     location_kind = models.CharField(max_length=16, null=True, blank=True)
     notes = models.TextField(null=True, blank=True)
     zone_id = models.CharField(max_length=64)
@@ -252,7 +252,7 @@ class Segment(Synced):
     source = models.CharField(max_length=16, default="TRACKED")
     km_estimated = models.FloatField(null=True, blank=True)
     km_declared = models.FloatField(null=True, blank=True)
-    note = models.CharField(max_length=500, null=True, blank=True)
+    note = models.TextField(null=True, blank=True)
 
 
 class Attachment(Synced):
@@ -280,7 +280,7 @@ class Expense(Synced):
     entry = _fk(Entry, null=False)
     segment = _fk(Segment, on_delete=models.SET_NULL)
     amount_cents = models.BigIntegerField()
-    description = models.CharField(max_length=500)
+    description = models.TextField()
     attachment = _fk(Attachment, on_delete=models.SET_NULL)
     created_utc = models.DateTimeField()
 
@@ -292,9 +292,9 @@ class EntryMaterial(Synced):
 
     entry = _fk(Entry, null=False)
     material = _fk(Material, on_delete=models.SET_NULL)
-    description = models.CharField(max_length=500)
+    description = models.TextField()
     quantity = models.FloatField(null=True, blank=True)
-    unit = models.CharField(max_length=40, null=True, blank=True)
+    unit = models.TextField(null=True, blank=True)
     unit_cost_cents = models.BigIntegerField(null=True, blank=True)
     created_utc = models.DateTimeField()
 
@@ -306,7 +306,7 @@ class ExternalRef(Synced):
 
     entry = _fk(Entry, null=False)
     kind = models.CharField(max_length=16)
-    value = models.CharField(max_length=500)
+    value = models.TextField()
 
 
 class Absence(Synced):
@@ -321,7 +321,7 @@ class DayOff(Synced):
     SYNC_TYPE = "dayOff"
 
     date = models.DateField()
-    note = models.CharField(max_length=200, null=True, blank=True)
+    note = models.TextField(null=True, blank=True)
 
 
 class WorkSchedule(Synced):
@@ -346,13 +346,13 @@ class RemoteItem(Synced):
     SYNC_TYPE = "remoteItem"
 
     company = _fk(Company, null=False)
-    plugin_id = models.CharField(max_length=100)
-    list = models.CharField(max_length=100)
-    parent_id = models.CharField(max_length=200, blank=True)
-    item_id = models.CharField(max_length=200)
-    name = models.CharField(max_length=500)
-    client_code = models.CharField(max_length=200, null=True, blank=True)
-    kind = models.CharField(max_length=100, null=True, blank=True)
+    plugin_id = models.TextField()
+    list = models.TextField()
+    parent_id = models.TextField(blank=True)
+    item_id = models.TextField()
+    name = models.TextField()
+    client_code = models.TextField(null=True, blank=True)
+    kind = models.TextField(null=True, blank=True)
     active = models.BooleanField(default=True)
     order = models.IntegerField(null=True, blank=True)
     extra = models.JSONField(default=dict, blank=True)
