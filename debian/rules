@@ -1,0 +1,7 @@
+#!/usr/bin/make -f
+%:
+	dh $@
+
+# started by the administrator once settings.ini and the web server are set
+override_dh_installsystemd:
+	dh_installsystemd --no-enable --no-start
