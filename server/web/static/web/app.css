@@ -32,6 +32,7 @@
 
 /* base */
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html { -webkit-text-size-adjust: 100%; }
 body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 "Roboto", system-ui, -apple-system, "Segoe UI", sans-serif; }
 a { color: var(--accent); text-underline-offset: 2px; }
@@ -324,3 +325,7 @@ pre.json { background: var(--surface-2); padding: 12px; border-radius: 10px; ove
 .dropdown .menu hr { border: 0; border-top: 1px solid var(--line-soft); width: 100%; margin: 6px 0; }
 .dropdown .menu a { padding: 6px 0; text-decoration: none; font-weight: 500; }
 .homefilters { align-items: flex-end; }
+.me a.who { color: var(--text); text-decoration: none; border-radius: 12px; padding: 4px; margin: -4px; }
+.me a.who:hover { background: var(--surface-3); }
+.checks { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0 16px; }
+.checks label.check { margin: 6px 0; }
