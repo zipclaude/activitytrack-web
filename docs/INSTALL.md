@@ -10,7 +10,8 @@ PostgreSQL. Three ways to install it:
 | [Clone](#2-tarball-or-clone-of-the-repository) of the repository | the same | `git pull` (or `git checkout v<version>`) |
 
 The packages and the tarball are on the
-[Releases](https://github.com/zipclaude/activitytrack-web/releases) page.
+[Releases](https://github.com/zipclaude/activitytrack-web/releases) page,
+with their `SHA256SUMS` (`sha256sum -c --ignore-missing SHA256SUMS`).
 Every release builds and tries them: the packages in their distribution,
 the tarball on Oracle Linux 9, Arch and FreeBSD 14
 (`.github/workflows/release.yml`).
@@ -24,8 +25,8 @@ Whatever the way, the server needs then: its settings
 On Ubuntu the `universe` component must be enabled (it is by default).
 
 ```sh
-apt install ./activitytrack-web_0.9.0~deb13_all.deb          # Debian 13
-# Debian 14: ~deb14, Ubuntu 24.04: ~ubuntu24.04, Ubuntu 26.04: ~ubuntu26.04
+apt install ./activitytrack-web_0.9.0-deb13_all.deb          # Debian 13
+# Debian 14: -deb14, Ubuntu 24.04: -ubuntu24.04, Ubuntu 26.04: -ubuntu26.04
 apt install python3-psycopg postgresql                        # optional: PostgreSQL instead of SQLite
 ```
 
