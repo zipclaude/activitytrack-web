@@ -83,6 +83,8 @@ ActivityTrack Web.
 |---|---|
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | requirements, stack, components, profiles, central and personal master data, policies, plugins |
 | [docs/SYNC.md](docs/SYNC.md) | sync protocol v1: records, change log, clocks, revisions, endpoints, first sync, pairing, conflicts |
+| [docs/manual](docs/manual/it/admin.md) | administrator's manual, Italian and [English](docs/manual/en/admin.md): users and profiles, phones, policies, reports, backups (PDF with each release) |
+| [docs/SECURITY.md](docs/SECURITY.md) | what protects the server, what the administrator does, the security review |
 | [docs/INSTALL.md](docs/INSTALL.md) | installation: packages for Debian 13/14 and Ubuntu 24.04/26.04, tarball or clone for those and RHEL / Oracle Linux, Arch, FreeBSD; nginx or Apache, at a host's root or under a path |
 | [docs/ROADMAP.md](docs/ROADMAP.md) | phases and their state |
 
