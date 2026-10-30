@@ -157,6 +157,9 @@ The `policy` record (one per user, read-only for the phone) carries the
 signed policy text and its signature; the app applies it as a
 `policy.json` read from the data folder (same checks, same pinned CN).
 When a sync policy is in force the file in the data folder is ignored.
+A phone keeps its policy until another replaces it, so deleting the
+organisation's last policy in the editor leaves an empty one (next
+revision): the phones then drop the locks they had.
 
 ## 9. Pairing
 

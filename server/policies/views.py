@@ -172,8 +172,14 @@ def edit(request, scope):
     policy = Policy.objects.filter(**lookup).first()
     if request.method == "POST":
         if "delete" in request.POST:
-            if policy:
+            if policy and Policy.objects.filter(org=lookup["org"]).exclude(pk=policy.pk).exists():
                 policy.delete()
+            elif policy:
+                # the last one becomes empty: a phone keeps its policy until
+                # another replaces it (the app's POLICY.md), so it must get one
+                policy.data = {}
+                policy.revision += 1
+                policy.save()
             messages.success(request, _("Policy di «%(s)s» eliminata.") % {"s": label})
             return redirect("policies:index")
         data, errors = _parse(request.POST)
