@@ -25,6 +25,9 @@ CSRF_TRUSTED_ORIGINS = sorted({f"{_base.scheme}://{_base.netloc}"} | {f"https://
 
 FILES_DIR = DATA_DIR / "files"
 FILES_MAX_MB = INI.getint("files", "max_mb", fallback=25)
+# a push carries up to 500 changes (sync.engine.MAX_CHANGES) with free texts: more
+# than Django's 2.5 MB; files are streamed and checked against FILES_MAX_MB
+DATA_UPLOAD_MAX_MEMORY_SIZE = 16 * 1024 * 1024
 # who sends the attachments' bytes: Django itself, nginx (X-Accel-Redirect to an
 # internal location) or Apache with mod_xsendfile (X-Sendfile)
 FILES_OFFLOAD = INI.get("files", "offload", fallback="none").strip()

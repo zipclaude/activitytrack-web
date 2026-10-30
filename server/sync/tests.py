@@ -4,6 +4,7 @@ import json
 import shutil
 import tempfile
 import uuid
+from pathlib import Path
 from datetime import timedelta
 
 from django.db import transaction
@@ -364,3 +365,37 @@ class TagSyncTests(SyncTestCase):
         engine.apply(self.admin, self.upsert("tag", uid(), {"name": "urgente"}, T0), central=True)
         with self.assertRaises(engine.ChangeError):
             engine.apply(self.admin, self.upsert("tag", uid(), {"name": "urgente"}, T0), central=True)
+
+
+class LargeFileTests(SyncTestCase):
+    """A photo above Django's 2.5 MB body limit goes through; one above files.max_mb does not."""
+
+    def test_four_megabytes(self):
+        with self.settings(FILES_DIR=self.files, FILES_MAX_MB=5):
+            phone = self.pair(self.alice)
+            e, att, big = uid(), uid(), uid()
+            data = b"\xff\xd8" + b"x" * (4 * 1024 * 1024)
+            self.push(phone, [
+                self.upsert("entry", e, entry_fields(), T0),
+                self.upsert("attachment", att, {"entryUid": e, "kind": "PHOTO", "mime": "image/jpeg", "createdUtcMs": T0}, T0),
+                self.upsert("attachment", big, {"entryUid": e, "kind": "PHOTO", "mime": "image/jpeg", "createdUtcMs": T0}, T0),
+            ])
+            ok = self.client.put(f"/api/v1/files/{att}", data, content_type="image/jpeg", HTTP_AUTHORIZATION=f"Bearer {phone}",
+                                 HTTP_X_SHA256=hashlib.sha256(data).hexdigest())
+            self.assertEqual(ok.status_code, 200, ok.content)
+            self.assertEqual(ok.json()["record"]["fields"]["size"], len(data))
+            too = self.client.put(f"/api/v1/files/{big}", data + b"y" * (2 * 1024 * 1024), content_type="image/jpeg", HTTP_AUTHORIZATION=f"Bearer {phone}")
+            self.assertEqual(too.status_code, 413)
+            self.assertEqual(sorted(p.name for p in Path(self.files).rglob("*") if p.is_file()), [str(att)])
+
+
+class LargePushTests(SyncTestCase):
+    def test_a_push_above_two_and_a_half_megabytes(self):
+        phone = self.pair(self.alice)
+        notes = "n" * 8000
+        changes = [self.upsert("entry", uid(), {**entry_fields(), "notes": notes}, T0) for _ in range(400)]
+        body = json.dumps({"deviceTime": T0, "changes": changes})
+        self.assertGreater(len(body), 3 * 1024 * 1024)
+        r = self.client.post("/api/v1/sync/push", body, content_type="application/json", HTTP_AUTHORIZATION=f"Bearer {phone}")
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual({x["status"] for x in r.json()["results"]}, {"applied"})
