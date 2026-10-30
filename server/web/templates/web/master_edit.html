@@ -1,7 +1,7 @@
 {% extends "web/base.html" %}{% load i18n at %}
 {% block title %}{{ title }} · ActivityTrack{% endblock %}
 {% block content %}
-<p><a href="{% url 'masters' kind %}">← {{ title }}</a></p>
+<p><a class="back" href="{% url 'masters' kind %}">{% icon "back" %}{{ title }}</a></p>
 <h1>{% if r %}{% firstof r.name r.text %}{% else %}{{ title }}: {% translate "nuova" %}{% endif %}</h1>
 <form method="post" class="card narrowform">{% csrf_token %}
 	{% if model == "Preset" %}<label>{% translate "Testo" %}<input name="text" value="{{ r.text|default:'' }}" required></label>

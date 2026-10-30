@@ -1,7 +1,7 @@
-{% extends "web/base.html" %}{% load i18n %}
+{% extends "web/base.html" %}{% load i18n at %}
 {% block title %}{% translate "Da fare" %} · ActivityTrack{% endblock %}
 {% block content %}
-<p>{% if next %}<a href="{{ next }}">← {% translate "Agenda" %}</a>{% else %}<a href="{% url 'todos' %}">← {% translate "Da fare" %}</a>{% endif %}</p>
+<p>{% if next %}<a class="back" href="{{ next }}">{% icon "back" %}{% translate "Agenda" %}</a>{% else %}<a class="back" href="{% url 'todos' %}">{% icon "back" %}{% translate "Da fare" %}</a>{% endif %}</p>
 <h1>{% if t %}{{ t.title }}{% else %}{% translate "Nuova voce" %}{% endif %}</h1>
 {% if t and t.external_key %}<p class="note">{% blocktranslate with k=t.external_key %}Dal gestionale ({{ k }}).{% endblocktranslate %}</p>{% endif %}
 <form method="post" class="card narrowform">{% csrf_token %}{% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
@@ -15,8 +15,8 @@
 	<button class="primary">{% translate "Salva" %}</button>
 </form>
 {% if t %}<form method="post" class="actions">{% csrf_token %}{% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
-	<a class="button" href="{% url 'entry_new' %}?todo={{ t.uid }}">▶ {% translate "Avvia" %}</a>
-	{% if not t.done %}<button name="state" value="done">{% translate "Fatta" %}</button>{% endif %}
+	<a class="button tonal" href="{% url 'entry_new' %}?todo={{ t.uid }}">{% icon "play" %}{% translate "Avvia" %}</a>
+	{% if not t.done %}<button name="state" value="done">{% icon "done" %}{% translate "Fatta" %}</button>{% endif %}
 	{% if not t.ignored_utc and not t.done %}<button name="state" value="ignored">{% translate "Ignora" %}</button>{% endif %}
 	{% if t.done or t.ignored_utc %}<button name="state" value="open">{% translate "Riapri" %}</button>{% endif %}
 </form>{% endif %}

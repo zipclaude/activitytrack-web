@@ -90,3 +90,18 @@ def tag_chips(tags, colors):
         else:
             out.append(format_html('<span class="tag none">{}</span>', t))
     return mark_safe(" ".join(out))
+
+
+@register.simple_tag
+def icon(name, label=""):
+    """An icon of web/_icons.html (the app's drawables); decorative unless labelled."""
+    if label:
+        return format_html('<svg class="i" role="img" aria-label="{}"><use href="#i-{}"/></svg>', label, name)
+    return format_html('<svg class="i" aria-hidden="true"><use href="#i-{}"/></svg>', name)
+
+
+@register.simple_tag(takes_context=True)
+def nav_on(context, *names):
+    """"on" when the page is one of the named views (namespace:name for apps)."""
+    match = getattr(context.get("request"), "resolver_match", None)
+    return "on" if match and match.view_name in names else ""

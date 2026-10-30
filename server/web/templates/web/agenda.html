@@ -2,8 +2,8 @@
 {% block title %}{% translate "Agenda" %} · ActivityTrack{% endblock %}
 {% block content %}
 <div class="head"><h1>{% translate "Agenda" %}</h1>
-<div class="actions">{% if plannable %}<a class="button" href="{% url 'todo_new' %}?plan_date={{ anchor|date:'Y-m-d' }}&amp;plan_time={{ add_at }}&amp;next={{ request.get_full_path|urlencode }}">+ {% translate "Aggiungi" %}</a>{% endif %}
-<a class="button" href="{{ today_link }}">{% translate "Oggi" %}</a></div></div>
+<div class="actions">{% if plannable %}<a class="button" href="{% url 'todo_new' %}?plan_date={{ anchor|date:'Y-m-d' }}&amp;plan_time={{ add_at }}&amp;next={{ request.get_full_path|urlencode }}">{% icon "add" %}{% translate "Aggiungi" %}</a>{% endif %}
+<a class="button tonal" href="{{ today_link }}">{% translate "Oggi" %}</a></div></div>
 
 <form class="filters agenda-bar" method="get">
 	<nav class="seg" aria-label="{% translate 'Vista' %}">{% for v, href in views %}<a href="{{ href }}" class="{% if v == view %}on{% endif %}">{% if v == "day" %}{% translate "Giorno" %}{% elif v == "week" %}{% translate "Settimana" %}{% else %}{% translate "Mese" %}{% endif %}</a>{% endfor %}</nav>
@@ -14,10 +14,10 @@
 </form>
 
 <div class="period">
-	<a class="button" href="{{ prev }}" aria-label="{% translate 'Precedente' %}">‹</a>
+	<a class="button" href="{{ prev }}" aria-label="{% translate 'Precedente' %}">{% icon "prev" %}</a>
 	<b>{% if view == "day" %}{{ anchor|date:"l j F Y" }}{% elif view == "week" %}{{ since|date:"j M" }} – {{ until|date:"j M Y" }}{% else %}{{ anchor|date:"F Y" }}{% endif %}</b>
 	<span class="total" title="{% translate 'Rendicontato nel periodo' %}">{{ total }}</span>
-	<a class="button" href="{{ next }}" aria-label="{% translate 'Successivo' %}">›</a>
+	<a class="button" href="{{ next }}" aria-label="{% translate 'Successivo' %}">{% icon "next" %}</a>
 </div>
 
 {% if view == "month" %}
