@@ -190,11 +190,14 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           V="${GITHUB_REF#refs/tags/v}"
-          cd artifacts && sha256sum * > SHA256SUMS && cat SHA256SUMS && cd ..
+          # GitHub turns the "~" of the package versions into "." in asset names: "-" instead
+          cd artifacts
+          for f in activitytrack-web_*~*_all.deb; do mv "$f" "$(echo "$f" | tr '~' '-')"; done
+          sha256sum * > SHA256SUMS && cat SHA256SUMS && cd ..
           {
             echo "ActivityTrack Web $V, the server for ActivityTrack $V."
             echo
-            echo "- Debian 13 / 14, Ubuntu 24.04 / 26.04: \`apt install ./activitytrack-web_${V}~<distro>_all.deb\`"
+            echo "- Debian 13 / 14, Ubuntu 24.04 / 26.04: \`apt install ./activitytrack-web_${V}-<distro>_all.deb\` (deb13, deb14, ubuntu24.04, ubuntu26.04)"
             echo "- Other systems (RHEL / Oracle Linux, Arch, FreeBSD) and installs by hand: \`activitytrack-web-$V.tar.gz\` or a clone of the repository"
             echo
             echo "Instructions: [docs/INSTALL.md](https://github.com/${GITHUB_REPOSITORY}/blob/v$V/docs/INSTALL.md)."
