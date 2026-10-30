@@ -83,7 +83,7 @@ Developer…). Permissions on the server are **profiles**.
 | Profile | Can |
 |---|---|
 | Admin | everything: users, devices, policies, central master data, every user's data |
-| Manager | central master data; read their team's entries; create and assign to-dos to the team; team reports |
+| Manager | central master data; read their team's entries and everyone's entries done for the companies they are responsible for (their `companies`); create and assign to-dos to the team; team and company reports. Edits (times) only their team's |
 | User | own entries and to-dos, own personal master data when the policy allows it; read central master data |
 | Company reader | read only, for the companies granted to them: the closed entries of every user done for those companies, with expenses, consumables and attachments, and the reports. Meant for a client company's administration |
 
