@@ -8,7 +8,7 @@ on:
     tags: ["v*"]
   # pull requests that touch the packaging try the packages and the installs too
   pull_request:
-    paths: ["debian/**", "packaging/**", "deploy/**", "server/requirements*.txt", ".github/workflows/release.yml"]
+    paths: ["debian/**", "packaging/**", "deploy/**", "server/requirements*.txt", "docs/manual/**", "scripts/build-manual.sh", ".github/workflows/release.yml"]
   workflow_dispatch:
 
 jobs:
@@ -95,6 +95,28 @@ jobs:
         with:
           name: tarball
           path: dist/*.tar.gz
+
+  # the administrator's manual, it and en (docs/manual)
+  manual:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Manual
+        run: |
+          # a release's manual carries its version; elsewhere the manual's own
+          V=$(sed -n 's/^__version__ = "\(.*\)"/\1/p' server/atweb/__init__.py)
+          case "$GITHUB_REF" in refs/tags/v*)
+            for f in docs/manual/it/admin.md docs/manual/en/admin.md; do
+              head -1 "$f" | grep -q "^Versione $V \|^Version $V " || { echo "$f does not say version $V"; exit 1; }
+            done ;;
+          esac
+          sudo apt-get update && sudo apt-get install -y --no-install-recommends pandoc
+          scripts/build-manual.sh
+          mkdir dist && cp build/manual/*.pdf dist/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: manual
+          path: dist/*.pdf
 
   # the manual installs of docs/INSTALL.md, from the tarball
   oracle-linux:
@@ -189,7 +211,7 @@ jobs:
 
   release:
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: [deb, tarball, oracle-linux, arch, freebsd]
+    needs: [deb, tarball, manual, oracle-linux, arch, freebsd]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -211,6 +233,8 @@ jobs:
             echo
             echo "- Debian 13 / 14, Ubuntu 24.04 / 26.04: \`apt install ./activitytrack-web_${V}-<distro>_all.deb\` (deb13, deb14, ubuntu24.04, ubuntu26.04)"
             echo "- Other systems (RHEL / Oracle Linux, Arch, FreeBSD) and installs by hand: \`activitytrack-web-$V.tar.gz\` or a clone of the repository"
+            echo
+            echo "Administrator's manual: \`ActivityTrack-Web-Amministratore-$V.pdf\` (it), \`ActivityTrack-Web-Administrator-$V.pdf\` (en)."
             echo
             echo "Instructions: [docs/INSTALL.md](https://github.com/${GITHUB_REPOSITORY}/blob/v$V/docs/INSTALL.md)."
           } > notes.md

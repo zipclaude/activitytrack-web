@@ -1,0 +1,33 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/* Print style of the user documentation (scripts/build-manual.sh). */
+@page { size: A4; margin: 18mm 16mm 20mm 16mm; }
+html { font-family: "Noto Sans", "DejaVu Sans", Helvetica, Arial, sans-serif; font-size: 10.5pt; color: #1d2230; }
+body { max-width: none; margin: 0; padding: 0; line-height: 1.45; }
+header#title-block-header { margin: 0 0 1.2em 0; padding-bottom: .6em; border-bottom: 3px solid #3d7bea; }
+h1.title { font-size: 24pt; margin: 0; color: #12306b; }
+p.subtitle { margin: .2em 0 0 0; color: #5b6475; font-size: 12pt; }
+h1 { font-size: 17pt; color: #12306b; margin: 1.4em 0 .4em; break-before: page; }
+h1:first-of-type { break-before: auto; }
+h2 { font-size: 13pt; color: #1a4bb0; margin: 1.1em 0 .3em; break-after: avoid; }
+h3 { font-size: 11pt; margin: .9em 0 .2em; break-after: avoid; }
+nav#TOC { break-after: page; }
+nav#TOC ul { list-style: none; padding-left: 1em; }
+nav#TOC > ul { padding-left: 0; }
+nav#TOC a { color: #1d2230; text-decoration: none; }
+table { border-collapse: collapse; width: 100%; margin: .5em 0 1em; break-inside: avoid; font-size: 9.5pt; }
+th, td { border: 1px solid #c8cdd8; padding: 4px 6px; vertical-align: top; text-align: left; }
+th { background: #eef2fb; }
+code { font-family: "DejaVu Sans Mono", monospace; font-size: 9pt; background: #f2f4f8; padding: 0 2px; }
+/*
+ * Screenshots take at most a quarter of a page (owner, issue #37: at least
+ * 2×2 per page): half the width, ~105 mm high; consecutive ones sit side by
+ * side. Diagrams (SVG) keep the full width.
+ */
+figure { margin: .8em 0; text-align: center; break-inside: avoid; display: inline-block; width: 48%; vertical-align: top; }
+/* every screenshot, inside a figure or not (pandoc versions differ) */
+img { max-width: 48%; max-height: 105mm; border: 1px solid #d5d9e2; border-radius: 6px; }
+figure img { max-width: 100%; }
+figure:has(img[src$=".svg"]) { display: block; width: auto; }
+img[src$=".svg"], figure img[src$=".svg"] { border: 0; max-width: 100%; max-height: 150mm; }
+figcaption { font-size: 9pt; color: #5b6475; margin-top: .3em; }
+blockquote { margin: .6em 0; padding: .4em .8em; border-left: 4px solid #f2b705; background: #fff8e1; }
