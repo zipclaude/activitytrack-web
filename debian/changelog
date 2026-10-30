@@ -1,3 +1,13 @@
+activitytrack-web (0.9.2) unstable; urgency=medium
+
+  * Security review (docs/SECURITY.md): attachments other than images, PDF,
+    audio and video are downloaded, not shown; a brake on password guessing;
+    uploads above 2.5 MB and large pushes accepted.
+  * An upgrade of the package keeps the service running.
+  * Administrator's manual, Italian and English, with each release.
+
+ -- ActivityTrack Web <flavio-claude@zipman.it>  Sat, 31 Oct 2026 00:30:00 +0100
+
 activitytrack-web (0.9.1) unstable; urgency=medium
 
   * Agenda by day, week and month; report and CSV rounded as the app.
