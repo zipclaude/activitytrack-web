@@ -250,6 +250,14 @@ class Todo(Synced):
         return self.title
 
 
+class TodoAssignment(models.Model):
+    """Who gave a to-do to its owner (a manager, an admin), on the server only: it does not travel."""
+
+    todo = models.OneToOneField(Todo, on_delete=models.CASCADE, primary_key=True, related_name="assignment")
+    by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="+")
+    at = models.DateTimeField(auto_now=True)
+
+
 class EntryStatus(models.TextChoices):
     ACTIVE = "ACTIVE"
     SUSPENDED = "SUSPENDED"

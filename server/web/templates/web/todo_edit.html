@@ -3,8 +3,11 @@
 {% block content %}
 <p>{% if next %}<a class="back" href="{{ next }}">{% icon "back" %}{% translate "Agenda" %}</a>{% else %}<a class="back" href="{% url 'todos' %}">{% icon "back" %}{% translate "Da fare" %}</a>{% endif %}</p>
 <h1>{% if t %}{{ t.title }}{% else %}{% translate "Nuova voce" %}{% endif %}</h1>
+{% if t and t.assignment.by and t.owner_id == user.pk %}<p class="note">{% blocktranslate with name=t.assignment.by.get_full_name|default:t.assignment.by.username %}Assegnata da {{ name }}.{% endblocktranslate %}</p>{% endif %}
 {% if t and t.external_key %}<p class="note">{% blocktranslate with k=t.external_key %}Dal gestionale ({{ k }}).{% endblocktranslate %}</p>{% endif %}
 <form method="post" class="card narrowform">{% csrf_token %}{% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+	{% if people %}<label>{% translate "Assegnata a" %}<select name="owner">{% for p in people %}<option value="{{ p.pk }}" {% if p.pk == owner_pk %}selected{% endif %}>{{ p.get_full_name|default:p.username }}{% if p == user %} ({% translate "io" %}){% endif %}</option>{% endfor %}</select></label>
+	<p class="doc">{% translate "Assegnandola a un'altra persona, la voce passa sui suoi telefoni e sparisce da quelli di chi l'aveva." %}</p>{% endif %}
 	<label>{% translate "Titolo" %}<input name="title" value="{{ t.title|default:'' }}" required></label>
 	<label>{% translate "Cliente" %}<select name="client"><option value="">—</option>{% regroup clients by company as groups %}{% for g in groups %}<optgroup label="{{ g.grouper.name|default:'—' }}">{% for c in g.list %}<option value="{{ c.uid }}" {% if t.client_id == c.uid %}selected{% endif %}>{{ c.name }}</option>{% endfor %}</optgroup>{% endfor %}</select></label>
 	<label>{% translate "Azienda (senza cliente)" %}<select name="company"><option value="">—</option>{% for c in companies %}<option value="{{ c.uid }}" {% if t.company_id == c.uid and not t.client_id %}selected{% endif %}>{{ c.name }}</option>{% endfor %}</select></label>
@@ -15,7 +18,7 @@
 	<button class="primary">{% translate "Salva" %}</button>
 </form>
 {% if t %}<form method="post" class="actions">{% csrf_token %}{% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
-	<a class="button tonal" href="{% url 'entry_new' %}?todo={{ t.uid }}">{% icon "play" %}{% translate "Avvia" %}</a>
+	{% if mine %}<a class="button tonal" href="{% url 'entry_new' %}?todo={{ t.uid }}">{% icon "play" %}{% translate "Avvia" %}</a>{% endif %}
 	{% if not t.done %}<button name="state" value="done">{% icon "done" %}{% translate "Fatta" %}</button>{% endif %}
 	{% if not t.ignored_utc and not t.done %}<button name="state" value="ignored">{% translate "Ignora" %}</button>{% endif %}
 	{% if t.done or t.ignored_utc %}<button name="state" value="open">{% translate "Riapri" %}</button>{% endif %}

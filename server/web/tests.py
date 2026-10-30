@@ -457,6 +457,60 @@ class HomeListTests(WorkTests):
         self.assertEqual(state(t(plan_date=date(2026, 10, 30), plan_start_min=660, duration_min=90), now, tz), "planned")
 
 
+class TodoAssignmentTests(WorkTests):
+    """A manager gives to-dos to the team (ARCHITECTURE §5): the phones follow the owner."""
+
+    def test_assign_and_reassign(self):
+        from records.models import Todo
+        from sync import engine
+
+        carl = User.objects.create_user("carl", password="x-x-x-x-x-x", org=self.org, manager=self.boss)
+        outsider = User.objects.create_user("dora", password="x-x-x-x-x-x", org=self.org)
+        self.client.force_login(self.boss)
+        page = self.client.get("/dafare/nuova/").content.decode()
+        self.assertIn('name="owner"', page)
+        self.assertNotIn(">dora<", page)
+        cursor = engine.head(self.org)
+        r = self.client.post("/dafare/nuova/", {"title": "Rinnovo", "owner": str(self.alice.pk)})
+        self.assertRedirects(r, "/dafare/", fetch_redirect_response=False)
+        t = Todo.objects.get(title="Rinnovo")
+        self.assertEqual(t.owner, self.alice)
+        self.assertEqual(t.assignment.by, self.boss)
+        self.assertEqual([x["uid"] for x in engine.pull(self.alice, cursor)["records"] if x["type"] == "todo"], [str(t.uid)])
+        self.assertFalse([x for x in engine.pull(self.boss, cursor)["records"] if x["type"] == "todo"])
+        # the team's list and the person's
+        self.assertIn("Rinnovo", self.client.get("/dafare/?person=all").content.decode())
+        self.assertNotIn("Rinnovo", self.client.get("/dafare/").content.decode())
+        # to carl: alice's phones drop it, carl's get it
+        cursor = engine.head(self.org)
+        self.client.post(f"/dafare/{t.uid}/", {"title": "Rinnovo", "owner": str(carl.pk), "notes": "urgente"})
+        t.refresh_from_db()
+        self.assertEqual((t.owner, t.notes), (carl, "urgente"))
+        self.assertEqual(engine.pull(self.alice, cursor)["gone"], [{"type": "todo", "uid": str(t.uid)}])
+        self.assertEqual([x["uid"] for x in engine.pull(carl, cursor)["records"]], [str(t.uid)])
+        # the assignee sees who gave it and starts it; the manager does not start it
+        self.client.force_login(carl)
+        page = self.client.get(f"/dafare/{t.uid}/").content.decode()
+        self.assertIn("Assegnata da boss", page)
+        self.assertIn("?todo=", page)
+        self.assertNotIn('name="owner"', page)
+        # someone outside the team may not get or read it
+        self.client.force_login(self.boss)
+        self.assertEqual(self.client.post(f"/dafare/{t.uid}/", {"title": "x", "owner": str(outsider.pk)}).status_code, 403)
+        self.client.force_login(outsider)
+        self.assertEqual(self.client.get(f"/dafare/{t.uid}/").status_code, 404)
+
+    def test_a_manager_marks_a_team_todo_done(self):
+        from records.models import Todo
+
+        self.client.force_login(self.boss)
+        self.client.post("/dafare/nuova/", {"title": "Chiamata", "owner": str(self.alice.pk)})
+        t = Todo.objects.get(title="Chiamata")
+        self.client.post(f"/dafare/{t.uid}/", {"state": "done"})
+        t.refresh_from_db()
+        self.assertEqual((t.done, t.owner), (True, self.alice))
+
+
 class ManagerCompaniesTests(WorkTests):
     """A manager reads every entry done for the companies they are responsible for, an admin's too."""
 
