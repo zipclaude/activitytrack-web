@@ -1,6 +1,6 @@
 {% load i18n at %}<a class="row" href="{% url 'entry' r.e.uid %}" style="--band: {{ r.e.client.color|color|default:'var(--line)' }}">{% tag_dots r.e.tags tag_colors %}
 	<span class="main"><b>{{ r.e.client.name|default:r.e.company.name|default:_("Senza cliente") }}</b>
 		<span class="sub">{% if r.e.company and r.e.client %}{{ r.e.company.name }} · {% endif %}{{ r.e.activity|default:_("senza descrizione") }}{% if show_owner %} · {{ r.e.owner.get_full_name|default:r.e.owner.username }}{% endif %}</span></span>
-	<span class="side">{{ r.start|time:"H:i" }}{% if r.end %}–{{ r.end|time:"H:i" }}{% endif %}<br><span class="sub">{{ r.work }}{% if r.travel %} · ✈ {{ r.travel }}{% endif %}</span></span>
+	<span class="side">{{ r.start|time:"H:i" }}{% if r.end %}–{{ r.end|time:"H:i" }}{% endif %}<br><span class="sub">{{ r.work }}{% if r.travel %} · ✈ {{ r.travel }}{% endif %}{% if r.real %} <span title="{% translate 'registrati' %}">({{ r.real }})</span>{% endif %}</span></span>
 	<span class="pill s-{{ r.e.status|lower }}">{{ r.e|status }}</span>
 </a>

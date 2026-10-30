@@ -1,0 +1,55 @@
+{% extends "web/base.html" %}{% load static i18n at %}
+{% block title %}{% translate "Agenda" %} · ActivityTrack{% endblock %}
+{% block content %}
+<div class="head"><h1>{% translate "Agenda" %}</h1>
+<div class="actions">{% if plannable %}<a class="button" href="{% url 'todo_new' %}?plan_date={{ anchor|date:'Y-m-d' }}&amp;plan_time={{ add_at }}&amp;next={{ request.get_full_path|urlencode }}">+ {% translate "Aggiungi" %}</a>{% endif %}
+<a class="button" href="{{ today_link }}">{% translate "Oggi" %}</a></div></div>
+
+<form class="filters agenda-bar" method="get">
+	<nav class="seg" aria-label="{% translate 'Vista' %}">{% for v, href in views %}<a href="{{ href }}" class="{% if v == view %}on{% endif %}">{% if v == "day" %}{% translate "Giorno" %}{% elif v == "week" %}{% translate "Settimana" %}{% else %}{% translate "Mese" %}{% endif %}</a>{% endfor %}</nav>
+	<input type="hidden" name="view" value="{{ view }}"><input type="hidden" name="date" value="{{ anchor|date:'Y-m-d' }}">
+	{% if people %}<label>{% translate "Persona" %}<select name="person" onchange="this.form.submit()">{% for p in people %}<option value="{{ p.pk }}" {% if p == person %}selected{% endif %}>{{ p.get_full_name|default:p.username }}</option>{% endfor %}</select></label>{% endif %}
+	{% if tags or tag %}<label>{% translate "Tag" %}<select name="tag" onchange="this.form.submit()"><option value="">{% translate "Tutti i tag" %}</option>{% for t in tags %}<option {% if t == tag %}selected{% endif %}>{{ t }}</option>{% endfor %}</select></label>{% endif %}
+	<noscript><button>{% translate "Filtra" %}</button></noscript>
+</form>
+
+<div class="period">
+	<a class="button" href="{{ prev }}" aria-label="{% translate 'Precedente' %}">‹</a>
+	<b>{% if view == "day" %}{{ anchor|date:"l j F Y" }}{% elif view == "week" %}{{ since|date:"j M" }} – {{ until|date:"j M Y" }}{% else %}{{ anchor|date:"F Y" }}{% endif %}</b>
+	<span class="total" title="{% translate 'Rendicontato nel periodo' %}">{{ total }}</span>
+	<a class="button" href="{{ next }}" aria-label="{% translate 'Successivo' %}">›</a>
+</div>
+
+{% if view == "month" %}
+<div class="month">
+	{% for c in weeks.0 %}<div class="wd">{{ c.day|date:"D" }}</div>{% endfor %}
+	{% for w in weeks %}{% for c in w %}<a class="mday{% if not c.in_month %} out{% endif %}{% if c.today %} today{% endif %}" href="{{ c.link }}">
+		<span class="n">{{ c.day.day }}</span>
+		<span class="marks">{% for k in c.companies %}<i class="dot" style="--tag: {{ k|color }}"></i>{% endfor %}{% if c.todos %}<i class="dot todo"></i>{% endif %}</span>
+		<span class="h">{{ c.reported }}</span>
+	</a>{% endfor %}{% endfor %}
+</div>
+{% else %}
+<div class="tl" id="timeline" style="--cols: {{ columns|length }}" data-from="{{ work_from }}" data-to="{{ work_to }}"
+	{% if plannable %}data-plan="{% url 'todo_new' %}" data-back="{{ request.get_full_path }}"{% endif %}>
+	{% if view == "week" %}<div class="tl-row tl-head"><span></span>{% for c in columns %}<a href="{{ c.link }}" class="{% if c.today %}today{% endif %}">{{ c.day|date:"D j" }}<span class="sub">{{ c.reported|default:"&nbsp;" }}</span></a>{% endfor %}</div>{% endif %}
+	{% if columns|length %}<div class="tl-row tl-band"><span class="sub">{% translate "giorno" %}</span>{% for c in columns %}<div>{% for t in c.band %}<a class="bandtodo" href="{{ t.url }}" style="--c: {{ t.color|color }}">☐ {{ t.title }}{% if t.due %} · {% translate "scade" %} {{ t.due }}{% endif %}</a>{% endfor %}</div>{% endfor %}</div>{% endif %}
+	<div class="tl-scroll"><div class="tl-grid">
+		<div class="tl-hours">{% for h in hours %}{% if h %}<span style="--m: {% widthratio h 1 60 %}">{{ h|stringformat:"02d" }}</span>{% endif %}{% endfor %}</div>
+		{% for c in columns %}<div class="tl-col{% if c.today %} today{% endif %}" data-day="{{ c.day|date:'Y-m-d' }}">
+			{% for b in c.blocks %}<a class="blk {{ b.kind }}{% if b.running %} running{% endif %}" href="{{ b.url }}{% if b.kind == 'todo' %}?next={{ request.get_full_path|urlencode }}{% endif %}"
+				style="--top: {{ b.top }}; --h: {{ b.height }}; --lane: {{ b.lane }}; --lanes: {{ b.lanes }}; --c: {{ b.color|color }}; --ink: {{ b.color|ink }}"
+				title="{{ b.title }}{% if b.activity %} · {{ b.activity }}{% endif %} · {{ b.span }}{% if b.reported %} · {{ b.reported }}{% endif %}">
+				{% if b.tags %}{% tag_dots b.tags tag_colors %}{% endif %}
+				<b>{% if b.kind == "todo" %}☐ {% endif %}{{ b.title|default:_("Senza cliente") }}</b>{% if b.activity %}<span class="act"> · {{ b.activity }}</span>{% endif %}
+				<span class="when">{{ b.span }}{% if b.reported %} · {{ b.reported }}{% endif %}</span>
+			</a>{% endfor %}
+			{% if c.now is not None %}<i class="now" style="--top: {{ c.now }}"></i>{% endif %}
+		</div>{% endfor %}
+	</div></div>
+	<div class="zoom"><button type="button" data-zoom="-1" aria-label="{% translate 'Riduci' %}">−</button><button type="button" data-zoom="1" aria-label="{% translate 'Ingrandisci' %}">+</button></div>
+</div>
+{% if plannable %}<p class="doc">{% translate "Un clic su uno spazio libero pianifica una nuova voce Da fare a quell'ora." %}</p>{% endif %}
+{% endif %}
+{% endblock %}
+{% block scripts %}{% if view != "month" %}<script src="{% static 'web/agenda.js' %}"></script>{% endif %}{% endblock %}

@@ -2,7 +2,7 @@
 from django.contrib.auth import views as auth
 from django.urls import path
 
-from . import masters, reports, views, work
+from . import agenda, masters, reports, views, work
 
 urlpatterns = [
     path("", work.home, name="home"),
@@ -11,6 +11,7 @@ urlpatterns = [
     path("attivita/<uuid:uid>/", work.entry, name="entry"),
     path("attivita/<uuid:uid>/comando/", work.quick, name="entry_quick"),
     path("allegati/<uuid:uid>/", work.attachment, name="attachment"),
+    path("agenda/", agenda.agenda, name="agenda"),
     path("dafare/", work.todos, name="todos"),
     path("dafare/nuova/", work.todo_edit, name="todo_new"),
     path("dafare/<uuid:uid>/", work.todo_edit, name="todo_edit"),

@@ -48,7 +48,7 @@ class WorkTests(TestCase):
         return Entry.objects.filter(owner=self.alice, deleted=False).latest("created_utc")
 
     def test_pages_render(self):
-        for url in ["/", "/attivita/", "/attivita/nuova/", "/dafare/", "/dafare/nuova/", "/anagrafiche/", "/anagrafiche/clienti/", "/report/", "/telefoni/"]:
+        for url in ["/", "/attivita/", "/attivita/nuova/", "/dafare/", "/dafare/nuova/", "/anagrafiche/", "/anagrafiche/clienti/", "/report/", "/telefoni/", "/agenda/"]:
             self.assertEqual(self.client.get(url).status_code, 200, url)
 
     def test_an_activity_from_start_to_closed(self):
@@ -272,3 +272,116 @@ class TagWebTests(TestCase):
         # the old free ones stay, a known one is added
         self.client.post(url, {"action": "save", "activity": "Rete", "tags": "urgente libero #Rete"})
         self.assertEqual(Entry.objects.get(pk=self.e.pk).tags, ["libero", "rete", "urgente"])
+
+
+class ReportingTests(TestCase):
+    """The app's day attribution and rounding (core/domain report/, rounding/)."""
+
+    def test_rounding_as_the_app(self):
+        from web.reporting import CEIL, CEIL_TOLERANT, FLOOR, Rule
+
+        tolerant = Rule(CEIL_TOLERANT, 15)
+        # Rounding.kt examples: 7 -> 15, 19:59 -> 15, 20 -> 30, 34:59 -> 30
+        for seconds, minutes in [(0, 0), (7 * 60, 15), (19 * 60 + 59, 15), (20 * 60, 30), (34 * 60 + 59, 30), (45 * 60, 45)]:
+            self.assertEqual(tolerant.apply(seconds), minutes, seconds)
+        self.assertEqual(Rule(CEIL, 5).apply(61 * 60), 65)
+        self.assertEqual(Rule(FLOOR, 5, 5).apply(3 * 60), 5)
+        self.assertEqual(Rule(FLOOR, 5, 5).apply(0), 0)
+
+    def test_night_work_stays_on_its_day_or_splits(self):
+        from datetime import date, datetime
+        from types import SimpleNamespace as S
+        from zoneinfo import ZoneInfo
+
+        from web.reporting import Rules, lines
+
+        tz = ZoneInfo("Europe/Rome")
+        seg = lambda a, b: S(kind="WORK", start_utc=a, end_utc=b)  # noqa: E731
+        # 22:00-04:30: by 06:00 of the next day, all on the start day
+        night = [seg(datetime(2026, 10, 27, 22, 0, tzinfo=tz), datetime(2026, 10, 28, 4, 30, tzinfo=tz))]
+        out = lines("e", night, Rules(), None, tz)
+        self.assertEqual([(x.day, x.work // 60, x.r_work) for x in out], [(date(2026, 10, 27), 390, 390)])
+        # until 07:00: split at midnight
+        late = [seg(datetime(2026, 10, 27, 22, 0, tzinfo=tz), datetime(2026, 10, 28, 7, 0, tzinfo=tz))]
+        out = lines("e", late, Rules(), None, tz)
+        self.assertEqual([(x.day, x.work // 60) for x in out], [(date(2026, 10, 27), 120), (date(2026, 10, 28), 420)])
+
+    def test_the_policy_sets_the_rules(self):
+        from policies.models import Policy
+        from web.reporting import CEIL, Rules, rules_for
+
+        org = Organization.objects.create(name="Infra")
+        alice = User.objects.create_user("alice", password="x-x-x-x-x-x", org=org)
+        self.assertEqual(rules_for(alice), Rules())
+        Policy.objects.create(org=org, data={"settings": {
+            "roundingWorkMin": {"value": 30, "locked": True}, "roundingWorkMode": {"value": "CEIL"},
+            "carryOverMin": {"value": 120}, "roundingTravelMin": {"value": 7},
+        }})
+        r = rules_for(alice)
+        self.assertEqual((r.work.mode, r.work.quantum, r.carry_over_min), (CEIL, 30, 120))
+        # a value the app does not allow: the default
+        self.assertEqual(r.travel, Rules().travel)
+
+    def test_lanes_side_by_side(self):
+        from web.agenda import lanes
+
+        out = {b["id"]: (b["lane"], b["lanes"]) for b in lanes([
+            {"id": "a", "top": 60, "height": 120}, {"id": "b", "top": 90, "height": 30},
+            {"id": "c", "top": 130, "height": 30}, {"id": "d", "top": 300, "height": 30},
+        ])}
+        self.assertEqual(out, {"a": (0, 2), "b": (1, 2), "c": (1, 2), "d": (0, 1)})
+
+
+class AgendaTests(WorkTests):
+    """Agenda by day, week and month (manual §7)."""
+
+    def test_an_entry_and_a_planned_todo_in_every_view(self):
+        self.client.post("/attivita/nuova/", {"when": "past", "client": "22222222-2222-4222-8222-222222222222", "activity": "Riunione", "start": "2026-10-27T09:00", "end": "2026-10-27T10:07"})
+        self.client.post("/dafare/nuova/", {"title": "Rinnovo certificati", "plan_date": "2026-10-28", "plan_time": "15:00", "duration": "60"})
+        day = self.client.get("/agenda/?view=day&date=2026-10-27").content.decode()
+        # 1:07 of work rounds to 1:15 (CEIL_TOLERANT 15)
+        self.assertIn("09:00–10:07 · 1:15", day)
+        self.assertIn("Riunione", day)
+        week = self.client.get("/agenda/?view=week&date=2026-10-27").content.decode()
+        self.assertIn("☐ Rinnovo certificati", week)
+        self.assertIn("15:00–16:00", week)
+        self.assertIn('data-plan="/dafare/nuova/"', week)
+        month = self.client.get("/agenda/?view=month&date=2026-10-27").content.decode()
+        self.assertIn("1:15", month)
+        self.assertIn('class="dot todo"', month)
+        # the last view comes back
+        self.assertIn('class="month"', self.client.get("/agenda/").content.decode())
+
+    def test_a_tag_filter_hides_the_todos(self):
+        self.client.post("/attivita/nuova/", {"when": "past", "client": "22222222-2222-4222-8222-222222222222", "activity": "Riunione", "start": "2026-10-27T09:00", "end": "2026-10-27T10:00"})
+        self.client.post(f"/attivita/{self.entry().uid}/", {"action": "save", "client": "22222222-2222-4222-8222-222222222222", "activity": "Riunione", "tags": "remoto"})
+        self.client.post("/dafare/nuova/", {"title": "Rinnovo", "plan_date": "2026-10-27", "plan_time": "15:00"})
+        page = self.client.get("/agenda/?view=day&date=2026-10-27&tag=remoto").content.decode()
+        self.assertIn("Riunione", page)
+        self.assertNotIn("Rinnovo", page)
+        self.assertNotIn("Riunione", self.client.get("/agenda/?view=day&date=2026-10-27&tag=altro").content.decode())
+
+    def test_planning_from_a_free_slot_comes_back(self):
+        page = self.client.get("/dafare/nuova/?plan_date=2026-10-28&plan_time=14:30&next=/agenda/%3Fview%3Dday").content.decode()
+        self.assertIn('value="2026-10-28"', page)
+        self.assertIn('value="14:30"', page)
+        r = self.client.post("/dafare/nuova/", {"title": "Chiamata", "plan_date": "2026-10-28", "plan_time": "14:30", "next": "/agenda/?view=day"})
+        self.assertRedirects(r, "/agenda/?view=day", fetch_redirect_response=False)
+        r = self.client.post("/dafare/nuova/", {"title": "Altrove", "next": "https://evil.example/"})
+        self.assertRedirects(r, "/dafare/", fetch_redirect_response=False)
+
+    def test_a_manager_sees_the_team_without_planning(self):
+        self.client.post("/attivita/nuova/", {"when": "past", "client": "22222222-2222-4222-8222-222222222222", "activity": "Riunione", "start": "2026-10-27T09:00", "end": "2026-10-27T10:00"})
+        self.client.force_login(self.boss)
+        page = self.client.get(f"/agenda/?view=day&date=2026-10-27&person={self.alice.pk}").content.decode()
+        self.assertIn("Riunione", page)
+        self.assertNotIn("data-plan=", page)
+        self.assertNotIn("Riunione", self.client.get("/agenda/?view=day&date=2026-10-27").content.decode())
+
+    def test_the_report_rounds_as_the_app(self):
+        self.client.post("/attivita/nuova/", {"when": "past", "client": "22222222-2222-4222-8222-222222222222", "activity": "Riunione", "start": "2026-10-27T09:00", "end": "2026-10-27T10:07"})
+        page = self.client.get("/report/?from=2026-10-01&to=2026-10-31").content.decode()
+        self.assertIn("<b>1:15</b><span class=\"sub\">1:07</span>", page)
+        csv = self.client.get("/report/csv/?from=2026-10-01&to=2026-10-31").content.decode()
+        self.assertIn(";67;0;0;0.00;;", csv)
+        self.assertTrue(csv.strip().endswith(";75;0;0"), csv)

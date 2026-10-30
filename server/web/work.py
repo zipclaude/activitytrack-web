@@ -8,6 +8,8 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.urls import reverse
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 
@@ -275,12 +277,17 @@ def todo_edit(request, uid=None):
     if not user.syncs:
         raise PermissionDenied
     todo = get_object_or_404(data.todos(user), uid=uid) if uid else None
+    # opened from the agenda: back there afterwards
+    back = request.POST.get("next") or request.GET.get("next") or ""
+    if not url_has_allowed_host_and_scheme(back, allowed_hosts={request.get_host()}, require_https=request.is_secure()):
+        back = ""
+    back = back or reverse("todos")
     if request.method == "POST":
         p = request.POST
         try:
             if p.get("state") and todo:
                 ops.todo_state(user, todo, p["state"])
-                return redirect("todos")
+                return redirect(back)
             title = p.get("title", "").strip()
             if not title:
                 raise ops.OpError(_("il titolo è obbligatorio"))
@@ -302,7 +309,7 @@ def todo_edit(request, uid=None):
             }
             ops.save_todo(user, todo.uid if todo else None, fields)
             messages.success(request, _("Voce salvata."))
-            return redirect("todos")
+            return redirect(back)
         except (ops.OpError, ValueError) as err:
             messages.error(request, str(err))
 
@@ -310,8 +317,25 @@ def todo_edit(request, uid=None):
         return f"{m // 60:02d}:{m % 60:02d}" if m is not None else ""
     return render(request, "web/todo_edit.html", {
         "t": todo, "companies": data.companies(user), "clients": data.clients(user),
-        "due_time": hhmm(todo.due_time_min) if todo else "", "plan_time": hhmm(todo.plan_start_min) if todo else "",
+        "due_time": hhmm(todo.due_time_min) if todo else "",
+        "plan_date": todo.plan_date.isoformat() if todo and todo.plan_date else "" if todo else _iso_date(request.GET.get("plan_date")),
+        "plan_time": hhmm(todo.plan_start_min) if todo else _hhmm(request.GET.get("plan_time")),
+        "next": back if back != reverse("todos") else "",
     })
+
+
+def _iso_date(text):
+    try:
+        return date.fromisoformat(text).isoformat() if text else ""
+    except ValueError:
+        return ""
+
+
+def _hhmm(text):
+    try:
+        return datetime.strptime(text, "%H:%M").strftime("%H:%M") if text else ""
+    except ValueError:
+        return ""
 
 
 @login_required
@@ -334,4 +358,3 @@ def quick(request, uid):
     except ops.OpError as err:
         messages.error(request, str(err))
     return redirect("home")
-
