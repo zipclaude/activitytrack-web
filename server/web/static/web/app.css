@@ -305,3 +305,22 @@ pre.json { background: var(--surface-2); padding: 12px; border-radius: 10px; ove
 	.mday .h { font-size: 11px; }
 	.period b { font-size: 16px; }
 }
+
+/* Home list (app manual §3): a state mark, what is over dimmed; the state filter drops down */
+.mark { flex: none; width: 30px; height: 30px; border-radius: 50%; display: inline-grid; place-items: center; font-weight: 700; font-size: 14px; color: var(--muted); border: 1px solid var(--line); }
+.mark .i { width: 16px; height: 16px; }
+.m-overdue { background: var(--err-bg); color: var(--danger); border: 0; }
+.m-planned { background: var(--secondary-c); color: var(--on-secondary-c); border: 0; }
+.m-to_complete { background: var(--warn-bg); color: var(--text); border: 0; }
+.m-done, .m-ignored, .m-closed { background: var(--surface-3); border: 0; }
+.hrow.over { opacity: .62; }
+.hrow .side .sub { text-align: right; }
+.dropdown { position: relative; }
+.dropdown > summary { list-style: none; height: 44px; border-radius: 10px; color: var(--text); font-weight: 400; font-size: 15px; background: var(--surface); }
+.dropdown > summary::-webkit-details-marker { display: none; }
+.dropdown.changed > summary, .filters select.changed { background: var(--secondary-c); color: var(--on-secondary-c); border-color: transparent; }
+.dropdown .menu { position: absolute; z-index: 30; top: calc(100% + 4px); left: 0; min-width: 240px; background: var(--surface); border: 1px solid var(--line-soft); border-radius: 12px; padding: 8px 12px; box-shadow: 0 8px 24px rgb(0 0 0 / .16); display: flex; flex-direction: column; }
+.dropdown .menu label { margin: 0; padding: 8px 0; }
+.dropdown .menu hr { border: 0; border-top: 1px solid var(--line-soft); width: 100%; margin: 6px 0; }
+.dropdown .menu a { padding: 6px 0; text-decoration: none; font-weight: 500; }
+.homefilters { align-items: flex-end; }

@@ -20,12 +20,28 @@
 <section class="card muted">{% translate "Nessuna attività in corso." %}</section>
 {% endfor %}
 
-{% if overdue %}<h3 class="sec late">{% translate "In ritardo" %}</h3>
-{% for t in overdue %}{% include "web/_todo_row.html" with state="overdue" %}{% endfor %}{% endif %}
-{% if today_todos %}<h3 class="sec">{% translate "Da fare oggi" %}</h3>
-{% for t in today_todos %}{% include "web/_todo_row.html" with state="planned" %}{% endfor %}{% endif %}
-{% if missing %}<h3 class="sec late">{% translate "Dettagli mancanti" %}</h3>
-{% for r in missing %}{% include "web/_entry_row.html" %}{% endfor %}{% endif %}
-{% if closed_today %}<h3 class="sec">{% translate "Fatte oggi" %}</h3>
-{% for r in closed_today %}{% include "web/_entry_row.html" %}{% endfor %}{% endif %}
+<form class="filters homefilters" method="get" id="homefilters">
+	<input type="hidden" name="f" value="1">
+	<label>{% translate "Periodo" %}<select name="period">{% for w in windows %}<option value="{{ w }}" {% if w == f.period %}selected{% endif %}>{% if w == -1 %}{% translate "Oggi" %}{% elif w == 0 %}{% translate "Tutti" %}{% elif w == 24 %}24 h{% elif w == 72 %}{% translate "3 gg" %}{% elif w == 168 %}{% translate "7 gg" %}{% else %}{% translate "30 gg" %}{% endif %}</option>{% endfor %}</select></label>
+	<details class="dropdown{% if show_changed %} changed{% endif %}"><summary class="button">{% translate "Stato" %} ▾</summary><div class="menu">
+		{% for s in offered %}<label class="check"><input type="checkbox" name="show" value="{{ s }}" {% if s in show %}checked{% endif %}> {% if s == "todo" %}{% translate "Da fare" %}{% elif s == "missing" %}{% translate "Dettagli mancanti" %}{% elif s == "done" %}{% translate "Fatte" %}{% else %}{% translate "Ignorate" %}{% endif %}</label>{% endfor %}
+		<hr>{% if todos_on %}<a href="{{ only_todo }}">{% translate "Solo da fare" %}</a>{% endif %}<a href="{{ only_done }}">{% translate "Solo fatte" %}</a><a href="{{ show_all }}">{% translate "Tutti" %}</a>
+	</div></details>
+	<label>{% translate "Azienda" %}<select name="company" class="{% if company %}changed{% endif %}"><option value="">{% translate "Tutte le aziende" %}</option>{% for c in companies %}<option value="{{ c.uid }}" {% if company == c %}selected{% endif %}>{{ c.name }}</option>{% endfor %}</select></label>
+	{% if "missing" in show or "done" in show %}{% if tags or tag %}<label>{% translate "Tag" %}<select name="tag" class="{% if tag %}changed{% endif %}"><option value="">{% translate "Tutti i tag" %}</option>{% for t in tags %}<option {% if t == tag %}selected{% endif %}>{{ t }}</option>{% endfor %}</select></label>{% endif %}{% endif %}
+	<noscript><button>{% translate "Filtra" %}</button></noscript>
+</form>
+{% for name, items in sections %}
+<h3 class="sec{% if name == 'overdue' or name == 'missing' %} late{% endif %}">{% if name == "overdue" %}{% translate "In ritardo" %}{% elif name == "missing" %}{% translate "Dettagli mancanti" %}{% elif name == "today" %}{% translate "Oggi" %}{% elif name == "next" %}{% translate "Prossimi giorni" %}{% elif name == "earlier" %}{% translate "Giorni precedenti" %}{% elif name == "no_date" %}{% translate "Senza data" %}{% else %}{% translate "Ignorate" %}{% endif %}</h3>
+{% for kind, obj, extra, r in items %}{% include "web/_home_row.html" %}{% endfor %}
+{% empty %}<p class="muted">{% translate "Niente da mostrare con questi filtri." %}</p>
+{% endfor %}
+{% if todos_on %}<p><a href="{% url 'todos' %}">{% translate "Tutte le Da fare" %} →</a></p>{% endif %}
 {% endblock %}
+{% block scripts %}<script>
+(function () {
+	/* the filters apply at once, as in the app */
+	var form = document.getElementById("homefilters");
+	form.addEventListener("change", function () { form.submit(); });
+})();
+</script>{% endblock %}
