@@ -108,7 +108,7 @@ def agenda(request):
         anchor = date.fromisoformat(g["date"]) if g.get("date") else today
     except ValueError:
         anchor = today
-    people = data.people(user)
+    people = data.readable_people(user)
     person = people.filter(pk=g.get("person")).first() if g.get("person") else None
     person = person or user
     tag = g.get("tag") or ""

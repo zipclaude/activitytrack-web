@@ -59,7 +59,18 @@ def readable_entries(user):
     if user.profile == Profile.READER:
         # a client company's administration: closed entries of its companies only
         return q.filter(company__in=user.companies.all(), status=EntryStatus.CLOSED)
+    if user.profile == Profile.MANAGER and not user.is_admin:
+        # their team's entries, and everyone's done for the companies they are responsible for
+        return q.filter(Q(owner__in=people(user)) | Q(company__in=user.companies.all()))
     return q.filter(owner__in=people(user))
+
+
+def readable_people(user):
+    """The people a user picks in filters: whose entries they read (the team only edits)."""
+    if user.profile == Profile.MANAGER and not user.is_admin:
+        owners = Entry.objects.filter(org=user.org, deleted=False, company__in=user.companies.all()).values("owner")
+        return User.objects.filter(Q(pk__in=people(user)) | Q(pk__in=owners), org=user.org).order_by("username")
+    return people(user)
 
 
 def writable(user, rec):
