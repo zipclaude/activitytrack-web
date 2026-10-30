@@ -87,6 +87,12 @@ Developer…). Permissions on the server are **profiles**.
 | User | own entries and to-dos, own personal master data when the policy allows it; read central master data |
 | Company reader | read only, for the companies granted to them: the closed entries of every user done for those companies, with expenses, consumables and attachments, and the reports. Meant for a client company's administration |
 
+A manager gives to-dos to their team, an admin to anyone with data: the
+to-do becomes the assignee's (their phones pull it, the previous owner's
+drop it as "gone", SYNC.md §5), the server alone remembers who assigned it.
+The assignee works it as their own; the manager still reads and edits it
+on the web.
+
 A user may pair several phones; each phone belongs to one user (no account
 switching in the app).
 

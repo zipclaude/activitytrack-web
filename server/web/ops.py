@@ -11,6 +11,7 @@ import uuid
 from datetime import datetime
 
 from django.conf import settings as dj
+from django.db import transaction
 
 from records.models import Entry, EntryStatus, Segment
 from sync import engine
@@ -209,7 +210,9 @@ def add_expense(user, entry, *, cents, description):
 
 # ---- to-dos ----
 
-def save_todo(user, todo_uid, fields):
+def save_todo(user, todo_uid, fields, owner=None):
+    """Creates or changes a to-do; a manager writes a team member's as theirs ([owner])."""
+    user = owner or user
     now = engine.now_ms()
     fields = dict(fields, updatedUtcMs=now)
     if todo_uid is None:
@@ -229,4 +232,26 @@ def todo_state(user, todo, state):
         f = {"done": False, "doneUtcMs": None, "ignoredUtcMs": now}
     else:
         f = {"done": False, "doneUtcMs": None, "ignoredUtcMs": None}
-    save_todo(user, todo.uid, f)
+    save_todo(user, todo.uid, f, owner=todo.owner)
+
+
+def assign(by, todo, to):
+    """
+    Gives [todo] to [to]: the new owner's phones pull it, the old owner's
+    drop it ("gone", docs/SYNC.md §5); the server remembers who assigned it.
+    """
+    from records.models import TodoAssignment
+    from sync.models import ScopeExit
+
+    with transaction.atomic():
+        rev = engine.next_rev(todo.org)
+        old = todo.owner_id
+        if old != to.pk:
+            todo.owner = to
+            todo.rev = rev
+            todo.save(update_fields=["owner", "rev"])
+            ScopeExit.objects.create(org=todo.org, user_id=old, type=todo.SYNC_TYPE, uid=todo.uid, rev=rev)
+        if to.pk == by.pk:
+            TodoAssignment.objects.filter(todo=todo).delete()
+        else:
+            TodoAssignment.objects.update_or_create(todo=todo, defaults={"by": by})

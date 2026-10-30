@@ -16,7 +16,7 @@ from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 
 from accounts.models import Profile
-from records.models import Attachment, Client, Company, Entry, EntryStatus, Expense, Role, Segment, tag_name
+from records.models import Attachment, Client, Company, Entry, EntryStatus, Expense, Role, Segment, Todo, tag_name
 
 from . import data, homelist, ops, reporting
 
@@ -305,13 +305,27 @@ def todos(request):
         raise PermissionDenied
     today = timezone.localdate()
     show = request.GET.get("show", "open")
+    # a manager or an admin: their own, one person's, or everyone's they assign to ("all")
+    people = data.assignable(user)
+    who = request.GET.get("person", "")
+    q = data.team_todos(user)
+    if who == "all" and people.count() > 1:
+        pass
+    elif who and people.filter(pk=who).exists():
+        q = q.filter(owner_id=who)
+    else:
+        who = ""
+        q = q.filter(owner=user)
     items = []
-    for t in data.todos(user).order_by("due_date", "plan_date", "title"):
+    for t in q.order_by("due_date", "plan_date", "title"):
         state = _todo_state(t, today)
         if (show == "open" and state in ("done", "ignored")) or (show == "done" and state != "done") or (show == "ignored" and state != "ignored"):
             continue
         items.append((t, state))
-    return render(request, "web/todos.html", {"items": items, "show": show})
+    return render(request, "web/todos.html", {
+        "items": items, "show": show, "people": people if people.count() > 1 else None, "who": who,
+        "person_q": f"&person={who}" if who else "",
+    })
 
 
 @login_required
@@ -319,7 +333,8 @@ def todo_edit(request, uid=None):
     user = request.user
     if not user.syncs:
         raise PermissionDenied
-    todo = get_object_or_404(data.todos(user), uid=uid) if uid else None
+    todo = get_object_or_404(data.team_todos(user), uid=uid) if uid else None
+    people = data.assignable(user)
     # opened from the agenda: back there afterwards
     back = request.POST.get("next") or request.GET.get("next") or ""
     if not url_has_allowed_host_and_scheme(back, allowed_hosts={request.get_host()}, require_https=request.is_secure()):
@@ -334,6 +349,10 @@ def todo_edit(request, uid=None):
             title = p.get("title", "").strip()
             if not title:
                 raise ops.OpError(_("il titolo è obbligatorio"))
+            owner = todo.owner if todo else user
+            to = people.filter(pk=p.get("owner")).first() if p.get("owner") else owner
+            if to is None:
+                raise PermissionDenied
             client = _pick(user, Client, p.get("client"))
             company = client.company if client and client.company_id else _pick(user, Company, p.get("company"))
             plan_time = p.get("plan_time") or None
@@ -350,8 +369,12 @@ def todo_edit(request, uid=None):
                 "durationMin": int(p["duration"]) if p.get("duration") else None,
                 "priority": int(p["priority"]) if p.get("priority") else None,
             }
-            ops.save_todo(user, todo.uid if todo else None, fields)
-            messages.success(request, _("Voce salvata."))
+            if todo and to != todo.owner:
+                ops.assign(user, todo, to)
+            saved = ops.save_todo(user, todo.uid if todo else None, fields, owner=to)
+            if not todo and to != user:
+                ops.assign(user, Todo.objects.get(uid=saved), to)
+            messages.success(request, _("Voce salvata.") if to == user else _("Voce assegnata a %(name)s.") % {"name": to.get_full_name() or to.username})
             return redirect(back)
         except (ops.OpError, ValueError) as err:
             messages.error(request, str(err))
@@ -364,6 +387,9 @@ def todo_edit(request, uid=None):
         "plan_date": todo.plan_date.isoformat() if todo and todo.plan_date else "" if todo else _iso_date(request.GET.get("plan_date")),
         "plan_time": hhmm(todo.plan_start_min) if todo else _hhmm(request.GET.get("plan_time")),
         "next": back if back != reverse("todos") else "",
+        "people": people if people.count() > 1 else None,
+        "owner_pk": todo.owner_id if todo else int(request.GET["person"]) if request.GET.get("person", "").isdigit() else user.pk,
+        "mine": todo is None or todo.owner_id == user.pk,
     })
 
 

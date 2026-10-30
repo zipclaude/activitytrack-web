@@ -92,6 +92,22 @@ def todos(user):
     return Todo.objects.filter(org=user.org, deleted=False, owner=user).select_related("company", "client")
 
 
+def assignable(user):
+    """Who a user gives to-dos to: a manager their team, an admin everyone with data; themselves always."""
+    if user.is_admin:
+        q = User.objects.filter(org=user.org).exclude(profile=Profile.READER)
+    elif user.profile == Profile.MANAGER:
+        q = User.objects.filter(Q(pk=user.pk) | Q(manager=user), org=user.org)
+    else:
+        q = User.objects.filter(pk=user.pk)
+    return q.filter(is_active=True).order_by("first_name", "username")
+
+
+def team_todos(user):
+    """The to-dos a user reads and edits: their own and those of whom they assign to."""
+    return Todo.objects.filter(org=user.org, deleted=False, owner__in=assignable(user)).select_related("company", "client", "owner", "assignment__by")
+
+
 def day_bounds(day):
     tz = timezone.get_current_timezone()
     start = datetime.combine(day, time.min, tzinfo=tz)
@@ -124,4 +140,3 @@ def expenses_of(entries):
 
 def hm(minutes):
     return f"{minutes // 60}:{minutes % 60:02d}"
-

@@ -1,6 +1,6 @@
 {% load i18n at %}<div class="row" style="--band: {{ t.client.color|color|default:'var(--line)' }}">
 	<a class="main" href="{% url 'todo_edit' t.uid %}"><b>{{ t.title }}</b>
-		<span class="sub">{{ t.client.name|default:t.company.name|default:"" }}{% if t.due_date %} · {% translate "scad." %} {{ t.due_date|date:"D d/m" }}{% endif %}{% if t.plan_date %} · {{ t.plan_date|date:"D d/m" }} {{ t.plan_start_min|minutes_hm }}{% endif %}{% if t.priority %} · P{{ t.priority }}{% endif %}</span></a>
+		<span class="sub">{% firstof t.client.name t.company.name %}{% if t.due_date %} · {% translate "scad." %} {{ t.due_date|date:"D d/m" }}{% endif %}{% if t.plan_date %} · {{ t.plan_date|date:"D d/m" }} {{ t.plan_start_min|minutes_hm }}{% endif %}{% if t.priority %} · P{{ t.priority }}{% endif %}{% if t.owner_id != user.pk %} · {% icon "person" %}{{ t.owner.get_full_name|default:t.owner.username }}{% endif %}</span></a>
 	<span class="pill t-{{ state }}">{{ state|todo_state }}</span>
-	{% if state != "done" and state != "ignored" %}<a class="button tonal" href="{% url 'entry_new' %}?todo={{ t.uid }}" title="{% translate 'Avvia' %}">{% icon "play" _("Avvia") %}</a>{% endif %}
+	{% if state != "done" and state != "ignored" and t.owner_id == user.pk %}<a class="button tonal" href="{% url 'entry_new' %}?todo={{ t.uid }}" title="{% translate 'Avvia' %}">{% icon "play" _("Avvia") %}</a>{% endif %}
 </div>
