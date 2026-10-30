@@ -295,6 +295,7 @@ location /activitytrack/ {
 	client_max_body_size 30m;
 	proxy_pass http://unix:/run/activitytrack-web.sock:/;
 	proxy_set_header Host $host;
+	proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
 	proxy_set_header X-Forwarded-Proto $scheme;
 }
 ```

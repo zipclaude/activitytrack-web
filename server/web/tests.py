@@ -591,3 +591,36 @@ class UsersTests(WorkTests):
         self.assertTrue(self.alice.check_password("nuova-password-lunga"))
         # still logged in
         self.assertEqual(self.client.get("/dafare/").status_code, 200)
+
+
+class SecurityTests(TestCase):
+    """Phase 9: what the security review fixed."""
+
+    def setUp(self):
+        self.org = Organization.objects.create(name="Infra")
+        self.alice = User.objects.create_user("alice", password="x-x-x-x-x-x", org=self.org)
+
+    def test_password_guessing_is_held_back(self):
+        for _ in range(10):
+            self.assertContains(self.client.post("/login/", {"username": "alice", "password": "wrong"}), "errati")
+        r = self.client.post("/login/", {"username": "alice", "password": "x-x-x-x-x-x"})
+        self.assertContains(r, "Troppi tentativi")
+        self.assertNotIn("_auth_user_id", self.client.session)
+        # another address is not held back
+        r = self.client.post("/login/", {"username": "alice", "password": "x-x-x-x-x-x"}, REMOTE_ADDR="", HTTP_X_FORWARDED_FOR="203.0.113.9")
+        self.assertEqual(r.status_code, 302)
+
+    def test_an_html_attachment_is_downloaded_not_shown(self):
+        from types import SimpleNamespace as S
+
+        from django.http import HttpResponse
+
+        from sync.views import _guarded
+
+        page = _guarded(HttpResponse(content_type="text/html"), S(mime="text/html", uid="u1"))
+        self.assertTrue(page["Content-Disposition"].startswith("attachment"))
+        self.assertIn("sandbox", page["Content-Security-Policy"])
+        photo = _guarded(HttpResponse(content_type="image/jpeg"), S(mime="image/jpeg", uid="u2"))
+        self.assertTrue(photo["Content-Disposition"].startswith("inline"))
+        svg = _guarded(HttpResponse(content_type="image/svg+xml"), S(mime="image/svg+xml", uid="u3"))
+        self.assertTrue(svg["Content-Disposition"].startswith("attachment"))

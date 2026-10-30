@@ -120,3 +120,14 @@ class PairingCode(models.Model):
             .filter(code_hash=_hash(code), device__isnull=True, expires__gt=timezone.now())
             .first()
         )
+
+
+class LoginFailure(models.Model):
+    """A failed web login: too many for a name from one address hold it back for a while (web/auth.py)."""
+
+    username = models.CharField(max_length=150)
+    address = models.CharField(max_length=64, blank=True)
+    at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [models.Index(fields=["username", "at"])]

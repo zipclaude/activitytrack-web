@@ -165,32 +165,57 @@ def files(request, uid):
         return serve_file(att, path)
     if not engine.can_write(user, att):
         return _error(403, "forbidden")
-    data = request.body
-    if len(data) > settings.FILES_MAX_MB * 1024 * 1024:
-        return _error(413, "too_large")
-    digest = hashlib.sha256(data).hexdigest()
-    claimed = request.headers.get("X-Sha256", "").lower()
-    if (claimed and claimed != digest) or (att.sha256 and att.sha256 != digest):
-        return _error(400, "sha256_mismatch")
+    # streamed to a temporary file: request.body would stop at Django's 2.5 MB
+    limit = settings.FILES_MAX_MB * 1024 * 1024
     path.parent.mkdir(parents=True, exist_ok=True)
     fd, tmp = tempfile.mkstemp(dir=path.parent)
-    with os.fdopen(fd, "wb") as f:
-        f.write(data)
+    sha, size = hashlib.sha256(), 0
+    try:
+        with os.fdopen(fd, "wb") as f:
+            while chunk := request.read(1024 * 1024):
+                size += len(chunk)
+                if size > limit:
+                    raise ValueError("too_large")
+                sha.update(chunk)
+                f.write(chunk)
+        digest = sha.hexdigest()
+        claimed = request.headers.get("X-Sha256", "").lower()
+        if (claimed and claimed != digest) or (att.sha256 and att.sha256 != digest):
+            raise ValueError("sha256_mismatch")
+    except ValueError as e:
+        os.unlink(tmp)
+        return _error(413, "too_large") if str(e) == "too_large" else _error(400, "sha256_mismatch")
     os.replace(tmp, path)
     with transaction.atomic():
         rev = engine.next_rev(user.org)
-        Attachment.objects.filter(pk=att.pk).update(has_file=True, sha256=digest, size=len(data), rev=rev)
+        Attachment.objects.filter(pk=att.pk).update(has_file=True, sha256=digest, size=size, rev=rev)
     att.refresh_from_db()
     return JsonResponse({"record": wire.record(att)})
+
+
+# shown in the browser; anything else is downloaded: the type comes from the
+# phone, and an HTML or SVG attachment shown here would run its scripts on
+# this site in the reader's session
+INLINE = {"image/jpeg", "image/png", "image/webp", "image/gif", "image/heic", "image/heif", "application/pdf"}
+
+
+def _guarded(response, att):
+    mime = (att.mime or "").split(";")[0].strip().lower()
+    inline = mime in INLINE or mime.startswith(("audio/", "video/"))
+    response["Content-Disposition"] = ("inline" if inline else "attachment") + f'; filename="{att.uid}"'
+    if mime != "application/pdf":
+        # no scripts, no plugins, even if a browser renders it anyway
+        response["Content-Security-Policy"] = "sandbox; default-src 'none'; img-src 'self'; media-src 'self'"
+    return response
 
 
 def serve_file(att, path):
     if settings.FILES_OFFLOAD == "nginx":
         response = HttpResponse(content_type=att.mime)
         response["X-Accel-Redirect"] = f"{settings.FILES_ACCEL_LOCATION.rstrip('/')}/{path.relative_to(settings.FILES_DIR)}"
-        return response
+        return _guarded(response, att)
     if settings.FILES_OFFLOAD == "apache":
         response = HttpResponse(content_type=att.mime)
         response["X-Sendfile"] = str(path)
-        return response
-    return FileResponse(open(path, "rb"), content_type=att.mime)
+        return _guarded(response, att)
+    return _guarded(FileResponse(open(path, "rb"), content_type=att.mime), att)
