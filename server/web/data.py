@@ -66,6 +66,28 @@ def writable(user, rec):
     return rec.owner_id == user.pk
 
 
+def owner_times_fixed_for(user):
+    """The user's policy locks "editable times" off: on the web too they only add travel and pauses."""
+    from policies.effective import fixed_setting
+
+    return fixed_setting(user, "editableTimes") is False
+
+
+def owner_times_fixed(entry):
+    return owner_times_fixed_for(entry.owner)
+
+
+def can_fix_times(user, entry):
+    """
+    Who edits an entry's segments: its owner unless the policy locks the
+    times; an admin, or the owner's manager, always (they fix what a
+    locked phone cannot, e.g. segments a sync left overlapping).
+    """
+    if entry.owner_id == user.pk:
+        return not owner_times_fixed(entry)
+    return (user.is_admin or user.profile == Profile.MANAGER) and people(user).filter(pk=entry.owner_id).exists()
+
+
 def todos(user):
     return Todo.objects.filter(org=user.org, deleted=False, owner=user).select_related("company", "client")
 

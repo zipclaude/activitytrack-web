@@ -90,6 +90,13 @@ Developer…). Permissions on the server are **profiles**.
 A user may pair several phones; each phone belongs to one user (no account
 switching in the app).
 
+Times locked by the policy (`settings.editableTimes` false and locked or
+hidden) hold on the web as on the phone: the owner starts activities now
+only and adds forgotten travel and pauses, but does not edit or remove
+segments. An admin, or the owner's manager, edits them on the web (the
+change is written as the owner's), e.g. to fix segments a sync left
+overlapping (SYNC.md §11).
+
 ## 6. Master data: central and personal
 
 Companies, company sites, clients, client sites, contacts, roles, tags,

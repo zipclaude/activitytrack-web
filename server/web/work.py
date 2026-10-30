@@ -97,6 +97,7 @@ def entry_new(request):
     user = request.user
     if not user.syncs:
         raise PermissionDenied
+    fixed = data.owner_times_fixed_for(user)
     todo = data.todos(user).filter(uid=request.GET.get("todo") or request.POST.get("todo") or None).first() if (request.GET.get("todo") or request.POST.get("todo")) else None
     if request.method == "POST":
         p = request.POST
@@ -104,6 +105,8 @@ def entry_new(request):
             client = _pick(user, Client, p.get("client"))
             company = client.company if client and client.company_id else _pick(user, Company, p.get("company"))
             kwargs = {"company": company, "client": client, "role": _pick(user, Role, p.get("role")), "activity": p.get("activity", "").strip(), "todo": todo}
+            if fixed and p.get("when") in ("started", "past"):
+                raise ops.OpError(_("la policy non consente di scegliere gli orari"))
             if p.get("when") == "past":
                 e = ops.record_past(user, start_at=_parse_dt(p.get("start")), end_at=_parse_dt(p.get("end")), **kwargs)
             else:
@@ -112,7 +115,7 @@ def entry_new(request):
         except (ops.OpError, TypeError) as e:
             messages.error(request, str(e))
     initial = {"client": str(todo.client_id or "") if todo else "", "company": str(todo.company_id or "") if todo else "", "activity": todo.title if todo else ""}
-    return render(request, "web/entry_new.html", {"companies": data.companies(user), "clients": data.clients(user), "roles": data.roles(user), "todo": todo, "initial": initial})
+    return render(request, "web/entry_new.html", {"companies": data.companies(user), "clients": data.clients(user), "roles": data.roles(user), "todo": todo, "initial": initial, "fixed": fixed})
 
 
 @login_required
@@ -174,11 +177,16 @@ def entry(request, uid):
     user = request.user
     e = _entry(request, uid)
     can = data.writable(user, e)
+    fix = data.can_fix_times(user, e)
     if request.method == "POST":
-        if not can:
-            raise PermissionDenied
         p = request.POST
         action = p.get("action")
+        if action in ("segment", "add_segment") and fix:
+            # an admin or a manager writes the owner's records as the owner
+            user = e.owner
+        elif not (can and (action != "segment" and (action != "add_segment" or p.get("kind") in (ops.TRAVEL, ops.PAUSE)))):
+            # with the times locked the owner only adds forgotten travel and pauses, as on the phone
+            raise PermissionDenied
         try:
             if action == "save":
                 client = _pick(user, Client, p.get("client"))
@@ -209,7 +217,7 @@ def entry(request, uid):
             elif action == "segment":
                 seg = get_object_or_404(Segment, entry=e, uid=p.get("segment"), deleted=False)
                 if p.get("remove"):
-                    ops.delete(user, "segment", seg.uid)
+                    ops.remove_segment(user, seg)
                 else:
                     ops.edit_segment(user, seg, start_at=_parse_dt(p.get("start")), end_at=_parse_dt(p.get("end")), kind=p.get("kind", seg.kind))
             elif action == "add_segment":
@@ -228,11 +236,11 @@ def entry(request, uid):
     e.refresh_from_db()
     segs = list(Segment.objects.filter(entry=e, deleted=False).order_by("start_utc"))
     return render(request, "web/entry.html", {
-        "e": e, "can": can, "segments": segs, "tags_free": _tags_free(e.owner), "tag_names": [t.name for t in data.tags(e.owner)], "d": {k: data.hm(v) for k, v in data.durations(segs).items()},
+        "e": e, "can": can, "fix": fix, "segments": segs, "tags_free": _tags_free(e.owner), "tag_names": [t.name for t in data.tags(e.owner)], "d": {k: data.hm(v) for k, v in data.durations(segs).items()},
         "expenses": Expense.objects.filter(entry=e, deleted=False).order_by("created_utc"),
         "attachments": Attachment.objects.filter(entry=e, deleted=False).order_by("created_utc"),
         "companies": data.companies(user), "clients": data.clients(user), "roles": data.roles(user),
-        "complete": ops.complete_enough(e), "kinds": [ops.WORK, ops.TRAVEL, ops.PAUSE],
+        "complete": ops.complete_enough(e), "kinds": [ops.WORK, ops.TRAVEL, ops.PAUSE] if fix else [ops.TRAVEL, ops.PAUSE],
     })
 
 
