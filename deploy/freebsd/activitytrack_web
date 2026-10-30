@@ -21,7 +21,7 @@ load_rc_config $name
 : ${activitytrack_web_dir:="/usr/local/share/activitytrack-web/server"}
 : ${activitytrack_web_rundir:="/var/run/activitytrack-web"}
 : ${activitytrack_web_workers:="3"}
-: ${activitytrack_web_python:="/usr/local/bin/python3.11"}
+: ${activitytrack_web_python:="/usr/local/bin/python3.12"}
 
 pidfile="${activitytrack_web_rundir}/gunicorn.pid"
 command="/usr/local/bin/gunicorn"

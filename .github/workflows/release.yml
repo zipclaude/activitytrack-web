@@ -149,7 +149,7 @@ jobs:
           release: "14.3"
           usesh: true
           prepare: |
-            pkg install -y python311 py311-django52 py311-segno py311-argon2-cffi py311-cryptography py311-gunicorn curl
+            pkg install -y python312 py312-django52 py312-segno py312-argon2-cffi py312-cryptography py312-gunicorn curl
           run: |
             set -e
             pw useradd atweb -d /var/db/activitytrack-web -s /usr/sbin/nologin
@@ -162,7 +162,7 @@ jobs:
             chgrp atweb /usr/local/etc/activitytrack-web/settings.ini && chmod 0640 /usr/local/etc/activitytrack-web/settings.ini
             install -m 0755 /usr/local/share/activitytrack-web/packaging/activitytrack-web-manage /usr/local/bin/
             install -m 0755 /usr/local/share/activitytrack-web/deploy/freebsd/activitytrack_web /usr/local/etc/rc.d/
-            printf 'ATWEB_HOME=/usr/local/share/activitytrack-web\nATWEB_USER=atweb\nATWEB_PYTHON=python3.11\nATWEB_CONFIG=/usr/local/etc/activitytrack-web/settings.ini\n' \
+            printf 'ATWEB_HOME=/usr/local/share/activitytrack-web\nATWEB_USER=atweb\nATWEB_PYTHON=python3.12\nATWEB_CONFIG=/usr/local/etc/activitytrack-web/settings.ini\n' \
               > /usr/local/etc/activitytrack-web/manage.env
             activitytrack-web-manage migrate
             activitytrack-web-manage collectstatic --noinput
@@ -173,7 +173,7 @@ jobs:
             ls -l /var/run/activitytrack-web/
             test "$(curl -s -o /dev/null -w '%{http_code}' --unix-socket /var/run/activitytrack-web/gunicorn.sock -H 'Host: at.example.com' http://localhost/login/)" = 200
             service activitytrack_web stop
-            cd /usr/local/share/activitytrack-web/server && ATWEB_CONFIG=/usr/local/etc/activitytrack-web/settings.ini python3.11 manage.py test
+            cd /usr/local/share/activitytrack-web/server && ATWEB_CONFIG=/usr/local/etc/activitytrack-web/settings.ini python3.12 manage.py test
 
   release:
     if: startsWith(github.ref, 'refs/tags/v')

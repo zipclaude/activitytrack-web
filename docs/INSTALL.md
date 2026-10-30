@@ -179,11 +179,14 @@ On Arch nginx has no `sites-enabled`: include the site file from
 
 Ports for everything; no systemd: the rc.d script `deploy/freebsd/activitytrack_web`
 runs gunicorn on a Unix socket for the web server (`www`). Here
-`AT=/usr/local/share/activitytrack-web`, the user is `atweb`.
+`AT=/usr/local/share/activitytrack-web`, the user is `atweb`. The `py312-`
+prefix follows the ports' default Python (`pkg search django52` shows it);
+with another one, set `activitytrack_web_python` in `/etc/rc.conf` and
+`ATWEB_PYTHON` in `manage.env` to that interpreter.
 
 ```sh
-pkg install python311 py311-django52 py311-segno py311-argon2-cffi py311-cryptography py311-gunicorn nginx
-pkg install py311-psycopg postgresql17-server                 # optional
+pkg install python312 py312-django52 py312-segno py312-argon2-cffi py312-cryptography py312-gunicorn nginx
+pkg install py312-psycopg postgresql17-server                 # optional
 AT=/usr/local/share/activitytrack-web
 # get the code into $AT (above)
 pw useradd atweb -d /var/db/activitytrack-web -s /usr/sbin/nologin
@@ -193,7 +196,7 @@ sed -e 's|/var/lib/activitytrack-web|/var/db/activitytrack-web|' $AT/deploy/sett
 	> /usr/local/etc/activitytrack-web/settings.ini
 chgrp atweb /usr/local/etc/activitytrack-web/settings.ini && chmod 0640 /usr/local/etc/activitytrack-web/settings.ini
 install -m 0755 $AT/packaging/activitytrack-web-manage /usr/local/bin/
-printf 'ATWEB_HOME=%s\nATWEB_USER=atweb\nATWEB_PYTHON=python3.11\nATWEB_CONFIG=/usr/local/etc/activitytrack-web/settings.ini\n' $AT \
+printf 'ATWEB_HOME=%s\nATWEB_USER=atweb\nATWEB_PYTHON=python3.12\nATWEB_CONFIG=/usr/local/etc/activitytrack-web/settings.ini\n' $AT \
 	> /usr/local/etc/activitytrack-web/manage.env
 install -m 0755 $AT/deploy/freebsd/activitytrack_web /usr/local/etc/rc.d/
 sysrc activitytrack_web_enable=YES
