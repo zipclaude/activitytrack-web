@@ -16,6 +16,8 @@ if [ "$1" = configure ]; then
 		echo "then run: activitytrack-web-manage migrate" >&2
 	fi
 	if [ -d /run/systemd/system ]; then
+		# new units, then the new code; a stopped service stays stopped
+		systemctl daemon-reload || true
 		deb-systemd-invoke try-restart activitytrack-web.service >/dev/null || true
 	fi
 fi

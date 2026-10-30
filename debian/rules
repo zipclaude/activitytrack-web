@@ -2,6 +2,7 @@
 %:
 	dh $@
 
-# started by the administrator once settings.ini and the web server are set
+# started by the administrator once settings.ini and the web server are set;
+# an upgrade leaves them running (postinst restarts the service)
 override_dh_installsystemd:
-	dh_installsystemd --no-enable --no-start
+	dh_installsystemd --no-enable --no-start --no-stop-on-upgrade

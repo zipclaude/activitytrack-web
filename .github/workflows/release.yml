@@ -55,7 +55,10 @@ jobs:
           activitytrack-web-manage setup --org Test --admin admin --password 'try-it-once'
           # the web server (www-data) reads the static files, not the private ones
           runuser -u www-data -- cat /var/lib/activitytrack-web/static/web/app.css >/dev/null
-          ! runuser -u www-data -- cat /var/lib/activitytrack-web/db.sqlite3 2>/dev/null
+          for f in activitytrack.sqlite3 secret_key; do
+            test -e /var/lib/activitytrack-web/$f
+            ! runuser -u www-data -- cat /var/lib/activitytrack-web/$f >/dev/null 2>&1
+          done
           cd /usr/share/activitytrack-web/server
           ATWEB_CONFIG=/etc/activitytrack-web/settings.ini runuser -u activitytrack-web -- \
             gunicorn --bind 127.0.0.1:8000 --daemon --pid /tmp/gunicorn.pid atweb.wsgi
