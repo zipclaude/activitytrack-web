@@ -5,7 +5,7 @@
 {% if first %}<section class="card"><h2>{% translate "Associa il telefono" %}</h2><p>{% translate "Collega l'app ActivityTrack a questo server: i dati restano sincronizzati nei due sensi." %}</p><a class="button" href="{% url 'phones' %}">{% translate "Telefoni" %}</a></section>{% endif %}
 
 {% for r in running %}
-<section class="card running" style="--band: {{ r.e.client.color|color|default:'var(--accent)' }}">
+<section class="card running" style="--band: {{ r.e.client.color|color|default:'var(--accent)' }}">{% tag_dots r.e.tags tag_colors %}
 	<div class="head"><div><div class="sub">{{ r.e.company.name }}</div><h2><a href="{% url 'entry' r.e.uid %}">{{ r.e.client.name|default:_("Senza cliente") }}</a></h2>
 	<div>{{ r.e.activity|default:_("senza descrizione") }}</div></div>
 	<div class="big"><span class="pill s-{{ r.e.status|lower }}">{{ r.e|status }}</span><div>{{ r.work }}</div></div></div>

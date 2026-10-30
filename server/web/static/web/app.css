@@ -3,12 +3,14 @@
 	--bg: #f8f9ff; --surface: #ffffff; --text: #191c20; --muted: #44474e;
 	--line: #c4c6d0; --primary: #2e7d32; --on-primary: #ffffff; --accent: #3e5f90;
 	--danger: #ba1a1a; --ok-bg: #d6f5d6; --err-bg: #ffdad6; --chip: #dae2f9;
+	--tag-none: #6b7280;
 }
 @media (prefers-color-scheme: dark) {
 	:root {
 		--bg: #10131a; --surface: #1d2027; --text: #e2e2e9; --muted: #c4c6d0;
 		--line: #44474e; --primary: #2e7d32; --on-primary: #ffffff; --accent: #a8c8ff;
 		--danger: #ffb4ab; --ok-bg: #1b3a1d; --err-bg: #5c1a14; --chip: #3e4759;
+		--tag-none: #8b919c;
 	}
 }
 * { box-sizing: border-box; }
@@ -86,3 +88,13 @@ table.totals td, table.totals th { white-space: nowrap; }
 button[disabled] { opacity: .5; cursor: not-allowed; }
 .bar nav { flex-wrap: wrap; row-gap: 6px; }
 @media (max-width: 640px) { .bar nav { gap: 12px; font-size: 14px; } }
+/* tags (issue #133): dots at the top right of a row or card, chips on the entry sheet */
+.row, .card.running { position: relative; }
+.dots { position: absolute; top: 6px; right: 10px; display: flex; align-items: center; gap: 3px; }
+.dots .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--tag); display: inline-block; }
+.dots .more { font-size: 11px; color: var(--muted); margin-left: 2px; }
+.tag { font-size: 13px; padding: 2px 10px; border-radius: 10px; display: inline-block; margin: 2px 2px 2px 0; }
+.tag.none { background: var(--chip); color: var(--text); }
+.swatches { display: flex; flex-wrap: wrap; gap: 8px; }
+.swatches label { display: inline-flex; align-items: center; gap: 4px; }
+.swatches .sw { width: 22px; height: 22px; border-radius: 50%; background: var(--sw); display: inline-block; border: 1px solid var(--line); }

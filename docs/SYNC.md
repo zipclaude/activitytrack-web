@@ -18,6 +18,7 @@ node), `fields`, `deleted`. References between records are uids
 | `clientSite` | client_site | as its client | |
 | `contact` | contact + contact_phone | as its client | `phones` is a list field |
 | `role` | role | central or personal | |
+| `tag` | tag | central or personal | name is the natural key; colour 0xRRGGBB (app #133) |
 | `preset` | activity_preset | central or personal | `lastUsed` is device-local |
 | `material` | material | central or personal | |
 | `place` | place | user | personal places (home…) |

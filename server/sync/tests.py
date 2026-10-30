@@ -327,3 +327,40 @@ class FileTests(SyncTestCase):
         ])
         self.assertEqual(res[1]["refused"], ["hasFile"])
         self.assertFalse(res[1]["record"]["fields"]["hasFile"])
+
+
+class TagSyncTests(SyncTestCase):
+    """Predefined tags (app #133): master data with the name as natural key."""
+
+    def test_names_are_normalised_as_the_app_does(self):
+        from records.models import tag_name
+
+        self.assertEqual(tag_name("  #Urgente Remoto! "), "urgente-remoto")
+        self.assertEqual(tag_name("Rete_LAN--"), "rete_lan")
+        self.assertEqual(tag_name("x" * 40), "x" * 30)
+        self.assertEqual(tag_name("#!?"), "")
+
+    def test_a_tag_both_ways_and_central_read_only(self):
+        a, b = self.pair(self.alice), self.pair(self.alice, "Altro")
+        mine = uid()
+        res = self.push(a, [self.upsert("tag", mine, {"name": "#Rete LAN", "color": 0x3D7BEA}, T0)])
+        self.assertEqual(res[0]["status"], "applied")
+        self.assertEqual(res[0]["record"]["fields"]["name"], "rete-lan")
+        got = [r for r in self.pull(b)["records"] if r["type"] == "tag"]
+        self.assertEqual([(r["uid"], r["fields"]["color"], r["central"]) for r in got], [(mine, 0x3D7BEA, False)])
+        central = uid()
+        engine.apply(self.admin, self.upsert("tag", central, {"name": "urgente", "color": 0xD64545}, T0), central=True)
+        self.assertIn(central, [r["uid"] for r in self.pull(a)["records"]])
+        res = self.push(a, [self.upsert("tag", central, {"color": 0x2E9D4E}, T0 + 1000)])
+        self.assertEqual(res[0]["error"], "forbidden")
+
+    def test_one_name_per_owner_and_among_central(self):
+        a = self.pair(self.alice)
+        self.assertEqual(self.push(a, [self.upsert("tag", uid(), {"name": "rete"}, T0)])[0]["status"], "applied")
+        dup = self.push(a, [self.upsert("tag", uid(), {"name": "Rete"}, T0)])[0]
+        self.assertEqual((dup["status"], dup["error"], dup["detail"]), ("error", "invalid", "duplicate"))
+        # another user's personal tag of the same name is theirs
+        self.assertEqual(self.push(self.pair(self.bob), [self.upsert("tag", uid(), {"name": "rete"}, T0)])[0]["status"], "applied")
+        engine.apply(self.admin, self.upsert("tag", uid(), {"name": "urgente"}, T0), central=True)
+        with self.assertRaises(engine.ChangeError):
+            engine.apply(self.admin, self.upsert("tag", uid(), {"name": "urgente"}, T0), central=True)

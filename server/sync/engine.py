@@ -9,7 +9,7 @@ import time
 import uuid
 
 from django.core.exceptions import ValidationError
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.db.models import F, Q
 
 from records.models import BY_TYPE, SYNCED_MODELS, Scope
@@ -170,7 +170,12 @@ def apply(user, change, offset_ms=0, now=None, central=False):
         except ValidationError as e:
             raise ChangeError("invalid", "; ".join(f"{k}: {' '.join(v)}" for k, v in e.message_dict.items())) from None
         rec.rev = rev
-        rec.save()
+        try:
+            with transaction.atomic():
+                rec.save()
+        except IntegrityError:
+            # a natural key taken by another record (a tag's name): the phone adopts that one at its pull
+            raise ChangeError("invalid", "duplicate") from None
         return {"uid": str(uid), "status": "conflict" if refused else "applied", "record": wire.record(rec), **({"refused": refused} if refused else {})}
 
 

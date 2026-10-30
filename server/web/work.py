@@ -12,7 +12,7 @@ from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 
 from accounts.models import Profile
-from records.models import Attachment, Client, Company, Entry, EntryStatus, Expense, Role, Segment
+from records.models import Attachment, Client, Company, Entry, EntryStatus, Expense, Role, Segment, tag_name
 
 from . import data, ops
 
@@ -147,6 +147,28 @@ def entries(request):
     })
 
 
+def _tags_free(owner):
+    """Free tags besides the master data's: unless the owner's policy locks them off (issue #133)."""
+    from policies.effective import fixed_setting
+
+    return fixed_setting(owner, "tagsFreeText") is not False
+
+
+def _tags(entry, text):
+    """The tags typed in the sheet, normalised as the app does; only known ones (or ones already there) when free tags are off."""
+    tags = []
+    for word in text.replace(",", " ").split():
+        t = tag_name(word)
+        if t and t not in tags:
+            tags.append(t)
+    if not _tags_free(entry.owner):
+        known = {t.name for t in data.tags(entry.owner)} | set(entry.tags or [])
+        unknown = [t for t in tags if t not in known]
+        if unknown:
+            raise ops.OpError(_("solo i tag dell'anagrafica: %(t)s non c'è") % {"t": ", ".join(unknown)})
+    return sorted(tags)
+
+
 @login_required
 def entry(request, uid):
     user = request.user
@@ -162,7 +184,7 @@ def entry(request, uid):
                 client = _pick(user, Client, p.get("client"))
                 company = client.company if client and client.company_id else _pick(user, Company, p.get("company"))
                 role = _pick(user, Role, p.get("role"))
-                tags = sorted({t.strip().lower().lstrip("#") for t in p.get("tags", "").replace(",", " ").split() if t.strip()})
+                tags = _tags(e, p.get("tags", ""))
                 ops.edit_entry(user, e, {
                     "companyUid": str(company.uid) if company else None, "clientUid": str(client.uid) if client else None,
                     "roleUid": str(role.uid) if role else None,
@@ -206,7 +228,7 @@ def entry(request, uid):
     e.refresh_from_db()
     segs = list(Segment.objects.filter(entry=e, deleted=False).order_by("start_utc"))
     return render(request, "web/entry.html", {
-        "e": e, "can": can, "segments": segs, "d": {k: data.hm(v) for k, v in data.durations(segs).items()},
+        "e": e, "can": can, "segments": segs, "tags_free": _tags_free(e.owner), "tag_names": [t.name for t in data.tags(e.owner)], "d": {k: data.hm(v) for k, v in data.durations(segs).items()},
         "expenses": Expense.objects.filter(entry=e, deleted=False).order_by("created_utc"),
         "attachments": Attachment.objects.filter(entry=e, deleted=False).order_by("created_utc"),
         "companies": data.companies(user), "clients": data.clients(user), "roles": data.roles(user),

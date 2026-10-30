@@ -92,8 +92,8 @@ switching in the app).
 
 ## 6. Master data: central and personal
 
-Companies, company sites, clients, client sites, contacts, roles, activity
-presets and consumables have an `owner`:
+Companies, company sites, clients, client sites, contacts, roles, tags,
+activity presets and consumables have an `owner`:
 
 - `owner = null` → **central**: created on the web by an admin or a manager,
   read-only for users, synced to every phone of the organisation;
@@ -107,8 +107,16 @@ personal one is deleted (the phones receive both changes).
 
 Imports and plugins on the phone create personal records; when one matches
 a central record by natural key (company name or external code; client
-company + name or external code; role name) the phone adopts the central
-record instead (`docs/SYNC.md` §7).
+company + name or external code; role name; tag name) the phone adopts the
+central record instead (`docs/SYNC.md` §7).
+
+Tags (app issue #133) carry a colour; entries keep their tags by name, so
+the name is unique among the central tags and among each user's personal
+ones. A same-named local tag adopts the server's (the server's colour
+wins). Renaming a tag on the web rewrites the entries carrying it (a
+central one: every user's; a personal one: its owner's); deleting it
+leaves the name on the entries as a free tag. `settings.tagsFreeText` false
+(locked) allows only the master data's tags on new edits.
 
 ## 7. Policies
 
