@@ -1,0 +1,3 @@
+server usr/share/activitytrack-web/
+deploy usr/share/activitytrack-web/
+packaging/activitytrack-web-manage usr/bin/

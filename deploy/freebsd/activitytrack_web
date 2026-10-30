@@ -1,0 +1,49 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# PROVIDE: activitytrack_web
+# REQUIRE: LOGIN postgresql
+# KEYWORD: shutdown
+#
+# ActivityTrack Web on FreeBSD (docs/INSTALL.md): gunicorn on a Unix socket
+# that only the web server's group (www) can reach. In /etc/rc.conf:
+#   activitytrack_web_enable="YES"
+
+. /etc/rc.subr
+
+name=activitytrack_web
+rcvar=activitytrack_web_enable
+load_rc_config $name
+
+: ${activitytrack_web_enable:="NO"}
+: ${activitytrack_web_user:="atweb"}
+: ${activitytrack_web_config:="/usr/local/etc/activitytrack-web/settings.ini"}
+: ${activitytrack_web_dir:="/usr/local/share/activitytrack-web/server"}
+: ${activitytrack_web_rundir:="/var/run/activitytrack-web"}
+: ${activitytrack_web_workers:="3"}
+: ${activitytrack_web_python:="/usr/local/bin/python3.12"}
+
+pidfile="${activitytrack_web_rundir}/gunicorn.pid"
+command="/usr/local/bin/gunicorn"
+command_args="--daemon --pid ${pidfile} --bind unix:${activitytrack_web_rundir}/gunicorn.sock \
+	--umask 0027 --chdir ${activitytrack_web_dir} --workers ${activitytrack_web_workers} --threads 4 \
+	--timeout 60 atweb.wsgi"
+procname="${activitytrack_web_python}"
+start_precmd="${name}_prestart"
+start_postcmd="${name}_poststart"
+
+activitytrack_web_prestart()
+{
+	install -d -m 0750 -o ${activitytrack_web_user} -g www ${activitytrack_web_rundir}
+	export ATWEB_CONFIG="${activitytrack_web_config}"
+}
+
+activitytrack_web_poststart()
+{
+	# the database and the attachments keep umask 0027; only the socket is the web server's
+	local sock="${activitytrack_web_rundir}/gunicorn.sock" i=0
+	while [ ! -S "$sock" ] && [ $i -lt 20 ]; do sleep 0.5; i=$((i + 1)); done
+	chgrp www "$sock" && chmod 0660 "$sock"
+}
+
+run_rc_command "$1"

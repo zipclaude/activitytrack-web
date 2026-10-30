@@ -1,0 +1,23 @@
+#!/bin/sh
+# manage.py of ActivityTrack Web, run as its service user with its settings.
+# Installs not made by the package set ATWEB_HOME, ATWEB_PYTHON, ATWEB_USER
+# and ATWEB_CONFIG in manage.env beside settings.ini (docs/INSTALL.md).
+set -e
+for env in /etc/activitytrack-web/manage.env /usr/local/etc/activitytrack-web/manage.env; do
+	if [ -r "$env" ]; then set -a; . "$env"; set +a; break; fi
+done
+export ATWEB_CONFIG="${ATWEB_CONFIG:-/etc/activitytrack-web/settings.ini}"
+ATWEB_HOME="${ATWEB_HOME:-/usr/share/activitytrack-web}"
+ATWEB_USER="${ATWEB_USER:-activitytrack-web}"
+PYTHON="${ATWEB_PYTHON:-python3}"
+# the static files are for the web server; the rest (database, attachments) for no other user
+if [ "$1" = collectstatic ]; then umask 022; else umask 027; fi
+cd "$ATWEB_HOME/server"
+if [ "$(id -u)" != 0 ]; then
+	exec "$PYTHON" manage.py "$@"
+fi
+if command -v runuser >/dev/null 2>&1; then
+	exec runuser -u "$ATWEB_USER" -- "$PYTHON" manage.py "$@"
+fi
+# BSD: su runs sh -c with the arguments as $0 $1 ...
+exec su -m "$ATWEB_USER" -c 'exec "$0" manage.py "$@"' "$PYTHON" "$@"

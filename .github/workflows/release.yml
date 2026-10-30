@@ -1,0 +1,202 @@
+name: Release
+
+# A tag vX.Y.Z builds the Debian/Ubuntu packages and the tarball, tries the
+# installs of docs/INSTALL.md and publishes the GitHub Release. Run by hand
+# (workflow_dispatch) it does everything but publishing.
+on:
+  push:
+    tags: ["v*"]
+  # pull requests that touch the packaging try the packages and the installs too
+  pull_request:
+    paths: ["debian/**", "packaging/**", "deploy/**", "server/requirements*.txt", ".github/workflows/release.yml"]
+  workflow_dispatch:
+
+jobs:
+  deb:
+    runs-on: ubuntu-latest
+    container: ${{ matrix.image }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { image: "debian:trixie", suffix: deb13 }
+          - { image: "debian:forky", suffix: deb14 }
+          - { image: "ubuntu:24.04", suffix: ubuntu24.04 }
+          - { image: "ubuntu:26.04", suffix: ubuntu26.04 }
+    steps:
+      - name: Build tools
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ca-certificates git curl build-essential debhelper dpkg-dev
+      - uses: actions/checkout@v4
+      - name: Version
+        run: |
+          V=$(sed -n 's/^__version__ = "\(.*\)"/\1/p' server/atweb/__init__.py)
+          case "$GITHUB_REF" in refs/tags/v*) test "v$V" = "${GITHUB_REF#refs/tags/}" ;; esac
+          grep -q "^activitytrack-web ($V)" debian/changelog
+          sed -i "1s/($V)/($V~${{ matrix.suffix }})/" debian/changelog
+          head -1 debian/changelog
+      - name: Package
+        run: |
+          dpkg-buildpackage -b -us -uc
+          mkdir dist && mv ../activitytrack-web_*.deb dist/
+          dpkg-deb --info dist/*.deb
+      - name: Install
+        run: DEBIAN_FRONTEND=noninteractive apt-get install -y ./dist/*.deb
+      - name: Try it
+        run: |
+          python3 -c "import django; print('Django', django.__version__)"
+          activitytrack-web-manage check
+          activitytrack-web-manage setup --org Test --admin admin --password 'try-it-once'
+          # the web server (www-data) reads the static files, not the private ones
+          runuser -u www-data -- cat /var/lib/activitytrack-web/static/web/app.css >/dev/null
+          ! runuser -u www-data -- cat /var/lib/activitytrack-web/db.sqlite3 2>/dev/null
+          cd /usr/share/activitytrack-web/server
+          ATWEB_CONFIG=/etc/activitytrack-web/settings.ini runuser -u activitytrack-web -- \
+            gunicorn --bind 127.0.0.1:8000 --daemon --pid /tmp/gunicorn.pid atweb.wsgi
+          sleep 3
+          test "$(curl -s -o /dev/null -w '%{http_code}' -H 'Host: at.example.com' http://127.0.0.1:8000/login/)" = 200
+          kill "$(cat /tmp/gunicorn.pid)"
+      - name: Tests on the installed files
+        working-directory: /usr/share/activitytrack-web/server
+        run: ATWEB_CONFIG=/etc/activitytrack-web/settings.ini python3 manage.py test
+      - name: Purge
+        run: |
+          apt-get purge -y activitytrack-web
+          test ! -e /etc/activitytrack-web && test ! -e /var/lib/activitytrack-web
+      - uses: actions/upload-artifact@v4
+        with:
+          name: deb-${{ matrix.suffix }}
+          path: dist/*.deb
+
+  tarball:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Tarball
+        run: |
+          V=$(sed -n 's/^__version__ = "\(.*\)"/\1/p' server/atweb/__init__.py)
+          mkdir dist
+          git archive --prefix="activitytrack-web-$V/" -o "dist/activitytrack-web-$V.tar.gz" HEAD
+          tar -tzf dist/*.tar.gz | grep -c .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tarball
+          path: dist/*.tar.gz
+
+  # the manual installs of docs/INSTALL.md, from the tarball
+  oracle-linux:
+    needs: tarball
+    runs-on: ubuntu-latest
+    container: "oraclelinux:9"
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { name: tarball }
+      - name: Install as in docs/INSTALL.md (RHEL / Oracle Linux 9)
+        run: |
+          dnf install -y python3.12 python3.12-pip tar util-linux
+          useradd --system --home-dir /var/lib/activitytrack-web --shell /sbin/nologin activitytrack-web
+          install -d -m 0711 -o activitytrack-web -g activitytrack-web /var/lib/activitytrack-web
+          mkdir -p /opt/activitytrack-web && tar -xzf activitytrack-web-*.tar.gz -C /opt/activitytrack-web --strip-components=1
+          python3.12 -m venv /opt/activitytrack-web/venv
+          /opt/activitytrack-web/venv/bin/pip install -r /opt/activitytrack-web/server/requirements.txt
+          install -d -m 0750 -o root -g activitytrack-web /etc/activitytrack-web
+          install -m 0640 -g activitytrack-web /opt/activitytrack-web/deploy/settings.ini.example /etc/activitytrack-web/settings.ini
+          install -m 0755 /opt/activitytrack-web/packaging/activitytrack-web-manage /usr/local/bin/
+          printf 'ATWEB_HOME=/opt/activitytrack-web\nATWEB_PYTHON=/opt/activitytrack-web/venv/bin/python\n' > /etc/activitytrack-web/manage.env
+      - name: Try it
+        run: |
+          activitytrack-web-manage migrate
+          activitytrack-web-manage collectstatic --noinput
+          activitytrack-web-manage setup --org Test --admin admin --password 'try-it-once'
+          cd /opt/activitytrack-web/server && ATWEB_CONFIG=/etc/activitytrack-web/settings.ini /opt/activitytrack-web/venv/bin/python manage.py test
+
+  arch:
+    needs: tarball
+    runs-on: ubuntu-latest
+    container: "archlinux:latest"
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { name: tarball }
+      - name: Install as in docs/INSTALL.md (Arch Linux)
+        run: |
+          pacman -Syu --noconfirm python python-django python-argon2-cffi python-cryptography gunicorn
+          useradd --system --home-dir /var/lib/activitytrack-web --shell /usr/bin/nologin activitytrack-web
+          install -d -m 0711 -o activitytrack-web -g activitytrack-web /var/lib/activitytrack-web
+          mkdir -p /opt/activitytrack-web && tar -xzf activitytrack-web-*.tar.gz -C /opt/activitytrack-web --strip-components=1
+          python -m venv --system-site-packages /opt/activitytrack-web/venv
+          /opt/activitytrack-web/venv/bin/pip install 'segno>=1.6'
+          install -d -m 0750 -o root -g activitytrack-web /etc/activitytrack-web
+          install -m 0640 -g activitytrack-web /opt/activitytrack-web/deploy/settings.ini.example /etc/activitytrack-web/settings.ini
+          install -m 0755 /opt/activitytrack-web/packaging/activitytrack-web-manage /usr/local/bin/
+          printf 'ATWEB_HOME=/opt/activitytrack-web\nATWEB_PYTHON=/opt/activitytrack-web/venv/bin/python\n' > /etc/activitytrack-web/manage.env
+      - name: Try it
+        run: |
+          activitytrack-web-manage migrate
+          activitytrack-web-manage collectstatic --noinput
+          activitytrack-web-manage setup --org Test --admin admin --password 'try-it-once'
+          cd /opt/activitytrack-web/server && ATWEB_CONFIG=/etc/activitytrack-web/settings.ini /opt/activitytrack-web/venv/bin/python manage.py test
+
+  freebsd:
+    needs: tarball
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { name: tarball }
+      - name: Install as in docs/INSTALL.md (FreeBSD 14), in a VM
+        uses: vmactions/freebsd-vm@v1
+        with:
+          release: "14.3"
+          usesh: true
+          prepare: |
+            pkg install -y python312 py312-django52 py312-segno py312-argon2-cffi py312-cryptography py312-gunicorn curl
+          run: |
+            set -e
+            pw useradd atweb -d /var/db/activitytrack-web -s /usr/sbin/nologin
+            install -d -m 0711 -o atweb -g atweb /var/db/activitytrack-web
+            mkdir -p /usr/local/share/activitytrack-web
+            tar -xzf activitytrack-web-*.tar.gz -C /usr/local/share/activitytrack-web --strip-components=1
+            install -d -m 0750 -o root -g atweb /usr/local/etc/activitytrack-web
+            sed -e 's|/var/lib/activitytrack-web|/var/db/activitytrack-web|' \
+              /usr/local/share/activitytrack-web/deploy/settings.ini.example > /usr/local/etc/activitytrack-web/settings.ini
+            chgrp atweb /usr/local/etc/activitytrack-web/settings.ini && chmod 0640 /usr/local/etc/activitytrack-web/settings.ini
+            install -m 0755 /usr/local/share/activitytrack-web/packaging/activitytrack-web-manage /usr/local/bin/
+            install -m 0755 /usr/local/share/activitytrack-web/deploy/freebsd/activitytrack_web /usr/local/etc/rc.d/
+            printf 'ATWEB_HOME=/usr/local/share/activitytrack-web\nATWEB_USER=atweb\nATWEB_PYTHON=python3.12\nATWEB_CONFIG=/usr/local/etc/activitytrack-web/settings.ini\n' \
+              > /usr/local/etc/activitytrack-web/manage.env
+            activitytrack-web-manage migrate
+            activitytrack-web-manage collectstatic --noinput
+            activitytrack-web-manage setup --org Test --admin admin --password 'try-it-once'
+            sysrc activitytrack_web_enable=YES
+            service activitytrack_web start
+            sleep 3
+            ls -l /var/run/activitytrack-web/
+            test "$(curl -s -o /dev/null -w '%{http_code}' --unix-socket /var/run/activitytrack-web/gunicorn.sock -H 'Host: at.example.com' http://localhost/login/)" = 200
+            service activitytrack_web stop
+            cd /usr/local/share/activitytrack-web/server && ATWEB_CONFIG=/usr/local/etc/activitytrack-web/settings.ini python3.12 manage.py test
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [deb, tarball, oracle-linux, arch, freebsd]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: { path: artifacts, merge-multiple: true }
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          V="${GITHUB_REF#refs/tags/v}"
+          cd artifacts && sha256sum * > SHA256SUMS && cat SHA256SUMS && cd ..
+          {
+            echo "ActivityTrack Web $V, the server for ActivityTrack $V."
+            echo
+            echo "- Debian 13 / 14, Ubuntu 24.04 / 26.04: \`apt install ./activitytrack-web_${V}~<distro>_all.deb\`"
+            echo "- Other systems (RHEL / Oracle Linux, Arch, FreeBSD) and installs by hand: \`activitytrack-web-$V.tar.gz\` or a clone of the repository"
+            echo
+            echo "Instructions: [docs/INSTALL.md](https://github.com/${GITHUB_REPOSITORY}/blob/v$V/docs/INSTALL.md)."
+          } > notes.md
+          gh release create "v$V" artifacts/* --title "ActivityTrack Web $V" --notes-file notes.md

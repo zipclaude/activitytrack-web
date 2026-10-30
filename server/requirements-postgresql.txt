@@ -1,0 +1,2 @@
+# PostgreSQL instead of SQLite: psycopg 3 (the binary build needs no compiler)
+psycopg[binary]>=3.1

@@ -1,0 +1,32 @@
+Source: activitytrack-web
+Section: web
+Priority: optional
+Maintainer: ActivityTrack Web <flavio-claude@zipman.it>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.7.0
+Homepage: https://github.com/zipclaude/activitytrack-web
+Rules-Requires-Root: no
+
+Package: activitytrack-web
+Architecture: all
+Depends: ${misc:Depends},
+ adduser,
+ gunicorn,
+ libjs-jquery,
+ python3 (>= 3.11),
+ python3-argon2,
+ python3-cryptography,
+ python3-django (>= 3:4.2),
+ python3-django (<< 3:6),
+ python3-segno
+Recommends: python3-psycopg, nginx | apache2
+Suggests: postgresql, certbot
+Description: sync server and web interface for the ActivityTrack app
+ ActivityTrack Web keeps the data of the ActivityTrack Android app of an
+ organisation's users: activities, to-dos, master data and attachments sync
+ both ways with the phones, which pair by scanning a QR code. In the browser
+ users work as on the phone, managers see their team, company readers the
+ reports of their companies, and administrators manage users, phones and the
+ policy the phones apply.
+ .
+ It runs on gunicorn behind nginx or Apache, with SQLite or PostgreSQL.

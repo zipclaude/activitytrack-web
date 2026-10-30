@@ -1,0 +1,23 @@
+#!/bin/sh
+set -e
+
+if [ "$1" = configure ]; then
+	adduser --system --group --quiet --home /var/lib/activitytrack-web activitytrack-web
+	# the web server reads static/ only; files/, the database and the key stay private
+	install -d -m 0711 -o activitytrack-web -g activitytrack-web /var/lib/activitytrack-web
+	install -d -m 0750 -o root -g activitytrack-web /etc/activitytrack-web
+	if [ ! -e /etc/activitytrack-web/settings.ini ]; then
+		install -m 0640 -o root -g activitytrack-web \
+			/usr/share/activitytrack-web/deploy/settings.ini.example /etc/activitytrack-web/settings.ini
+	fi
+	activitytrack-web-manage collectstatic --noinput >/dev/null
+	if ! activitytrack-web-manage migrate --noinput >/dev/null 2>&1; then
+		echo "activitytrack-web: database not updated; check /etc/activitytrack-web/settings.ini," >&2
+		echo "then run: activitytrack-web-manage migrate" >&2
+	fi
+	if [ -d /run/systemd/system ]; then
+		deb-systemd-invoke try-restart activitytrack-web.service >/dev/null || true
+	fi
+fi
+
+#DEBHELPER#

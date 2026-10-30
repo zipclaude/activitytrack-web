@@ -1,0 +1,8 @@
+# For installs without the distribution's packages (docs/INSTALL.md): a
+# virtualenv with these. The lower bounds are the oldest releases tested
+# (Debian 13, Ubuntu 24.04); Django 5.2 is tested too.
+Django>=4.2,<6.0
+segno>=1.6
+argon2-cffi>=21.1
+cryptography>=41
+gunicorn>=20.1
