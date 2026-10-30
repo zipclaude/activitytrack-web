@@ -10,9 +10,11 @@ Conventions (mirroring the app's Entities.kt):
 - amounts are EUR cents.
 """
 
+import re
 import uuid
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
 
 
@@ -137,6 +139,53 @@ class Role(Synced):
     name = models.TextField()
     archived = models.BooleanField(default=False)
     position = models.IntegerField(null=True, blank=True)
+
+    def __str__(self):
+        return self.name
+
+
+TAG_MAX = 30
+
+
+def tag_name(text):
+    """
+    A tag as entries carry it, the app's Tags.normalize: without '#', lower
+    case, spaces as '-', letters, digits, '-' and '_' only, at most 30
+    characters; "" when nothing is left.
+    """
+    s = (text or "").strip()
+    s = s[1:] if s.startswith("#") else s
+    s = re.sub(r"\s+", "-", s.strip().lower())
+    s = "".join(c for c in s if c.isalnum() or c in "-_")
+    return s.strip("-")[:TAG_MAX]
+
+
+class Tag(Synced):
+    """
+    A predefined tag with its colour (app issue #133). Entries keep tags by
+    name, so the name is the natural key: unique among the central ones and
+    among each user's personal ones.
+    """
+
+    SYNC_TYPE = "tag"
+    SCOPE = Scope.MASTER
+
+    name = models.TextField()
+    # 0xRRGGBB, null = none (a grey dot)
+    color = models.IntegerField(null=True, blank=True)
+    archived = models.BooleanField(default=False)
+    position = models.IntegerField(null=True, blank=True)
+
+    class Meta(Synced.Meta):
+        constraints = [
+            models.UniqueConstraint(fields=["org", "name"], condition=models.Q(owner__isnull=True, deleted=False), name="records_tag_central_name"),
+            models.UniqueConstraint(fields=["org", "owner", "name"], condition=models.Q(owner__isnull=False, deleted=False), name="records_tag_personal_name"),
+        ]
+
+    def clean(self):
+        self.name = tag_name(self.name)
+        if not self.name:
+            raise ValidationError({"name": "empty tag"})
 
     def __str__(self):
         return self.name
@@ -360,7 +409,7 @@ class RemoteItem(Synced):
 
 # parents before children: the order of a full push and of the wire schema
 SYNCED_MODELS = [
-    Company, CompanySite, Client, ClientSite, Contact, Role, Preset, Material, Place,
+    Company, CompanySite, Client, ClientSite, Contact, Role, Tag, Preset, Material, Place,
     Todo, Entry, Segment, Attachment, Expense, EntryMaterial, ExternalRef,
     Absence, DayOff, WorkSchedule, LunchBreak, RemoteItem,
 ]

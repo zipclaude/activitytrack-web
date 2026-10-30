@@ -195,3 +195,80 @@ class TimesPolicyTests(TestCase):
     def test_another_manager_cannot(self):
         self.client.force_login(self.bob)
         self.assertEqual(self.client.post(f"/attivita/{self.e.uid}/", {"action": "segment", "segment": self.segs()[1].uid, "remove": "1"}).status_code, 404)
+
+
+class TagWebTests(TestCase):
+    """Predefined tags on the web (app #133)."""
+
+    def setUp(self):
+        from web import ops
+
+        self.org = Organization.objects.create(name="Infra")
+        self.boss = User.objects.create_user("boss", password="x-x-x-x-x-x", org=self.org, profile="manager")
+        self.alice = User.objects.create_user("alice", password="x-x-x-x-x-x", org=self.org, manager=self.boss)
+        self.bob = User.objects.create_user("bob", password="x-x-x-x-x-x", org=self.org)
+        self.e = ops.start(self.alice, activity="Rete")
+        ops.put(self.alice, "entry", self.e.uid, {"tags": ["urgente", "libero"]})
+        self.f = ops.start(self.bob, activity="Altro")
+        ops.put(self.bob, "entry", self.f.uid, {"tags": ["urgente"]})
+
+    def tag(self, name):
+        from records.models import Tag
+
+        return Tag.objects.get(org=self.org, name=name, deleted=False)
+
+    def test_central_tag_with_colour_and_rename_on_every_entry(self):
+        from records.models import Entry
+
+        self.client.force_login(self.boss)
+        r = self.client.post("/anagrafiche/tag/nuova/", {"name": "#Urgente", "color": str(0xD64545), "central": "1"})
+        self.assertEqual(r.status_code, 302)
+        t = self.tag("urgente")
+        self.assertIsNone(t.owner_id)
+        self.assertEqual(t.color, 0xD64545)
+        # a second one of the same name is refused
+        self.assertContains(self.client.post("/anagrafiche/tag/nuova/", {"name": "urgente", "central": "1"}), "esiste già")
+        self.client.post(f"/anagrafiche/tag/{t.uid}/", {"name": "Priorità Alta", "color": str(0xD64545)})
+        self.assertEqual(self.tag("priorità-alta").uid, t.uid)
+        self.assertEqual(Entry.objects.get(pk=self.e.pk).tags, ["libero", "priorità-alta"])
+        self.assertEqual(Entry.objects.get(pk=self.f.pk).tags, ["priorità-alta"])
+
+    def test_personal_rename_stays_with_its_owner(self):
+        from records.models import Entry
+
+        self.client.force_login(self.alice)
+        self.client.post("/anagrafiche/tag/nuova/", {"name": "urgente"})
+        t = self.tag("urgente")
+        self.assertEqual(t.owner, self.alice)
+        self.client.post(f"/anagrafiche/tag/{t.uid}/", {"name": "subito"})
+        self.assertEqual(Entry.objects.get(pk=self.e.pk).tags, ["libero", "subito"])
+        self.assertEqual(Entry.objects.get(pk=self.f.pk).tags, ["urgente"])
+
+    def test_dots_and_chips_take_the_colours(self):
+        from web import ops
+
+        ops.put(self.boss, "tag", ops.new_uid(), {"name": "urgente", "color": 0xD64545}, central=True)
+        self.client.force_login(self.alice)
+        home = self.client.get("/").content.decode()
+        self.assertIn('class="dots"', home)
+        self.assertIn("--tag: #d64545", home)
+        self.assertIn("--tag: var(--tag-none)", home)
+        sheet = self.client.get(f"/attivita/{self.e.uid}/").content.decode()
+        self.assertIn('<span class="tag" style="background: #d64545', sheet)
+        self.assertIn('<span class="tag none">libero</span>', sheet)
+
+    def test_free_tags_locked_off(self):
+        from policies.models import Policy
+        from records.models import Entry
+        from web import ops
+
+        Policy.objects.create(org=self.org, data={"settings": {"tagsFreeText": {"value": False, "locked": True}}}, revision=1)
+        ops.put(self.boss, "tag", ops.new_uid(), {"name": "rete"}, central=True)
+        self.client.force_login(self.alice)
+        url = f"/attivita/{self.e.uid}/"
+        r = self.client.post(url, {"action": "save", "activity": "Rete", "tags": "urgente libero nuovo"}, follow=True)
+        self.assertContains(r, "nuovo non c")
+        self.assertEqual(Entry.objects.get(pk=self.e.pk).tags, ["urgente", "libero"])
+        # the old free ones stay, a known one is added
+        self.client.post(url, {"action": "save", "activity": "Rete", "tags": "urgente libero #Rete"})
+        self.assertEqual(Entry.objects.get(pk=self.e.pk).tags, ["libero", "rete", "urgente"])

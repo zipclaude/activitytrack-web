@@ -25,12 +25,13 @@
 	{% include "web/_entry_fields.html" %}
 	<label>{% translate "Località" %}<input name="locality" value="{{ e.locality|default:'' }}"></label>
 	<label>{% translate "Note" %}<textarea name="notes" rows="2">{{ e.notes|default:"" }}</textarea></label>
-	<label>{% translate "Tag" %}<input name="tags" value="{{ e.tags|join:' ' }}" placeholder="rete urgente"></label>
+	<label>{% translate "Tag" %}{% if e.tags %}<span>{% tag_chips e.tags tag_colors %}</span>{% endif %}<input name="tags" value="{{ e.tags|join:' ' }}" placeholder="rete urgente"></label>
+	{% if not tags_free %}<p class="muted">{% translate "Solo i tag dell'anagrafica:" %} {% tag_chips tag_names tag_colors %}</p>{% endif %}
 	<button class="primary">{% translate "Salva" %}</button>
 </form>
 {% else %}
 <section class="card"><h2>{% translate "Dettagli" %}</h2>
-	<p>{% translate "Ruolo" %}: {{ e.role.name|default:"—" }}</p><p>{% translate "Note" %}: {{ e.notes|default:"—" }}</p><p>{% translate "Tag" %}: {{ e.tags|join:" "|default:"—" }}</p>
+	<p>{% translate "Ruolo" %}: {{ e.role.name|default:"—" }}</p><p>{% translate "Note" %}: {{ e.notes|default:"—" }}</p><p>{% translate "Tag" %}: {% tag_chips e.tags tag_colors %}{% if not e.tags %}—{% endif %}</p>
 </section>
 {% endif %}
 

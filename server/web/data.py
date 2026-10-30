@@ -7,7 +7,7 @@ from django.db.models import Q
 from django.utils import timezone
 
 from accounts.models import Profile, User
-from records.models import Client, Company, Entry, EntryStatus, Expense, Role, Segment, Todo
+from records.models import Client, Company, Entry, EntryStatus, Expense, Role, Segment, Tag, Todo
 
 
 def own_or_central(user):
@@ -29,6 +29,20 @@ def clients(user):
 
 def roles(user):
     return masters(user, Role).filter(archived=False).order_by("name")
+
+
+def tags(user):
+    """The tags a user picks from: central and their own, live ones."""
+    return masters(user, Tag).filter(archived=False).order_by("position", "name")
+
+
+def tag_colors(user):
+    """name -> 0xRRGGBB or None of every tag the user sees; a central one wins over a personal one of the same name."""
+    out = {}
+    for name, color, owner in masters(user, Tag).order_by("-owner").values_list("name", "color", "owner"):
+        if owner is None or name not in out:
+            out[name] = color
+    return out
 
 
 def people(user):

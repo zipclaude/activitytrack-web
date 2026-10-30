@@ -218,6 +218,11 @@
       "doc": "true/false"
     },
     {
+      "key": "tagsFreeText",
+      "kind": "BOOLEAN",
+      "doc": "true/false — false: only the tags of the master data (issue #133)"
+    },
+    {
       "key": "confirmIntervalMin",
       "kind": "INT",
       "min": 10,
