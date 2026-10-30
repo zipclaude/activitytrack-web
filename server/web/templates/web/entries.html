@@ -1,7 +1,7 @@
 {% extends "web/base.html" %}{% load i18n at %}
 {% block title %}{% translate "Attività" %} · ActivityTrack{% endblock %}
 {% block content %}
-<div class="head"><h1>{% translate "Attività" %}</h1>{% if user.syncs %}<a class="button primary" href="{% url 'entry_new' %}">▶ {% translate "Nuova" %}</a>{% endif %}</div>
+<div class="head"><h1>{% translate "Attività" %}</h1>{% if user.syncs %}<a class="button primary" href="{% url 'entry_new' %}">{% icon "play" %}{% translate "Nuova" %}</a>{% endif %}</div>
 <form class="filters" method="get">
 	<label>{% translate "Dal" %}<input type="date" name="from" value="{{ since|date:'Y-m-d' }}"></label>
 	<label>{% translate "Al" %}<input type="date" name="to" value="{{ until|date:'Y-m-d' }}"></label>

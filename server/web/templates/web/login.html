@@ -2,7 +2,7 @@
 {% block title %}{% translate "Accesso" %} · ActivityTrack{% endblock %}
 {% block content %}
 <section class="card narrow">
-	<h1>ActivityTrack</h1>
+	<div class="login-head"><svg class="logo" aria-hidden="true"><use href="#i-logo"/></svg><h1>ActivityTrack</h1><p class="muted">{% translate "Accedi con l'utente che ti ha dato l'amministratore." %}</p></div>
 	<form method="post">{% csrf_token %}
 		{% if form.errors %}<p class="note error">{% translate "Nome utente o password errati." %}</p>{% endif %}
 		<label>{% translate "Nome utente" %}<input name="username" autocomplete="username" required autofocus value="{{ form.username.value|default:'' }}"></label>

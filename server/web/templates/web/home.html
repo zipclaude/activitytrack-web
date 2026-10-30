@@ -1,8 +1,8 @@
 {% extends "web/base.html" %}{% load i18n at %}
 {% block content %}
 <div class="head"><h1>{% blocktranslate with name=user.first_name|default:user.username %}Ciao {{ name }}{% endblocktranslate %}</h1>
-<a class="button primary" href="{% url 'entry_new' %}">▶ {% translate "Nuova attività" %}</a></div>
-{% if first %}<section class="card"><h2>{% translate "Associa il telefono" %}</h2><p>{% translate "Collega l'app ActivityTrack a questo server: i dati restano sincronizzati nei due sensi." %}</p><a class="button" href="{% url 'phones' %}">{% translate "Telefoni" %}</a></section>{% endif %}
+<a class="button primary" href="{% url 'entry_new' %}">{% icon "play" %}{% translate "Nuova attività" %}</a></div>
+{% if first %}<section class="card"><h2>{% translate "Associa il telefono" %}</h2><p>{% translate "Collega l'app ActivityTrack a questo server: i dati restano sincronizzati nei due sensi." %}</p><a class="button tonal" href="{% url 'phones' %}">{% icon "phone" %}{% translate "Associa un telefono" %}</a></section>{% endif %}
 
 {% for r in running %}
 <section class="card running" style="--band: {{ r.e.client.color|color|default:'var(--accent)' }}">{% tag_dots r.e.tags tag_colors %}
@@ -10,10 +10,10 @@
 	<div>{{ r.e.activity|default:_("senza descrizione") }}</div></div>
 	<div class="big"><span class="pill s-{{ r.e.status|lower }}">{{ r.e|status }}</span><div>{{ r.work }}</div></div></div>
 	<form method="post" action="{% url 'entry_quick' r.e.uid %}" class="actions">{% csrf_token %}
-		{% if r.e.status == "ACTIVE" and r.e.mode != "PAUSE" %}<button name="action" value="pause" class="c-pause">{% translate "Pausa" %}</button>{% else %}<button name="action" value="work" class="c-work">{% translate "Riprendi" %}</button>{% endif %}
-		{% if r.e.mode != "TRAVEL" %}<button name="action" value="travel" class="c-travel">{% translate "Viaggio" %}</button>{% endif %}
-		{% if r.e.status == "ACTIVE" %}<button name="action" value="suspend" class="c-suspend">{% translate "Sospendi" %}</button>{% endif %}
-		<button name="action" value="stop" class="c-stop">{% translate "Stop" %}</button>
+		{% if r.e.status == "ACTIVE" and r.e.mode != "PAUSE" %}<button name="action" value="pause" class="c-pause">{% icon "pause" %}{% translate "Pausa" %}</button>{% else %}<button name="action" value="work" class="c-work">{% icon "play" %}{% translate "Riprendi" %}</button>{% endif %}
+		{% if r.e.mode != "TRAVEL" %}<button name="action" value="travel" class="c-travel">{% icon "travel" %}{% translate "Viaggio" %}</button>{% endif %}
+		{% if r.e.status == "ACTIVE" %}<button name="action" value="suspend" class="c-suspend">{% icon "suspend" %}{% translate "Sospendi" %}</button>{% endif %}
+		<button name="action" value="stop" class="c-stop">{% icon "stop" %}{% translate "Stop" %}</button>
 	</form>
 </section>
 {% empty %}

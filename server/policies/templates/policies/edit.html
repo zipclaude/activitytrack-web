@@ -1,7 +1,7 @@
-{% extends "web/base.html" %}{% load i18n policy_tags %}
+{% extends "web/base.html" %}{% load i18n policy_tags at %}
 {% block title %}{{ label }} · {% translate "Policy" %}{% endblock %}
 {% block content %}
-<p><a href="{% url 'policies:index' %}">← {% translate "Policy" %}</a></p>
+<p><a class="back" href="{% url 'policies:index' %}">{% icon "back" %}{% translate "Policy" %}</a></p>
 <h1>{{ label }}</h1>
 <p class="muted">{% translate "Ciò che resta «non impostato» segue l'ambito più generale, o l'app così com'è." %}</p>
 {% if errors %}<p class="note error">{% translate "Correggi i campi segnati." %}</p>{% endif %}

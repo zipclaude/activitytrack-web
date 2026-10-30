@@ -1,7 +1,7 @@
 {% extends "web/base.html" %}{% load i18n at %}
 {% block title %}{% translate "Da fare" %} · ActivityTrack{% endblock %}
 {% block content %}
-<div class="head"><h1>{% translate "Da fare" %}</h1><a class="button primary" href="{% url 'todo_new' %}">+ {% translate "Nuova voce" %}</a></div>
+<div class="head"><h1>{% translate "Da fare" %}</h1><a class="button primary" href="{% url 'todo_new' %}">{% icon "add" %}{% translate "Nuova voce" %}</a></div>
 <p class="tabs">
 	<a href="?show=open" class="{% if show == 'open' %}on{% endif %}">{% translate "Aperte" %}</a>
 	<a href="?show=done" class="{% if show == 'done' %}on{% endif %}">{% translate "Fatte" %}</a>

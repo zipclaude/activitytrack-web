@@ -1,29 +1,59 @@
-{% load static i18n %}<!doctype html>
+{% load static i18n at %}<!doctype html>
 <html lang="{{ LANGUAGE_CODE|default:'it' }}">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
 <title>{% block title %}ActivityTrack{% endblock %}</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 108 108'%3E%3Crect width='108' height='108' rx='26' fill='%231F5C4A'/%3E%3Ccircle cx='54' cy='58' r='20' fill='none' stroke='%23fff' stroke-width='5'/%3E%3Cpath d='M48 30h12v6H48z' fill='%23fff'/%3E%3Cpath d='M54 58V46m0 12 8 4' fill='none' stroke='%23fff' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="{% static 'web/app.css' %}">
 </head>
-<body>
+<body class="{% if user.is_authenticated %}app{% if user.syncs %} with-bottom{% endif %}{% else %}guest{% endif %}">
+{% include "web/_icons.html" %}
 {% if user.is_authenticated %}
-<header class="bar">
-	<a class="brand" href="{% url 'home' %}">ActivityTrack</a>
-	<nav>
+<aside class="rail">
+	<a class="brand" href="{% url 'home' %}"><svg class="logo" aria-hidden="true"><use href="#i-logo"/></svg><span>ActivityTrack<small>{{ user.org.name }}</small></span></a>
+	<nav aria-label="{% translate 'Menu' %}">
 		{% if user.syncs %}
-		<a href="{% url 'home' %}">{% translate "Home" context "menu" %}</a>
-		<a href="{% url 'entries' %}">{% translate "Attività" %}</a>
-		<a href="{% url 'todos' %}">{% translate "Da fare" %}</a>
+		<a class="{% nav_on 'home' %}" href="{% url 'home' %}">{% icon "home" %}{% translate "Home" context "menu" %}</a>
+		<a class="{% nav_on 'todos' 'todo_new' 'todo_edit' %}" href="{% url 'todos' %}">{% icon "todo" %}{% translate "Da fare" %}</a>
 		{% endif %}
-		{% if user.syncs or user.can_edit_central %}<a href="{% url 'agenda' %}">{% translate "Agenda" %}</a>{% endif %}
-		{% if user.syncs %}<a href="{% url 'masters_home' %}">{% translate "Anagrafiche" %}</a>{% endif %}
-		<a href="{% url 'report' %}">{% translate "Report" %}</a>
-		{% if user.syncs %}<a href="{% url 'phones' %}">{% translate "Telefoni" %}</a>{% endif %}
-		{% if user.is_admin %}<a href="{% url 'policies:index' %}">{% translate "Policy" %}</a><a href="{% url 'admin:index' %}">{% translate "Amministrazione" %}</a>{% endif %}
-		<form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="link">{% translate "Esci" %}</button></form>
+		{% if user.syncs or user.can_edit_central %}<a class="{% nav_on 'agenda' %}" href="{% url 'agenda' %}">{% icon "agenda" %}{% translate "Agenda" %}</a>{% endif %}
+		<a class="{% nav_on 'report' %}" href="{% url 'report' %}">{% icon "report" %}{% translate "Report" %}</a>
+		{% if user.syncs %}
+		<a class="{% nav_on 'entries' 'entry' 'entry_new' %}" href="{% url 'entries' %}">{% icon "list" %}{% translate "Attività" %}</a>
+		<a class="{% nav_on 'masters_home' 'masters' 'master_new' 'master_edit' %}" href="{% url 'masters_home' %}">{% icon "folder" %}{% translate "Anagrafiche" %}</a>
+		<a class="{% nav_on 'phones' 'pair_new' %}" href="{% url 'phones' %}">{% icon "phone" %}{% translate "Telefoni" %}</a>
+		{% endif %}
+		{% if user.is_admin %}
+		<a class="{% nav_on 'policies:index' 'policies:edit' %}" href="{% url 'policies:index' %}">{% icon "tune" %}{% translate "Policy" %}</a>
+		<a href="{% url 'admin:index' %}">{% icon "settings" %}{% translate "Amministrazione" %}</a>
+		{% endif %}
 	</nav>
-</header>
+	<div class="me">
+		<span class="who">{% icon "person" %}<span>{{ user.get_full_name|default:user.username }}<small>{{ user.get_profile_display }}</small></span></span>
+		<form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="icon-button" title="{% translate 'Esci' %}">{% icon "logout" _("Esci") %}</button></form>
+	</div>
+</aside>
+{% if user.syncs %}
+<nav class="bottom" aria-label="{% translate 'Menu' %}">
+	<a class="{% nav_on 'home' %}" href="{% url 'home' %}">{% icon "home" %}<span>{% translate "Home" context "menu" %}</span></a>
+	<a class="{% nav_on 'todos' 'todo_new' 'todo_edit' %}" href="{% url 'todos' %}">{% icon "todo" %}<span>{% translate "Da fare" %}</span></a>
+	<a class="{% nav_on 'agenda' %}" href="{% url 'agenda' %}">{% icon "agenda" %}<span>{% translate "Agenda" %}</span></a>
+	<a class="{% nav_on 'report' %}" href="{% url 'report' %}">{% icon "report" %}<span>{% translate "Report" %}</span></a>
+	<details class="more">
+		<summary class="{% nav_on 'entries' 'entry' 'entry_new' 'masters_home' 'masters' 'master_new' 'master_edit' 'phones' 'pair_new' 'policies:index' 'policies:edit' %}">{% icon "more" %}<span>{% translate "Altro" %}</span></summary>
+		<div class="sheet">
+			<a href="{% url 'entries' %}">{% icon "list" %}{% translate "Attività" %}</a>
+			<a href="{% url 'masters_home' %}">{% icon "folder" %}{% translate "Anagrafiche" %}</a>
+			<a href="{% url 'phones' %}">{% icon "phone" %}{% translate "Telefoni" %}</a>
+			{% if user.is_admin %}<a href="{% url 'policies:index' %}">{% icon "tune" %}{% translate "Policy" %}</a>
+			<a href="{% url 'admin:index' %}">{% icon "settings" %}{% translate "Amministrazione" %}</a>{% endif %}
+			<form method="post" action="{% url 'logout' %}">{% csrf_token %}<button>{% icon "logout" %}{% translate "Esci" %} · {{ user.get_full_name|default:user.username }}</button></form>
+		</div>
+	</details>
+</nav>
+{% endif %}
 {% endif %}
 <main>
 {% for m in messages %}<p class="note {{ m.tags }}">{{ m }}</p>{% endfor %}
