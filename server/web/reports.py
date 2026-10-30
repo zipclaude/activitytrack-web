@@ -84,7 +84,7 @@ def report(request):
     return render(request, "web/report.html", {
         "since": since, "until": until, "f": request.GET, "table": table, "whole": whole, "rows": [_row(x) for x in lines], "reader": reader,
         "companies": user.companies.all() if reader else data.companies(user),
-        "people": data.people(user) if (user.is_admin or user.profile == Profile.MANAGER) else None,
+        "people": data.readable_people(user) if (user.is_admin or user.profile == Profile.MANAGER) else None,
         "expenses": sum(v["expenses"] for v in totals.values()),
     })
 
