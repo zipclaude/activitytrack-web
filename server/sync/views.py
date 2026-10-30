@@ -73,7 +73,6 @@ def pair(request):
             name=str(body.get("deviceName") or "Telefono")[:100],
             model=str(body.get("model") or "")[:100],
             app_version=str(body.get("appVersion") or "")[:40],
-            fcm_token=str(body.get("fcmToken") or ""),
         )
         pairing.device = device
         pairing.save(update_fields=["device"])

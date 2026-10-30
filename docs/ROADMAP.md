@@ -13,7 +13,7 @@ come on top.
 | 5 | Several users: team views, to-do assignment, company readers | 3–4 | done: team and reader views, to-do assignment |
 | 6 | Policy editor, signing, delivery through the sync | 4–5 | done (app #117) |
 | 7 | Management-system records (tested with the SDP plugin) | 2–3 | done (app #118); test with SDP pending |
-| 8 | FCM tickle | 1–2 | |
+| 8 | ~~FCM tickle~~ | — | dropped 2026-10-30: no Firebase; periodic sync (SYNC.md §10) |
 | 9 | Hardening, security review, admin manual it/en, beta | 4–5 | |
 
 First milestone: phases 0–3 plus a minimal web page (one user, sync
@@ -21,5 +21,4 @@ working, entries listed and editable), about 3–4 weeks.
 
 App-side work is tracked in the app's issues #111–#121 (index: #122).
 Server items they need: `pluginHolder` in the pair and head answers
-(#118), an entry field `needsReview` for overlapping segments (#119),
-FCM token updates (#120).
+(#118), an entry field `needsReview` for overlapping segments (#119).

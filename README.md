@@ -49,7 +49,7 @@ Reports) come next.
 | Plugins | One phone per user sends to the management systems (chosen on the Phones page); entries closed or deleted on the web are sent or deleted there by that phone. |
 | Conflicts | Two running activities, overlapping segments after a merge ("to check"), and records the server refused are shown on the phone, with "discard the change". |
 | Policies | Per organisation, per profile, per user, merged key by key; a graphical editor built from the app's own policy catalog, checked before saving; optional signature with the organisation's certificate. |
-| Push | Optional FCM wake-up when the phone has Google Play services; otherwise periodic sync (planned). |
+| Push | None: the phone syncs after its changes, while the app is open and every 15 minutes (no Firebase). |
 
 What does not travel: location samples (km and travel times do), the call
 log, the plugins' secrets and their export bookkeeping.

@@ -18,7 +18,7 @@ with profiles, and a graphical editor for the phones' policies.
 | R7 | Management-system plugins do not run on the server; their to-dos and entries are synced and can be worked on the web; the phone keeps syncing with the management system |
 | R8 | Master data are central, but a user may add their own when the policy allows; the app and the web show which records are central and which are personal |
 | R9 | One server per organisation for now; the design leaves room for multi-tenancy |
-| R10 | Push: Google services (FCM) when the phone has them, otherwise periodic sync; nothing more elaborate |
+| R10 | No push: periodic sync and sync on changes (decided 2026-10-30, instead of FCM: no Firebase dependency) |
 | R11 | Attachments are synced (a read-only account per company lets its administration see the reports on its own); location samples are not (km and travel times are enough) |
 | R12 | PostgreSQL, with SQLite as an option for small installations |
 
@@ -34,7 +34,7 @@ with profiles, and a graphical editor for the phones' policies.
 | Database | `postgresql` 17 (`python3-psycopg` 3.2) or SQLite 3.46 | |
 | Passwords | `python3-argon2` | Argon2id hasher of Django |
 | QR codes | `python3-segno` | SVG QR codes, no image library |
-| Signatures | `python3-cryptography` 43 | policy signing (ECDSA P-256), FCM service-account JWT |
+| Signatures | `python3-cryptography` 43 | policy signing (ECDSA P-256) |
 | Static files | `python3-whitenoise` (optional) | when nginx does not serve `/static` |
 
 Django 4.2 is past its upstream end of life (April 2026); Debian keeps
@@ -51,7 +51,7 @@ repository: no npm, no bundler, no CDN.
 ┌───────────────────────┐   HTTPS JSON   ┌─────────────────────────────────────────┐
 │ Room DB + triggers    │ ─────────────▶ │ nginx/Apache ─▶ gunicorn ─▶ Django      │
 │ sync_change (outbox)  │ ◀───────────── │   api/v1/sync   push · pull · files     │
-│ SyncWorker            │   FCM "tickle" │   api/v1/pair   QR pairing               │
+│ SyncWorker            │                │   api/v1/pair   QR pairing               │
 │ plugins ⇄ mgmt system │ ◀───────────── │   web UI        same screens as the app  │
 └───────────────────────┘                │   admin         users, devices, policies │
                                           │ PostgreSQL / SQLite · files/ (attachments)│
