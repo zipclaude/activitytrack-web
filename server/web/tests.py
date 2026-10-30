@@ -385,3 +385,27 @@ class AgendaTests(WorkTests):
         csv = self.client.get("/report/csv/?from=2026-10-01&to=2026-10-31").content.decode()
         self.assertIn(";67;0;0;0.00;;", csv)
         self.assertTrue(csv.strip().endswith(";75;0;0"), csv)
+
+
+class ManagerCompaniesTests(WorkTests):
+    """A manager reads every entry done for the companies they are responsible for, an admin's too."""
+
+    def test_an_admins_entry_in_the_managers_company(self):
+        from accounts.models import Profile
+
+        admin = User.objects.create_user("root", password="x-x-x-x-x-x", org=self.org, profile=Profile.ADMIN)
+        self.client.force_login(admin)
+        self.client.post("/attivita/nuova/", {"when": "past", "client": "22222222-2222-4222-8222-222222222222", "activity": "Lavoro admin", "start": "2026-10-27T09:00", "end": "2026-10-27T10:00"})
+        from records.models import Entry
+
+        entry = Entry.objects.get(activity="Lavoro admin")
+        self.client.force_login(self.boss)
+        self.assertNotIn("Lavoro admin", self.client.get("/attivita/?from=2026-10-01").content.decode())
+        self.boss.companies.add(self.acme)
+        self.assertIn("Lavoro admin", self.client.get("/attivita/?from=2026-10-01").content.decode())
+        self.assertIn("Lavoro admin", self.client.get("/report/?from=2026-10-01").content.decode())
+        self.assertIn(f'value="{admin.pk}"', self.client.get("/report/?from=2026-10-01").content.decode())
+        self.assertIn("Lavoro admin", self.client.get(f"/agenda/?view=day&date=2026-10-27&person={admin.pk}").content.decode())
+        # read only: the admin is not in the manager's team
+        page = self.client.get(f"/attivita/{entry.uid}/").content.decode()
+        self.assertNotIn('name="action" value="segment"', page)

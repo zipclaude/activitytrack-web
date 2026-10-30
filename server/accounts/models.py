@@ -33,8 +33,11 @@ class User(AbstractUser):
     profile = models.CharField(_("profilo"), max_length=16, choices=Profile.choices, default=Profile.USER)
     # the manager whose team this user is in
     manager = models.ForeignKey("self", on_delete=models.SET_NULL, null=True, blank=True, related_name="team")
-    # companies a reader may see
-    companies = models.ManyToManyField("records.Company", blank=True, related_name="readers")
+    # a reader: the companies whose closed entries they see; a manager: the companies
+    # they are responsible for, whose entries they see whoever did them
+    companies = models.ManyToManyField(
+        "records.Company", blank=True, related_name="readers", verbose_name=_("aziende"),
+        help_text=_("Lettore azienda: le attività chiuse di queste aziende. Responsabile: tutte le attività fatte per queste aziende, oltre a quelle del suo team."))
 
     objects = UserManager()
 

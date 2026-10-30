@@ -147,7 +147,7 @@ def entries(request):
     return render(request, "web/entries.html", {
         "days": sorted(days.items(), reverse=True), "since": since, "until": until, "f": g,
         "companies": data.companies(user) if user.profile != Profile.READER else user.companies.all(),
-        "people": data.people(user) if user.profile in (Profile.ADMIN, Profile.MANAGER) or user.is_admin else None,
+        "people": data.readable_people(user) if user.profile in (Profile.ADMIN, Profile.MANAGER) or user.is_admin else None,
         "statuses": EntryStatus.choices,
     })
 
