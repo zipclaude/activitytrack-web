@@ -43,6 +43,11 @@ jobs:
           dpkg-deb --info dist/*.deb
       - name: Install
         run: DEBIAN_FRONTEND=noninteractive apt-get install -y ./dist/*.deb
+      - name: The files named by docs/INSTALL.md
+        run: |
+          ROOT=/usr/share/activitytrack-web
+          grep -o '\$AT/[A-Za-z0-9_./-]*' docs/INSTALL.md | grep -v '/venv' | sort -u | sed "s|^\$AT|$ROOT|" |
+            while read -r f; do test -e "$f" || { echo "INSTALL.md names $f, missing"; exit 1; }; done
       - name: Try it
         run: |
           python3 -c "import django; print('Django', django.__version__)"
@@ -79,6 +84,10 @@ jobs:
           mkdir dist
           git archive --prefix="activitytrack-web-$V/" -o "dist/activitytrack-web-$V.tar.gz" HEAD
           tar -tzf dist/*.tar.gz | grep -c .
+          mkdir /tmp/at && tar -xzf dist/*.tar.gz -C /tmp/at --strip-components=1
+          ROOT=/tmp/at
+          grep -o '\$AT/[A-Za-z0-9_./-]*' docs/INSTALL.md | grep -v '/venv' | sort -u | sed "s|^\$AT|$ROOT|" |
+            while read -r f; do test -e "$f" || { echo "INSTALL.md names $f, missing"; exit 1; }; done
       - uses: actions/upload-artifact@v4
         with:
           name: tarball

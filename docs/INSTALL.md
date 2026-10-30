@@ -46,7 +46,10 @@ with the settings (`activitytrack-web-manage migrate`,
 `.deb`; the database is updated and the service restarted.
 `apt purge activitytrack-web` removes settings and data too.
 
-The examples for the web server are in `/usr/share/activitytrack-web/deploy/`.
+The package keeps the tarball's layout in `/usr/share/activitytrack-web`
+(`$AT` below): the examples for the web server are in `$AT/deploy/`.
+The 0.9.0 packages leave out `$AT/packaging/` (#8); they need nothing
+from it, `activitytrack-web-manage` is already in `/usr/bin`.
 
 ## 2. Tarball or clone of the repository
 
@@ -140,7 +143,7 @@ firewall-cmd --permanent --add-service=https && firewall-cmd --reload
 ```
 
 On RHEL nginx keeps its sites in `/etc/nginx/conf.d/*.conf`: copy
-`deploy/nginx-site.conf` there.
+`$AT/deploy/nginx-site.conf` there.
 
 ### Arch Linux
 
@@ -248,7 +251,7 @@ systemctl enable --now activitytrack-web.socket
 
 ```sh
 apt install nginx python3-certbot-nginx
-cp deploy/nginx-site.conf /etc/nginx/sites-available/activitytrack-web
+cp $AT/deploy/nginx-site.conf /etc/nginx/sites-available/activitytrack-web
 editor /etc/nginx/sites-available/activitytrack-web
 ln -s ../sites-available/activitytrack-web /etc/nginx/sites-enabled/
 certbot --nginx -d at.example.com
@@ -265,7 +268,7 @@ apt install apache2 python3-certbot-apache
 # optional, for [files] offload = apache
 apt install libapache2-mod-xsendfile
 a2enmod ssl proxy proxy_http headers expires http2
-cp deploy/apache-site.conf /etc/apache2/sites-available/activitytrack-web.conf
+cp $AT/deploy/apache-site.conf /etc/apache2/sites-available/activitytrack-web.conf
 editor /etc/apache2/sites-available/activitytrack-web.conf
 a2ensite activitytrack-web
 certbot --apache -d at.example.com
@@ -281,7 +284,7 @@ Both web servers run as `www-data`, the owner of gunicorn's socket.
 
 For a host that already serves a site: `base_url` with the path
 (`https://www.example.com/activitytrack`), `allowed_hosts` with every name
-and address the server is reached by. Apache: `deploy/apache-path.conf`
+and address the server is reached by. Apache: `$AT/deploy/apache-path.conf`
 included in the site's `<VirtualHost *:443>`. nginx, in the site's
 `server` block:
 
