@@ -84,6 +84,18 @@ class PolicyTests(TestCase):
         self.assertContains(bad, "one of 1, 5, 15, 30, 60")
         self.assertEqual(Policy.objects.get(pk=p.pk).revision, 1)
 
+    def test_deleting_the_last_policy_leaves_an_empty_one(self):
+        Policy.objects.create(org=self.org, data={"settings": {"editableTimes": {"value": False, "locked": True}}}, revision=3)
+        Policy.objects.create(org=self.org, user=self.alice, data={"ui": {"language": "it"}}, revision=1)
+        self.client.force_login(self.admin)
+        self.client.post(f"/policy/user-{self.alice.pk}/", {"delete": "1"})
+        self.assertFalse(Policy.objects.filter(user=self.alice).exists())
+        self.client.post("/policy/org/", {"delete": "1"})
+        # the phones get a policy without the lock, not none at all
+        p = json.loads(effective(self.alice))
+        self.assertNotIn("settings", p)
+        self.assertEqual(p["version"], "4")
+
     def test_only_admins_edit(self):
         self.client.force_login(self.bob)
         self.assertEqual(self.client.get("/policy/").status_code, 403)
