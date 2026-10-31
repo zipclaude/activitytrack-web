@@ -1,4 +1,4 @@
-Version 0.9.2 (October 2026). For whoever installs and runs the
+Version 0.9.3 (October 2026). For whoever installs and runs the
 organisation's server; users of the app find everything in the ActivityTrack
 *User manual*.
 

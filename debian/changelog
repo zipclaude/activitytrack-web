@@ -1,3 +1,16 @@
+activitytrack-web (0.9.3) unstable; urgency=medium
+
+  * Versions and compatibility (docs/SYNC.md §12): wire schema 1, the server
+    speaks it and the two before; 426 for an app outside the window; each
+    phone's app version kept current; the policy editor warns of phones
+    that would refuse a policy.
+  * Two-step login: authenticator app (TOTP) or email code, recovery codes,
+    required by the organisation for admins, managers or everyone.
+  * Content-Security-Policy on every page.
+  * The server's version in the menu and on the login page.
+
+ -- ActivityTrack Web <flavio-claude@zipman.it>  Sat, 31 Oct 2026 15:30:00 +0100
+
 activitytrack-web (0.9.2) unstable; urgency=medium
 
   * Security review (docs/SECURITY.md): attachments other than images, PDF,
