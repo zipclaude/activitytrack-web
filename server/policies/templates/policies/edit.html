@@ -4,6 +4,8 @@
 <p><a class="back" href="{% url 'policies:index' %}">{% icon "back" %}{% translate "Policy" %}</a></p>
 <h1>{{ label }}</h1>
 <p class="muted">{% translate "Ciò che resta «non impostato» segue l'ambito più generale, o l'app così com'è." %}</p>
+{% if too_old %}<div class="note error"><p>{% translate "Alcuni telefoni hanno un'app che non conosce queste impostazioni: rifiutano tutta la policy e restano con la precedente finché non aggiornano l'app." %}</p>
+<ul>{% for key, since, devs in too_old %}<li><code>{{ key }}</code> — {% blocktranslate %}serve l'app {{ since }}{% endblocktranslate %}: {% for d in devs %}{{ d.user.get_full_name|default:d.user.username }} ({{ d.name }}, {{ d.app_version }}){% if not forloop.last %}, {% endif %}{% endfor %}</li>{% endfor %}</ul></div>{% endif %}
 {% if errors %}<p class="note error">{% translate "Correggi i campi segnati." %}</p>{% endif %}
 <form method="post" class="policy">{% csrf_token %}
 

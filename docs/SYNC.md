@@ -206,3 +206,74 @@ shown instead (web: banner on the entry; app: notification):
   "da verificare". Commands on it keep working; the mark goes when the
   segments no longer overlap (phone or web). With the times locked by the
   policy only an admin or the owner's manager fixes them, on the web.
+
+## 12. Versions and compatibility
+
+Rules (owner, 2026-10-31), from release 1.0 on:
+
+1. Within a major release, app and server stay compatible with the **two
+   previous versions** of each other. A version is a minor release
+   (1.3 → 1.4); a patch (1.3.0 → 1.3.1) never changes what travels.
+2. When keeping compatibility is too costly, a **major** release; and even
+   then, in this order: keep compatibility if it is not too penalising;
+   else a transition update of the old version that speaks the new one;
+   else both are updated together.
+3. The app checks GitHub for newer releases (§12.4); an app installed from
+   a store leaves it to the store.
+
+### 12.1 The wire schema
+
+An integer, independent of the version numbers: it grows only when what
+travels changes (a type, a field, its meaning, a rule of the engine). A
+release that does not touch the sync keeps it. Today: **schema 1** (since
+0.9.0; the 0.9.x releases are compatible, not by rule).
+
+The server speaks its schema and the **two before it** (`sync/compat.py`:
+`SCHEMA`, `WINDOW`), so rule 1 holds and is wider when releases leave the
+schema alone. Between schema *n* and *n + 1* a `Step` translates both ways:
+`up` brings a change of an older app to the current schema, `down` brings
+a record to the app's schema (pull, push answers, file uploads). CI tests
+every step.
+
+### 12.2 Headers and answers
+
+Every request of the app names its version and schema:
+
+```
+X-ActivityTrack-App: 1.0.0
+X-ActivityTrack-Schema: 1
+```
+
+An app without them (0.9.x) speaks schema 1. The server records the app's
+version and schema of each phone at every request (the Phones and Users
+pages show them). `pair` and `sync/head` answer, besides their fields,
+`server` (its version), `schema` and `minSchema`.
+
+Outside the window the server answers **426** with
+`{"error": "app_too_old" | "server_too_old", "server", "schema", "minSchema"}`;
+the app stops syncing and tells what to update. The data stay on the
+phone and sync once the versions match again.
+
+### 12.3 Writing a change
+
+- A new field: optional or with a default, on both sides; an older peer
+  ignores it (the server ignores unknown fields, the app too) and keeps
+  the value it does not know (a push carries only the fields it changed).
+- A new type: an older app skips it; an older server refuses it per
+  change (`unknown_type`, shown in the app's "Non sincronizzati").
+- Removing or renaming a field, changing its meaning or a rule: a new
+  schema with its `Step`.
+- New endpoints: the app treats a 404 as "server too old" for that
+  feature and goes on with the rest.
+- Policy keys: the app refuses a policy with a key it does not know (and
+  keeps the previous one). The catalog's entries carry `since` (the app
+  version that knows them); the policy editor warns of the paired phones
+  whose app is older.
+
+### 12.4 Update check of the app
+
+Installed from GitHub (no store as installer), the app checks the public
+releases of `zipclaude/activitytrack` once a day: a newer **stable**
+release, or a newer **pre-release** when the user subscribed to the betas
+(Settings; a policy can fix both), shows in Settings and as a notification
+that opens the release page. Betas are published as GitHub pre-releases.

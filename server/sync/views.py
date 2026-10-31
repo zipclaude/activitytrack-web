@@ -19,7 +19,7 @@ from django.views.decorators.http import require_GET, require_http_methods, requ
 from accounts.models import Device, PairingCode
 from records.models import Attachment
 
-from . import engine, wire
+from . import compat, engine, wire
 
 
 def _error(status, code, detail=""):
@@ -38,13 +38,31 @@ def device_api(view):
             return _error(401, "revoked")
         if not device.user.is_active or not device.user.syncs:
             return _error(403, "user_disabled")
+        version, schema = compat.client(request)
+        refused = compat.refusal(schema)
+        if refused:
+            return _incompatible(refused)
         now = timezone.now()
+        seen = {}
         if device.last_seen is None or (now - device.last_seen).total_seconds() > 60:
-            Device.objects.filter(pk=device.pk).update(last_seen=now)
+            seen["last_seen"] = now
+        # the app's version as it is now, not as it was at pairing
+        if version and version != device.app_version:
+            seen["app_version"] = version
+        if schema != device.schema:
+            seen["schema"] = schema
+        if seen:
+            Device.objects.filter(pk=device.pk).update(**seen)
         request.device = device
+        request.schema = schema
         return view(request, *args, **kwargs)
 
     return wrapped
+
+
+def _incompatible(code):
+    """426: outside the compatibility window (docs/SYNC.md §12); the app tells what to update."""
+    return JsonResponse({"error": code, "detail": "", **compat.describe()}, status=426)
 
 
 def _json(request):
@@ -61,6 +79,10 @@ def pair(request):
     body = _json(request)
     if body is None or not isinstance(body.get("code"), str):
         return _error(400, "invalid")
+    version, schema = compat.client(request)
+    refused = compat.refusal(schema)
+    if refused:
+        return _incompatible(refused)
     with transaction.atomic():
         pairing = PairingCode.redeem(body["code"])
         if pairing is None:
@@ -72,7 +94,8 @@ def pair(request):
             user,
             name=str(body.get("deviceName") or "Telefono")[:100],
             model=str(body.get("model") or "")[:100],
-            app_version=str(body.get("appVersion") or "")[:40],
+            app_version=str(body.get("appVersion") or version)[:40],
+            schema=schema,
         )
         pairing.device = device
         pairing.save(update_fields=["device"])
@@ -84,6 +107,7 @@ def pair(request):
             "org": {"name": user.org.name},
             "pluginHolder": device.plugin_holder,
             "serverTime": engine.now_ms(),
+            **compat.describe(),
         }
     )
 
@@ -94,10 +118,16 @@ def push(request):
     body = _json(request)
     if body is None:
         return _error(400, "invalid")
+    if isinstance(body.get("changes"), list):
+        body["changes"] = [compat.from_client(c, request.schema) if isinstance(c, dict) else c for c in body["changes"]]
     try:
-        return JsonResponse(engine.push(request.device, body))
+        result = engine.push(request.device, body)
     except engine.ChangeError as e:
         return _error(400, e.code, e.detail)
+    for r in result["results"]:
+        if r.get("record"):
+            r["record"] = compat.to_client(r["record"], request.schema)
+    return JsonResponse(result)
 
 
 @device_api
@@ -109,6 +139,7 @@ def pull(request):
     except ValueError:
         return _error(400, "invalid")
     result = engine.pull(request.device.user, cursor, limit)
+    result["records"] = [compat.to_client(r, request.schema) for r in result["records"]]
     if not result["more"]:
         Device.objects.filter(pk=request.device.pk).update(cursor=result["cursor"])
     return JsonResponse(result)
@@ -135,6 +166,7 @@ def head(request):
         "filesMaxMb": settings.FILES_MAX_MB,
         # this phone sends to the management systems (ARCHITECTURE.md §8)
         "pluginHolder": request.device.plugin_holder,
+        **compat.describe(),
     })
 
 
@@ -190,7 +222,7 @@ def files(request, uid):
         rev = engine.next_rev(user.org)
         Attachment.objects.filter(pk=att.pk).update(has_file=True, sha256=digest, size=size, rev=rev)
     att.refresh_from_db()
-    return JsonResponse({"record": wire.record(att)})
+    return JsonResponse({"record": compat.to_client(wire.record(att), request.schema)})
 
 
 # shown in the browser; anything else is downloaded: the type comes from the

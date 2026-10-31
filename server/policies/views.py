@@ -193,7 +193,19 @@ def edit(request, scope):
         values = {k: (request.POST.getlist(k) if len(request.POST.getlist(k)) > 1 else request.POST.get(k)) for k in request.POST}
     else:
         errors, values = {}, _initial(policy.data if policy else {})
+    # the phones of the scope whose app would refuse this policy
+    from accounts.models import Device
+
+    from .catalog import unknown_to_phones
+
+    devices = Device.objects.filter(user__org=lookup["org"], revoked__isnull=True).select_related("user")
+    if lookup["user"] is not None:
+        devices = devices.filter(user=lookup["user"])
+    elif lookup["profile"]:
+        devices = devices.filter(user__profile=lookup["profile"])
+    too_old = unknown_to_phones(policy.data if policy else {}, list(devices))
     return render(request, "policies/edit.html", {
+        "too_old": too_old,
         "label": label,
         "scope": scope,
         "policy": policy,
