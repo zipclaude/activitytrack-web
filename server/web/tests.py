@@ -626,6 +626,16 @@ class SecurityTests(TestCase):
         self.assertTrue(svg["Content-Disposition"].startswith("attachment"))
 
 
+class VersionTests(TestCase):
+    def test_the_version_is_shown(self):
+        from atweb import __version__
+
+        self.assertContains(self.client.get("/login/"), f"ActivityTrack Web {__version__}")
+        org = Organization.objects.create(name="Infra")
+        self.client.force_login(User.objects.create_user("alice", password="x-x-x-x-x-x", org=org))
+        self.assertContains(self.client.get("/"), f"ActivityTrack Web {__version__}")
+
+
 class MfaTests(TestCase):
     """Two-step login (web/mfa.py): authenticator app or email code, recovery codes, the organisation's rule."""
 
