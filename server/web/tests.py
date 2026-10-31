@@ -624,3 +624,116 @@ class SecurityTests(TestCase):
         self.assertTrue(photo["Content-Disposition"].startswith("inline"))
         svg = _guarded(HttpResponse(content_type="image/svg+xml"), S(mime="image/svg+xml", uid="u3"))
         self.assertTrue(svg["Content-Disposition"].startswith("attachment"))
+
+
+class MfaTests(TestCase):
+    """Two-step login (web/mfa.py): authenticator app or email code, recovery codes, the organisation's rule."""
+
+    def setUp(self):
+        from accounts.models import Profile
+
+        self.org = Organization.objects.create(name="Infra")
+        self.alice = User.objects.create_user("alice", password="x-x-x-x-x-x", org=self.org, email="alice@example.com")
+        self.root = User.objects.create_user("root", password="x-x-x-x-x-x", org=self.org, profile=Profile.ADMIN)
+
+    def test_rfc_6238_vectors(self):
+        from web.mfa import totp
+
+        secret = "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ"  # "12345678901234567890"
+        self.assertEqual(totp(secret, 59 // 30), "287082")
+        self.assertEqual(totp(secret, 1111111109 // 30), "081804")
+        self.assertEqual(totp(secret, 2000000000 // 30), "279037")
+
+    def login(self, user="alice"):
+        return self.client.post("/login/", {"username": user, "password": "x-x-x-x-x-x"})
+
+    def test_authenticator_app(self):
+        import time
+
+        from web.mfa import totp
+
+        self.client.force_login(self.alice)
+        self.client.post("/sicurezza/", {"action": "totp_start"})
+        secret = self.client.session["mfa_setup"]["secret"]
+        self.assertContains(self.client.get("/sicurezza/"), "<svg")
+        now = int(time.time() // 30)
+        r = self.client.post("/sicurezza/", {"action": "confirm", "code": totp(secret, now)})
+        self.assertContains(r, "Codici di recupero")
+        codes = r.content.decode().split("<code>")[1:]
+        recovery = codes[0].split("</code>")[0]
+        self.alice.refresh_from_db()
+        self.assertEqual((self.alice.mfa_method, len(self.alice.mfa_recovery)), ("totp", 10))
+        self.client.logout()
+        # the password alone does not log in
+        self.assertRedirects(self.login(), "/login/codice/", fetch_redirect_response=False)
+        self.assertNotIn("_auth_user_id", self.client.session)
+        self.assertContains(self.client.post("/login/codice/", {"code": "000000"}), "non valido")
+        # the code used to set up is spent: the next step's code works
+        self.assertContains(self.client.post("/login/codice/", {"code": totp(secret, now)}), "non valido")
+        r = self.client.post("/login/codice/", {"code": totp(secret, now + 1)})
+        self.assertRedirects(r, "/", fetch_redirect_response=False)
+        self.assertEqual(int(self.client.session["_auth_user_id"]), self.alice.pk)
+        # a recovery code, once
+        self.client.logout()
+        self.login()
+        self.assertRedirects(self.client.post("/login/codice/", {"code": recovery}), "/", fetch_redirect_response=False)
+        self.client.logout()
+        self.login()
+        self.assertContains(self.client.post("/login/codice/", {"code": recovery}), "non valido")
+
+    def test_too_many_wrong_codes(self):
+        from web.mfa import new_secret
+
+        self.alice.mfa_method, self.alice.totp_secret = "totp", new_secret()
+        self.alice.save()
+        self.login()
+        for _ in range(4):
+            self.client.post("/login/codice/", {"code": "000000"})
+        self.assertRedirects(self.client.post("/login/codice/", {"code": "000000"}), "/login/", fetch_redirect_response=False)
+        self.assertRedirects(self.client.get("/login/codice/"), "/login/", fetch_redirect_response=False)
+
+    def test_email_code(self):
+        import re
+
+        from django.core import mail
+
+        with self.settings(EMAIL_HOST="smtp.example.com"):
+            self.client.force_login(self.alice)
+            self.client.post("/sicurezza/", {"action": "email_start"})
+            code = re.search(r"\b(\d{6})\b", mail.outbox[-1].body).group(1)
+            self.assertEqual(mail.outbox[-1].to, ["alice@example.com"])
+            self.assertContains(self.client.post("/sicurezza/", {"action": "confirm", "code": code}), "Codici di recupero")
+            self.client.logout()
+            self.assertRedirects(self.login(), "/login/codice/", fetch_redirect_response=False)
+            code = re.search(r"\b(\d{6})\b", mail.outbox[-1].body).group(1)
+            self.assertRedirects(self.client.post("/login/codice/", {"code": code}), "/", fetch_redirect_response=False)
+        # without mail on the server, no email choice
+        self.assertNotContains(self.client.get("/sicurezza/"), 'value="email_start"')
+
+    def test_the_organisation_requires_it(self):
+        self.client.force_login(self.root)
+        self.client.post("/utenti/", {"mfa_required": "admins"})
+        self.org.refresh_from_db()
+        self.assertEqual(self.org.mfa_required, "admins")
+        # the admin without a second step only sets it up
+        self.assertRedirects(self.client.get("/utenti/"), "/sicurezza/", fetch_redirect_response=False)
+        self.assertEqual(self.client.get("/sicurezza/").status_code, 200)
+        # a user is not concerned
+        self.client.force_login(self.alice)
+        self.assertEqual(self.client.get("/dafare/").status_code, 200)
+        # phones keep syncing: the API is not stopped
+        self.client.force_login(self.root)
+        self.assertNotEqual(self.client.get("/api/v1/sync/head").status_code, 302)
+
+    def test_admin_resets_a_lost_phone(self):
+        from web.mfa import new_secret
+
+        self.alice.mfa_method, self.alice.totp_secret = "totp", new_secret()
+        self.alice.save()
+        self.client.force_login(self.root)
+        self.assertContains(self.client.get(f"/utenti/{self.alice.pk}/"), "Azzera")
+        self.client.post(f"/utenti/{self.alice.pk}/verifica/")
+        self.alice.refresh_from_db()
+        self.assertEqual((self.alice.mfa_method, self.alice.totp_secret), ("", ""))
+        self.client.logout()
+        self.assertRedirects(self.login(), "/", fetch_redirect_response=False)

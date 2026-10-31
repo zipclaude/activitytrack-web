@@ -31,7 +31,7 @@
 		{% endif %}
 	</nav>
 	<div class="me">
-		<a class="who" href="{% url 'my_password' %}" title="{% translate 'Cambia password' %}">{% icon "person" %}<span>{{ user.get_full_name|default:user.username }}<small>{{ user.get_profile_display }}</small></span></a>
+		<a class="who" href="{% url 'security' %}" title="{% translate 'Sicurezza dell’account' %}">{% icon "person" %}<span>{{ user.get_full_name|default:user.username }}<small>{{ user.get_profile_display }}</small></span></a>
 		<form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="icon-button" title="{% translate 'Esci' %}">{% icon "logout" _("Esci") %}</button></form>
 	</div>
 </aside>
@@ -42,14 +42,14 @@
 	<a class="{% nav_on 'agenda' %}" href="{% url 'agenda' %}">{% icon "agenda" %}<span>{% translate "Agenda" %}</span></a>
 	<a class="{% nav_on 'report' %}" href="{% url 'report' %}">{% icon "report" %}<span>{% translate "Report" %}</span></a>
 	<details class="more">
-		<summary class="{% nav_on 'entries' 'entry' 'entry_new' 'masters_home' 'masters' 'master_new' 'master_edit' 'phones' 'pair_new' 'policies:index' 'policies:edit' 'users' 'user_new' 'user_edit' 'my_password' %}">{% icon "more" %}<span>{% translate "Altro" %}</span></summary>
+		<summary class="{% nav_on 'entries' 'entry' 'entry_new' 'masters_home' 'masters' 'master_new' 'master_edit' 'phones' 'pair_new' 'policies:index' 'policies:edit' 'users' 'user_new' 'user_edit' 'my_password' 'security' %}">{% icon "more" %}<span>{% translate "Altro" %}</span></summary>
 		<div class="sheet">
 			<a href="{% url 'entries' %}">{% icon "list" %}{% translate "Attività" %}</a>
 			<a href="{% url 'masters_home' %}">{% icon "folder" %}{% translate "Anagrafiche" %}</a>
 			<a href="{% url 'phones' %}">{% icon "phone" %}{% translate "Telefoni" %}</a>
 			{% if user.is_admin %}<a href="{% url 'policies:index' %}">{% icon "tune" %}{% translate "Policy" %}</a>
 			<a href="{% url 'users' %}">{% icon "settings" %}{% translate "Utenti" %}</a>{% endif %}
-			<a href="{% url 'my_password' %}">{% icon "person" %}{% translate "Cambia password" %}</a>
+			<a href="{% url 'security' %}">{% icon "person" %}{% translate "Sicurezza dell'account" %}</a>
 			<form method="post" action="{% url 'logout' %}">{% csrf_token %}<button>{% icon "logout" %}{% translate "Esci" %} · {{ user.get_full_name|default:user.username }}</button></form>
 		</div>
 	</details>

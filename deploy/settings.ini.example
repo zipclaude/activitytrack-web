@@ -29,3 +29,14 @@ max_mb = 25
 offload = none
 ;offload = nginx
 ;accel_location = /_files/
+
+[mail]
+; for the login codes by email (two-step verification); without a host the
+; codes come only from an authenticator app
+;host = smtp.example.com
+;port = 587
+; starttls (port 587), ssl (port 465) or none
+;security = starttls
+;user = activitytrack@example.com
+;password =
+;from = ActivityTrack <activitytrack@example.com>

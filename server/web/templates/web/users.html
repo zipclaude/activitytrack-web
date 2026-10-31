@@ -13,10 +13,15 @@
 	<span class="mark">{% icon "person" %}</span>
 	<span class="main"><b>{{ u.get_full_name|default:u.username }}</b>
 		<span class="sub">{{ u.username }}{% if u.email %} · {{ u.email }}{% endif %}{% if u.manager %} · {% translate "team di" %} {{ u.manager.get_full_name|default:u.manager.username }}{% endif %}</span></span>
-	<span class="side">{% if u.phones %}{% icon "phone" %} {{ u.phones }}{% endif %}</span>
+	<span class="side">{% if u.mfa_method %}<span title="{% translate 'Verifica in due passaggi' %}">🔒</span> {% endif %}{% if u.phones %}{% icon "phone" %} {{ u.phones }}{% endif %}</span>
 	{% if not u.is_active %}<span class="pill">{% translate "disattivato" %}</span>{% endif %}
 	<span class="pill {% if u.profile == 'admin' %}central{% endif %}">{{ u.get_profile_display }}</span>
 </a>
 {% empty %}<p class="muted">{% translate "Nessun utente." %}</p>{% endfor %}
+<form method="post" class="card inline-form">{% csrf_token %}
+	<label>{% translate "Verifica in due passaggi obbligatoria per" %}<select name="mfa_required" data-autosubmit>{% for v, l in mfa_levels %}<option value="{{ v }}" {% if org.mfa_required == v %}selected{% endif %}>{{ l }}</option>{% endfor %}</select></label>
+	<noscript><button>{% translate "Salva" %}</button></noscript>
+	<p class="doc">{% translate "Chi è indicato deve attivarla (app di autenticazione o email) al primo accesso; gli altri possono attivarla da «Sicurezza dell'account». I telefoni già associati non cambiano." %}</p>
+</form>
 <p class="doc">{% translate "L'organizzazione e i dati grezzi restano nell'" %}<a href="{% url 'admin:index' %}">{% translate "amministrazione avanzata" %}</a>.</p>
 {% endblock %}

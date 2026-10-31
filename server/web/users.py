@@ -12,7 +12,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 
-from accounts.models import Profile, User
+from accounts.models import Organization, Profile, User
 from records.models import Company
 
 
@@ -31,6 +31,14 @@ def _check_password(password, again, user):
 @login_required
 def users(request):
     admin = _admin(request)
+    if request.method == "POST":
+        # the organisation's rule for the second login step (web/mfa.py)
+        level = request.POST.get("mfa_required", "")
+        if level in dict(Organization._meta.get_field("mfa_required").choices):
+            admin.org.mfa_required = level
+            admin.org.save(update_fields=["mfa_required"])
+            messages.success(request, _("Regola della verifica in due passaggi salvata."))
+        return redirect("users")
     g = request.GET
     q = User.objects.filter(org=admin.org).select_related("manager").annotate(
         phones=Count("devices", filter=Q(devices__revoked__isnull=True)))
@@ -41,7 +49,10 @@ def users(request):
     if g.get("q"):
         text = g["q"].strip()
         q = q.filter(Q(username__icontains=text) | Q(first_name__icontains=text) | Q(last_name__icontains=text) | Q(email__icontains=text))
-    return render(request, "web/users.html", {"users": q.order_by("first_name", "last_name", "username"), "f": g, "profiles": Profile.choices})
+    return render(request, "web/users.html", {
+        "users": q.order_by("first_name", "last_name", "username"), "f": g, "profiles": Profile.choices,
+        "mfa_levels": Organization._meta.get_field("mfa_required").choices, "org": admin.org,
+    })
 
 
 @login_required
@@ -110,6 +121,19 @@ def user_password(request, pk):
     if u == admin:
         update_session_auth_hash(request, u)
     messages.success(request, _("Password di «%(name)s» cambiata.") % {"name": u.get_full_name() or u.username})
+    return redirect("user_edit", pk=pk)
+
+
+@login_required
+@require_POST
+def user_mfa_reset(request, pk):
+    """A lost phone: the admin turns the user's second step off; they set it up again at the next login if required."""
+    from . import mfa
+
+    admin = _admin(request)
+    u = get_object_or_404(User, org=admin.org, pk=pk)
+    mfa.reset(u)
+    messages.success(request, _("Verifica in due passaggi di «%(name)s» azzerata.") % {"name": u.get_full_name() or u.username})
     return redirect("user_edit", pk=pk)
 
 

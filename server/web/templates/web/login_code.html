@@ -1,0 +1,15 @@
+{% extends "web/base.html" %}{% load i18n %}
+{% block title %}{% translate "Codice di accesso" %} · ActivityTrack{% endblock %}
+{% block content %}
+<section class="card narrow">
+	<div class="login-head"><svg class="logo" aria-hidden="true"><use href="#i-logo"/></svg><h1>{% translate "Verifica in due passaggi" %}</h1>
+	<p class="muted">{% if method == "totp" %}{% translate "Scrivi il codice di 6 cifre dell'app di autenticazione." %}{% else %}{% blocktranslate %}Scrivi il codice di 6 cifre inviato a {{ email }}.{% endblocktranslate %}{% endif %}</p></div>
+	<form method="post">{% csrf_token %}
+		<label>{% translate "Codice" %}<input name="code" inputmode="numeric" autocomplete="one-time-code" required autofocus maxlength="12"></label>
+		<button class="primary">{% translate "Accedi" %}</button>
+	</form>
+	{% if method == "email" %}<form method="post" class="actions">{% csrf_token %}<button name="resend" value="1">{% translate "Invia un nuovo codice" %}</button></form>{% endif %}
+	<p class="doc">{% translate "Senza il telefono o la posta: scrivi uno dei codici di recupero." %}</p>
+	<p><a href="{% url 'login' %}">{% translate "Torna all'accesso" %}</a></p>
+</section>
+{% endblock %}

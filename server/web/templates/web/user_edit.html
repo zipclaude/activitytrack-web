@@ -40,6 +40,11 @@
 </section>
 {% if team %}<section class="card"><h2>{% translate "Team" %}</h2>{% for m in team %}<div class="line"><a href="{% url 'user_edit' m.pk %}">{{ m.get_full_name|default:m.username }}</a></div>{% endfor %}</section>{% endif %}
 <section class="card"><h2>{% translate "Policy" %}</h2><p>{% translate "Oltre a quelle dell'organizzazione e del profilo, questo utente può avere una policy sua." %}</p><a class="button" href="{% url 'policies:index' %}user-{{ u.pk }}/">{% icon "tune" %}{% translate "Policy dell'utente" %}</a></section>
+<section class="card"><h2>{% translate "Verifica in due passaggi" %}</h2>
+	{% if u.mfa_method %}<p>{% if u.mfa_method == "totp" %}{% translate "Attiva, con un'app di autenticazione." %}{% else %}{% translate "Attiva, con un codice via email." %}{% endif %}</p>
+	<form method="post" action="{% url 'user_mfa_reset' u.pk %}" data-confirm="{% translate "Azzerare la verifica in due passaggi? Serve se l'utente ha perso il telefono o la posta." %}">{% csrf_token %}<button class="danger">{% translate "Azzera" %}</button></form>
+	{% else %}<p class="muted">{% translate "Non attiva." %}</p>{% endif %}
+</section>
 <form method="post" action="{% url 'user_password' u.pk %}" class="card">{% csrf_token %}<h2>{% translate "Nuova password" %}</h2>
 	<p class="doc">{% translate "L'utente esce dal web; i telefoni restano associati." %}</p>
 	<div class="fields"><label>{% translate "Password" %}<input type="password" name="password" autocomplete="new-password" required></label>
