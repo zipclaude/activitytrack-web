@@ -399,3 +399,99 @@ class LargePushTests(SyncTestCase):
         r = self.client.post("/api/v1/sync/push", body, content_type="application/json", HTTP_AUTHORIZATION=f"Bearer {phone}")
         self.assertEqual(r.status_code, 200)
         self.assertEqual({x["status"] for x in r.json()["results"]}, {"applied"})
+
+
+class CompatTests(SyncTestCase):
+    """Versions of app and server (docs/SYNC.md §12): the schema window and the translations."""
+
+    def get(self, token, path, schema=None, app=None):
+        headers = {"HTTP_AUTHORIZATION": f"Bearer {token}"}
+        if schema is not None:
+            headers["HTTP_X_ACTIVITYTRACK_SCHEMA"] = str(schema)
+        if app:
+            headers["HTTP_X_ACTIVITYTRACK_APP"] = app
+        return self.client.get(path, **headers)
+
+    def test_window_and_versions(self):
+        from accounts.models import Device
+        from atweb import __version__
+        from sync import compat
+
+        phone = self.pair(self.alice)
+        # an app without the headers (0.9.x) speaks schema 1
+        head = self.get(phone, "/api/v1/sync/head").json()
+        self.assertEqual((head["schema"], head["minSchema"], head["server"]), (compat.SCHEMA, compat.min_schema(), __version__))
+        self.get(phone, "/api/v1/sync/head", schema=1, app="1.0.0")
+        self.assertEqual(Device.objects.get(user=self.alice).app_version, "1.0.0")
+        too_new = self.get(phone, "/api/v1/sync/head", schema=compat.SCHEMA + 1)
+        self.assertEqual((too_new.status_code, too_new.json()["error"]), (426, "server_too_old"))
+        too_old = self.get(phone, "/api/v1/sync/head", schema=0)
+        self.assertEqual((too_old.status_code, too_old.json()["error"]), (426, "app_too_old"))
+        # pairing refuses too, and the code stays good
+        from accounts.models import PairingCode
+
+        _, code = PairingCode.issue(self.alice)
+        r = self.client.post("/api/v1/pair", json.dumps({"code": code}), content_type="application/json", HTTP_X_ACTIVITYTRACK_SCHEMA="99")
+        self.assertEqual(r.status_code, 426)
+        r = self.client.post("/api/v1/pair", json.dumps({"code": code, "appVersion": "1.0.0"}), content_type="application/json", HTTP_X_ACTIVITYTRACK_SCHEMA="1")
+        self.assertEqual((r.status_code, r.json()["schema"]), (200, compat.SCHEMA))
+
+    def test_an_older_schema_is_translated_both_ways(self):
+        from unittest import mock
+
+        from sync import compat
+
+        # a schema 2 that renamed the entry's "activity" to "description"
+        def up(change):
+            f = dict(change.get("fields") or {})
+            if change.get("type") == "entry" and "activity" in f:
+                f["description"] = f.pop("activity")
+                change = {**change, "fields": f, "times": {("description" if k == "activity" else k): v for k, v in (change.get("times") or {}).items()}}
+            return change
+
+        def down(record):
+            f = dict(record.get("fields") or {})
+            if record.get("type") == "entry" and "description" in f:
+                f["activity"] = f.pop("description")
+                record = {**record, "fields": f}
+            return record
+
+        with mock.patch.object(compat, "SCHEMA", 2), mock.patch.dict(compat.STEPS, {1: compat.Step(up=up, down=down)}):
+            phone = self.pair(self.alice)
+            e = uid()
+            # the schema 1 app writes "activity": the server, in schema 2, reads "description"
+            with mock.patch("sync.engine.apply", wraps=__import__("sync.engine", fromlist=["apply"]).apply) as apply:
+                self.push(phone, [self.upsert("entry", e, {**entry_fields(), "activity": "Riunione"}, T0)])
+                self.assertIn("description", apply.call_args[0][1]["fields"])
+            # a record for a schema 1 app comes back with "activity"
+            records = self.get(phone, "/api/v1/sync/pull?cursor=0", schema=1).json()["records"]
+            entry = next(r for r in records if r["uid"] == e)
+            self.assertNotIn("description", entry["fields"])
+            # schema 0 is outside the window of a schema 2 server (2 and the two before)
+            self.assertEqual(self.get(phone, "/api/v1/sync/head", schema=0).status_code, 426)
+
+    def test_version_order(self):
+        from sync.compat import version_key
+
+        ordered = ["0.9.2", "1.0.0-beta.1", "1.0.0", "1.0.1", "1.1", "1.10.0", "2.0.0-beta.2"]
+        self.assertEqual(sorted(reversed(ordered), key=version_key), ordered)
+        self.assertEqual(version_key("1.1"), version_key("1.1.0"))
+
+
+class PolicyCompatTests(SyncTestCase):
+    def test_the_editor_warns_of_phones_that_do_not_know_a_key(self):
+        from unittest import mock
+
+        from accounts.models import Device
+        from policies.models import Policy
+
+        self.pair(self.alice, name="Pixel")
+        Device.objects.filter(user=self.alice).update(app_version="0.9.2")
+        Policy.objects.create(org=self.org, data={"settings": {"editableTimes": {"value": False, "locked": True}}})
+        self.client.force_login(self.admin)
+        self.assertNotContains(self.client.get("/policy/org/"), "rifiutano tutta la policy")
+        with mock.patch("policies.catalog.since", side_effect=lambda section, key: "1.1.0" if key == "editableTimes" else "0.9.0"):
+            page = self.client.get("/policy/org/").content.decode()
+        self.assertIn("rifiutano tutta la policy", page)
+        self.assertIn("settings.editableTimes", page)
+        self.assertIn("Pixel, 0.9.2", page)

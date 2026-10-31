@@ -33,8 +33,10 @@ jobs:
         run: |
           V=$(sed -n 's/^__version__ = "\(.*\)"/\1/p' server/atweb/__init__.py)
           case "$GITHUB_REF" in refs/tags/v*) test "v$V" = "${GITHUB_REF#refs/tags/}" ;; esac
-          grep -q "^activitytrack-web ($V)" debian/changelog
-          sed -i "1s/($V)/($V~${{ matrix.suffix }})/" debian/changelog
+          # Debian: a beta 1.1.0-beta.1 is 1.1.0~beta.1 (sorts before 1.1.0)
+          DV=$(echo "$V" | tr '-' '~')
+          grep -q "^activitytrack-web ($DV)" debian/changelog
+          sed -i "1s/($DV)/($DV~${{ matrix.suffix }})/" debian/changelog
           head -1 debian/changelog
       - name: Package
         run: |
@@ -238,4 +240,6 @@ jobs:
             echo
             echo "Instructions: [docs/INSTALL.md](https://github.com/${GITHUB_REPOSITORY}/blob/v$V/docs/INSTALL.md)."
           } > notes.md
-          gh release create "v$V" artifacts/* --title "ActivityTrack Web $V" --notes-file notes.md
+          # a tag with a suffix (v1.1.0-beta.1) is a beta: a pre-release (docs/SYNC.md §12.4)
+          case "$V" in *-*) pre=--prerelease ;; *) pre= ;; esac
+          gh release create "v$V" artifacts/* --title "ActivityTrack Web $V" --notes-file notes.md $pre

@@ -83,6 +83,8 @@ class Device(models.Model):
     name = models.CharField(_("nome"), max_length=100)
     model = models.CharField(_("modello"), max_length=100, blank=True)
     app_version = models.CharField(_("versione app"), max_length=40, blank=True)
+    # the wire schema it last spoke (sync/compat.py)
+    schema = models.PositiveIntegerField(_("schema"), default=1)
     token_hash = models.CharField(max_length=64, unique=True)
     # the one phone of the user that sends to the management systems (ARCHITECTURE.md §8)
     plugin_holder = models.BooleanField(_("invia ai gestionali"), default=False)
