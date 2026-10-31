@@ -8,8 +8,8 @@
 <form class="filters agenda-bar" method="get">
 	<nav class="seg" aria-label="{% translate 'Vista' %}">{% for v, href in views %}<a href="{{ href }}" class="{% if v == view %}on{% endif %}">{% if v == "day" %}{% translate "Giorno" %}{% elif v == "week" %}{% translate "Settimana" %}{% else %}{% translate "Mese" %}{% endif %}</a>{% endfor %}</nav>
 	<input type="hidden" name="view" value="{{ view }}"><input type="hidden" name="date" value="{{ anchor|date:'Y-m-d' }}">
-	{% if people %}<label>{% translate "Persona" %}<select name="person" onchange="this.form.submit()">{% for p in people %}<option value="{{ p.pk }}" {% if p == person %}selected{% endif %}>{{ p.get_full_name|default:p.username }}</option>{% endfor %}</select></label>{% endif %}
-	{% if tags or tag %}<label>{% translate "Tag" %}<select name="tag" onchange="this.form.submit()"><option value="">{% translate "Tutti i tag" %}</option>{% for t in tags %}<option {% if t == tag %}selected{% endif %}>{{ t }}</option>{% endfor %}</select></label>{% endif %}
+	{% if people %}<label>{% translate "Persona" %}<select name="person" data-autosubmit>{% for p in people %}<option value="{{ p.pk }}" {% if p == person %}selected{% endif %}>{{ p.get_full_name|default:p.username }}</option>{% endfor %}</select></label>{% endif %}
+	{% if tags or tag %}<label>{% translate "Tag" %}<select name="tag" data-autosubmit><option value="">{% translate "Tutti i tag" %}</option>{% for t in tags %}<option {% if t == tag %}selected{% endif %}>{{ t }}</option>{% endfor %}</select></label>{% endif %}
 	<noscript><button>{% translate "Filtra" %}</button></noscript>
 </form>
 

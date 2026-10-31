@@ -3,7 +3,7 @@
 {% block content %}
 <h1>{% translate "Nuova attività" %}</h1>
 {% if todo %}<p class="note">{% blocktranslate with t=todo.title %}Dalla voce Da fare «{{ t }}».{% endblocktranslate %}</p>{% endif %}
-<form method="post" class="card narrowform">{% csrf_token %}
+<form method="post" class="card narrowform" data-when data-label-now="{% translate 'Avvia' %}" data-label-past="{% translate 'Registra' %}">{% csrf_token %}
 	{% if todo %}<input type="hidden" name="todo" value="{{ todo.uid }}">{% endif %}
 	<div class="seg" role="radiogroup">
 		<label><input type="radio" name="when" value="now" checked> {% translate "Adesso" %}</label>
@@ -16,15 +16,3 @@
 	<button class="primary">{% translate "Avvia" %}</button>
 </form>
 {% endblock %}
-{% block scripts %}<script>
-(function () {
-	const form = document.querySelector("form.narrowform");
-	const sync = () => {
-		const v = form.querySelector("input[name=when]:checked").value;
-		form.querySelectorAll(".when-started, .when-past").forEach((el) => { el.hidden = !el.classList.contains("when-" + v); });
-		form.querySelector("button.primary").textContent = v === "past" ? "{{ _('Registra')|escapejs }}" : "{{ _('Avvia')|escapejs }}";
-	};
-	form.querySelectorAll("input[name=when]").forEach((r) => r.addEventListener("change", sync));
-	sync();
-})();
-</script>{% endblock %}

@@ -4,8 +4,8 @@
 <div class="head"><h1>{% translate "Utenti" %}</h1><a class="button primary" href="{% url 'user_new' %}">{% icon "add" %}{% translate "Nuovo utente" %}</a></div>
 <form class="filters" method="get">
 	<label>{% translate "Cerca" %}<input name="q" value="{{ f.q|default:'' }}" placeholder="{% translate 'nome, utente, email' %}"></label>
-	<label>{% translate "Profilo" %}<select name="profile" onchange="this.form.submit()"><option value="">{% translate "tutti" %}</option>{% for v, l in profiles %}<option value="{{ v }}" {% if f.profile == v %}selected{% endif %}>{{ l }}</option>{% endfor %}</select></label>
-	<label>{% translate "Stato" %}<select name="state" onchange="this.form.submit()"><option value="">{% translate "attivi" %}</option><option value="inactive" {% if f.state == "inactive" %}selected{% endif %}>{% translate "disattivati" %}</option><option value="all" {% if f.state == "all" %}selected{% endif %}>{% translate "tutti" %}</option></select></label>
+	<label>{% translate "Profilo" %}<select name="profile" data-autosubmit><option value="">{% translate "tutti" %}</option>{% for v, l in profiles %}<option value="{{ v }}" {% if f.profile == v %}selected{% endif %}>{{ l }}</option>{% endfor %}</select></label>
+	<label>{% translate "Stato" %}<select name="state" data-autosubmit><option value="">{% translate "attivi" %}</option><option value="inactive" {% if f.state == "inactive" %}selected{% endif %}>{% translate "disattivati" %}</option><option value="all" {% if f.state == "all" %}selected{% endif %}>{% translate "tutti" %}</option></select></label>
 	<button>{% translate "Cerca" %}</button>
 </form>
 {% for u in users %}

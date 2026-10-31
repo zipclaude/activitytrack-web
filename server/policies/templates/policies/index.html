@@ -16,7 +16,7 @@
 	</tbody>
 </table></section>
 {% if users %}
-<form method="get" onsubmit="location.href=this.dataset.base.replace('0', this.u.value); return false" data-base="{% url 'policies:edit' 'user-0' %}" class="card">
+<form method="get" data-policy-user="{% url 'policies:edit' 'user-0' %}" class="card">
 	<label>{% translate "Policy per un utente" %}
 		<select name="u">{% for u in users %}<option value="{{ u.pk }}">{{ u.get_full_name|default:u.username }}</option>{% endfor %}</select>
 	</label>
