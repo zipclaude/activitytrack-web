@@ -38,6 +38,7 @@ not start the service. First write `/etc/activitytrack-web/settings.ini`:
 | `[database]` | SQLite (default) or PostgreSQL |
 | `[files] max_mb`, `offload` | largest attachment; who sends the files: Django, nginx or Apache |
 | `[policy] key`, `cert` | key and certificate to sign the policies (optional) |
+| `[mail]` | mail server for the login codes by email (optional) |
 
 Then create the organisation with the first administrator and start the
 service:
@@ -65,6 +66,19 @@ as the service user, for example `migrate`, `createsuperuser` or `shell`.
 Everyone logs in with the user name and password the administrator gave
 them. After 10 wrong attempts in a row from the same address, the login
 holds back for a few minutes.
+
+**Two-step login.** From **"Sicurezza dell'account"** (account security:
+one's name at the bottom of the menu) anyone may ask, after the password,
+for a 6-digit code:
+- from an **authenticator app** on the phone (Aegis, FreeOTP, Google
+  Authenticator…): scan the QR code and confirm with the first code;
+- or by **email**, when the user has an address and the server has mail
+  configured (`[mail]` in `settings.ini`).
+
+Turning it on gives **10 recovery codes** to keep: each works once instead
+of the code, when the phone or the mailbox is lost. After 5 wrong codes the
+login starts again from the password. Paired phones are not concerned: they
+sync with their token.
 
 The menu on the left (on a phone, the bar at the bottom) has **Home**,
 **Da fare** (To-dos), **Agenda**, **Report**, **Attività** (Activities),
@@ -108,6 +122,13 @@ On a user's sheet:
 An administrator cannot drop their own profile nor deactivate themselves.
 Another administrator, or `activitytrack-web-manage createsuperuser`, helps
 when needed.
+
+At the bottom of the Users page, **"Verifica in due passaggi obbligatoria
+per"** (two-step login required for): nobody, administrators,
+administrators and managers, everyone. Whoever is concerned and has not
+turned it on can only do that at their first login. On a user's sheet,
+**"Azzera"** (reset) removes it for someone who lost their phone: they set
+it up again at the next login. The padlock 🔒 in the list marks who has it.
 
 Django's old administration stays reachable from the bottom of the Users
 page (**"amministrazione avanzata"**), for the organisation and raw data.
@@ -253,6 +274,8 @@ With PostgreSQL, use `pg_dump activitytrack`.
 | The phone says "certificate not valid" | self-signed certificate without `tls_pin`, or made as a CA (`docs/INSTALL.md` §4) |
 | The QR code is not read | raise the screen brightness, or paste in the app the link under "Non riesci a inquadrarlo?" |
 | "Codice scaduto" (code expired) | the code is good for 10 minutes and once: make another |
+| A user lost the phone with the authenticator app | a recovery code, or the administrator **"Azzera"** (resets) it on their sheet |
+| The app's code is always "non valido" (not valid) | the phone's or the server's clock is wrong: sync it (NTP) |
 | A user no longer syncs | deactivated, or the phone was revoked (Users → their sheet) |
 | Attachments do not open on the web | with `offload = nginx` or `apache` the web server needs the example's configuration |
 | A change from the web does not arrive at once | it arrives within 15 minutes; opening the app brings it at once |

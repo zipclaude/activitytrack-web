@@ -2,7 +2,7 @@
 from django.contrib.auth import views as auth
 from django.urls import path
 
-from . import agenda, auth as login, masters, reports, users, views, work
+from . import agenda, auth as login, mfa, masters, reports, users, views, work
 
 urlpatterns = [
     path("", work.home, name="home"),
@@ -25,8 +25,11 @@ urlpatterns = [
     path("utenti/nuovo/", users.user_edit, name="user_new"),
     path("utenti/<int:pk>/", users.user_edit, name="user_edit"),
     path("utenti/<int:pk>/password/", users.user_password, name="user_password"),
+    path("utenti/<int:pk>/verifica/", users.user_mfa_reset, name="user_mfa_reset"),
     path("password/", users.my_password, name="my_password"),
     path("login/", login.Login.as_view(), name="login"),
+    path("login/codice/", mfa.login_step, name="login_code"),
+    path("sicurezza/", mfa.security, name="security"),
     path("logout/", auth.LogoutView.as_view(), name="logout"),
     path("telefoni/", views.phones, name="phones"),
     path("telefoni/associa/", views.pair_new, name="pair_new"),

@@ -1,0 +1,60 @@
+{% extends "web/base.html" %}{% load i18n at %}
+{% block title %}{% translate "Sicurezza dell'account" %} · ActivityTrack{% endblock %}
+{% block content %}
+<h1>{% translate "Sicurezza dell'account" %}</h1>
+
+{% if codes %}<section class="card">
+	<h2>{% translate "Codici di recupero" %}</h2>
+	<p>{% translate "Conservali in un posto sicuro: ognuno vale una volta, al posto del codice, se perdi il telefono o la posta. Non si vedranno più." %}</p>
+	<ul class="codes">{% for c in codes %}<li><code>{{ c }}</code></li>{% endfor %}</ul>
+	<a class="button primary" href="{% url 'security' %}">{% translate "Li ho salvati" %}</a>
+</section>
+{% else %}
+
+<section class="card">
+	<h2>{% translate "Verifica in due passaggi" %}</h2>
+	{% if user.mfa_method %}
+		<p class="note success">{% if user.mfa_method == "totp" %}{% translate "Attiva: dopo la password chiede il codice dell'app di autenticazione." %}{% else %}{% blocktranslate with email=user.email %}Attiva: dopo la password chiede il codice inviato a {{ email }}.{% endblocktranslate %}{% endif %}
+		{% blocktranslate count n=left %}Resta {{ n }} codice di recupero.{% plural %}Restano {{ n }} codici di recupero.{% endblocktranslate %}</p>
+	{% else %}
+		<p>{% translate "Dopo la password, l'accesso chiede un codice: dall'app di autenticazione del telefono (per esempio Aegis, FreeOTP, Google Authenticator) o via email. Chi ha solo la password non entra." %}</p>
+		{% if required %}<p class="note error">{% translate "L'organizzazione la chiede per il tuo profilo: attivala per continuare." %}</p>{% endif %}
+	{% endif %}
+
+	{% if setup.method == "totp" %}
+		<h3>{% translate "App di autenticazione" %}</h3>
+		<p>{% translate "Inquadra il codice con l'app, poi scrivi il codice di 6 cifre che mostra." %}</p>
+		<div class="qr">{{ qr|safe }}</div>
+		<p class="doc">{% translate "Senza fotocamera, inserisci a mano questa chiave:" %} <code>{{ secret }}</code></p>
+	{% elif setup.method == "email" %}
+		<h3>{% translate "Codice via email" %}</h3>
+		<p>{% blocktranslate with email=user.email %}Scrivi il codice di 6 cifre inviato a {{ email }}.{% endblocktranslate %}</p>
+	{% endif %}
+	{% if setup %}
+		<form method="post" class="inline-form">{% csrf_token %}<input type="hidden" name="action" value="confirm">
+			<input name="code" inputmode="numeric" autocomplete="one-time-code" required autofocus maxlength="8" placeholder="123456">
+			<button class="primary">{% translate "Conferma" %}</button></form>
+		<form method="post" class="inline-form">{% csrf_token %}<button name="action" value="cancel">{% translate "Annulla" %}</button></form>
+	{% else %}
+		<form method="post" class="actions">{% csrf_token %}
+			<button name="action" value="totp_start" class="{% if not user.mfa_method %}primary{% endif %}">{% icon "phone" %}{% if user.mfa_method == "totp" %}{% translate "Nuova app di autenticazione" %}{% else %}{% translate "Usa un'app di autenticazione" %}{% endif %}</button>
+			{% if mail %}<button name="action" value="email_start" {% if not user.email %}disabled title="{% translate 'Manca l’indirizzo email nel tuo utente' %}"{% endif %}>{% translate "Usa un codice via email" %}</button>{% endif %}
+		</form>
+		{% if not mail %}<p class="doc">{% translate "I codici via email non sono disponibili: sul server non è configurata la posta." %}</p>{% elif not user.email %}<p class="doc">{% translate "Per i codici via email serve un indirizzo nel tuo utente: chiedilo all'amministratore." %}</p>{% endif %}
+	{% endif %}
+</section>
+
+{% if user.mfa_method and not setup %}
+<section class="card">
+	<h2>{% translate "Codici di recupero e disattivazione" %}</h2>
+	<form method="post" class="inline-form">{% csrf_token %}
+		<input type="password" name="password" autocomplete="current-password" required placeholder="{% translate 'password attuale' %}">
+		<button name="action" value="recovery">{% translate "Nuovi codici di recupero" %}</button>
+		{% if not required %}<button name="action" value="off" class="danger">{% translate "Disattiva la verifica" %}</button>{% endif %}
+	</form>
+</section>
+{% endif %}
+
+<section class="card"><h2>{% translate "Password" %}</h2><a class="button" href="{% url 'my_password' %}">{% translate "Cambia password" %}</a></section>
+{% endif %}
+{% endblock %}
