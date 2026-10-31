@@ -223,6 +223,18 @@
       "doc": "true/false — false: only the tags of the master data (issue #133)"
     },
     {
+      "key": "updateCheck",
+      "kind": "BOOLEAN",
+      "since": "0.9.3",
+      "doc": "true/false — daily check of newer releases on GitHub, apps not installed from a store (0.9.3)"
+    },
+    {
+      "key": "updateBetas",
+      "kind": "BOOLEAN",
+      "since": "0.9.3",
+      "doc": "true/false — the check shows betas (pre-releases) too (0.9.3)"
+    },
+    {
       "key": "confirmIntervalMin",
       "kind": "INT",
       "min": 10,
