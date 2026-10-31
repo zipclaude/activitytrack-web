@@ -64,5 +64,5 @@
 {% empty %}<p class="muted">{% translate "Si aggiungono dall'app." %}</p>{% endfor %}
 </section>
 
-{% if can %}<form class="danger-zone" method="post" onsubmit="return confirm('{% translate "Eliminare questa attività? Si elimina anche sui telefoni." %}')">{% csrf_token %}<input type="hidden" name="action" value="delete"><button class="danger">{% translate "Elimina l'attività" %}</button></form>{% endif %}
+{% if can %}<form class="danger-zone" method="post" data-confirm="{% translate "Eliminare questa attività? Si elimina anche sui telefoni." %}">{% csrf_token %}<input type="hidden" name="action" value="delete"><button class="danger">{% translate "Elimina l'attività" %}</button></form>{% endif %}
 {% endblock %}

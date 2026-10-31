@@ -737,3 +737,25 @@ class MfaTests(TestCase):
         self.assertEqual((self.alice.mfa_method, self.alice.totp_secret), ("", ""))
         self.client.logout()
         self.assertRedirects(self.login(), "/", fetch_redirect_response=False)
+
+
+class CspTests(TestCase):
+    """Pages carry a Content-Security-Policy and no inline script (docs/SECURITY.md)."""
+
+    def test_pages_have_the_policy_and_no_inline_script(self):
+        import re
+
+        from accounts.models import Profile
+
+        org = Organization.objects.create(name="Infra")
+        root = User.objects.create_user("root", password="x-x-x-x-x-x", org=org, profile=Profile.ADMIN)
+        self.assertIn("script-src 'self'", self.client.get("/login/")["Content-Security-Policy"])
+        self.client.force_login(root)
+        for url in ["/", "/attivita/", "/attivita/nuova/", "/dafare/", "/agenda/", "/agenda/?view=month", "/report/", "/anagrafiche/", "/telefoni/",
+                    "/utenti/", f"/utenti/{root.pk}/", "/password/", "/sicurezza/", "/policy/", "/policy/org/"]:
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200, url)
+            self.assertIn("frame-ancestors 'none'", r["Content-Security-Policy"])
+            page = r.content.decode()
+            self.assertFalse(re.search(r"<script(?![^>]*\bsrc=)", page), url)
+            self.assertFalse(re.search(r"\son(click|submit|change|load)=", page), url)

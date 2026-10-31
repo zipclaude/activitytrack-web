@@ -76,7 +76,7 @@
 </table></details>
 
 <p><button class="primary">{% translate "Salva" %}</button>
-{% if policy %}<button name="delete" value="1" class="danger" onclick="return confirm('{% translate "Eliminare la policy di questo ambito?" %}')">{% translate "Elimina" %}</button>{% endif %}</p>
+{% if policy %}<button name="delete" value="1" class="danger" data-confirm="{% translate "Eliminare la policy di questo ambito?" %}">{% translate "Elimina" %}</button>{% endif %}</p>
 </form>
 {% if preview %}<details><summary>{% translate "JSON di questo ambito" %}</summary><pre class="json">{{ preview }}</pre></details>{% endif %}
 {% endblock %}

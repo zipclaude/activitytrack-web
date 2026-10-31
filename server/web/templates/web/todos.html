@@ -3,7 +3,7 @@
 {% block content %}
 <div class="head"><h1>{% translate "Da fare" %}</h1><a class="button primary" href="{% url 'todo_new' %}{% if who and who != 'all' %}?person={{ who }}{% endif %}">{% icon "add" %}{% translate "Nuova voce" %}</a></div>
 {% if people %}<form class="filters" method="get"><input type="hidden" name="show" value="{{ show }}">
-	<label>{% translate "Persona" %}<select name="person" onchange="this.form.submit()"><option value="">{% translate "Le mie" %}</option><option value="all" {% if who == "all" %}selected{% endif %}>{% translate "Tutto il team" %}</option>{% for p in people %}{% if p != user %}<option value="{{ p.pk }}" {% if who == p.pk|stringformat:"s" %}selected{% endif %}>{{ p.get_full_name|default:p.username }}</option>{% endif %}{% endfor %}</select></label>
+	<label>{% translate "Persona" %}<select name="person" data-autosubmit><option value="">{% translate "Le mie" %}</option><option value="all" {% if who == "all" %}selected{% endif %}>{% translate "Tutto il team" %}</option>{% for p in people %}{% if p != user %}<option value="{{ p.pk }}" {% if who == p.pk|stringformat:"s" %}selected{% endif %}>{{ p.get_full_name|default:p.username }}</option>{% endif %}{% endfor %}</select></label>
 	<noscript><button>{% translate "Filtra" %}</button></noscript></form>{% endif %}
 <p class="tabs">
 	<a href="?show=open{{ person_q }}" class="{% if show == 'open' %}on{% endif %}">{% translate "Aperte" %}</a>

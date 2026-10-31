@@ -10,7 +10,7 @@
 		<label>{% translate "Email" %}<input type="email" name="email" value="{{ form.email|default:'' }}"></label>
 		<label>{% translate "Nome" %}<input name="first_name" value="{{ form.first_name|default:'' }}"></label>
 		<label>{% translate "Cognome" %}<input name="last_name" value="{{ form.last_name|default:'' }}"></label>
-		<label>{% translate "Profilo" %}<select name="profile" id="profile">{% for v, l in profiles %}<option value="{{ v }}" {% if form.profile == v or not form and v == "user" %}selected{% endif %}>{{ l }}</option>{% endfor %}</select>{% if errors.profile %}<span class="err">{{ errors.profile }}</span>{% endif %}</label>
+		<label>{% translate "Profilo" %}<select name="profile" id="profile" data-profile>{% for v, l in profiles %}<option value="{{ v }}" {% if form.profile == v or not form and v == "user" %}selected{% endif %}>{{ l }}</option>{% endfor %}</select>{% if errors.profile %}<span class="err">{{ errors.profile }}</span>{% endif %}</label>
 		<label data-for="admin manager user">{% translate "Team di (responsabile)" %}<select name="manager"><option value="">—</option>{% for m in managers %}<option value="{{ m.pk }}" {% if form.manager_id == m.pk %}selected{% endif %}>{{ m.get_full_name|default:m.username }}</option>{% endfor %}</select></label>
 	</div>
 	<p class="doc" id="profile-doc">
@@ -35,7 +35,7 @@
 {% if u %}
 <section class="card"><h2>{% translate "Telefoni" %}</h2>
 {% for d in devices %}<div class="line{% if d.revoked %} muted{% endif %}">{% icon "phone" %}<b>{{ d.name }}</b> <span class="sub">{{ d.model }} · {{ d.app_version }} · {% if d.revoked %}{% translate "revocato" %} {{ d.revoked|date:"SHORT_DATETIME_FORMAT" }}{% else %}{% translate "ultima sincronizzazione" %} {{ d.last_seen|date:"SHORT_DATETIME_FORMAT"|default:"—" }}{% endif %}</span>
-	{% if not d.revoked %}<form method="post" action="{% url 'device_revoke' d.pk %}" onsubmit="return confirm('{% translate "Revocare questo telefono? Smette subito di sincronizzare." %}')">{% csrf_token %}<input type="hidden" name="next" value="{{ request.path }}"><button class="danger">{% translate "Revoca" %}</button></form>{% endif %}</div>
+	{% if not d.revoked %}<form method="post" action="{% url 'device_revoke' d.pk %}" data-confirm="{% translate "Revocare questo telefono? Smette subito di sincronizzare." %}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.path }}"><button class="danger">{% translate "Revoca" %}</button></form>{% endif %}</div>
 {% empty %}<p class="muted">{% translate "Nessun telefono associato." %}</p>{% endfor %}
 </section>
 {% if team %}<section class="card"><h2>{% translate "Team" %}</h2>{% for m in team %}<div class="line"><a href="{% url 'user_edit' m.pk %}">{{ m.get_full_name|default:m.username }}</a></div>{% endfor %}</section>{% endif %}
@@ -54,16 +54,3 @@
 </form>
 {% endif %}
 {% endblock %}
-{% block scripts %}<script>
-(function () {
-	/* the fields and notes of the chosen profile only */
-	var form = document.getElementById("userform"), profile = document.getElementById("profile");
-	function sync() {
-		document.querySelectorAll("[data-for]").forEach(function (el) {
-			el.hidden = el.dataset.for.split(" ").indexOf(profile.value) < 0;
-		});
-	}
-	profile.addEventListener("change", sync);
-	sync();
-})();
-</script>{% endblock %}
