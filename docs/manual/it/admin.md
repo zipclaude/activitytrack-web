@@ -1,4 +1,4 @@
-Versione 0.9.2 (ottobre 2026). Per chi installa e amministra il server
+Versione 0.9.3 (ottobre 2026). Per chi installa e amministra il server
 dell'organizzazione; chi usa l'app trova tutto nel *Manuale* di
 ActivityTrack.
 
