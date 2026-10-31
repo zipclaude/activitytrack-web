@@ -15,6 +15,10 @@ class Organization(models.Model):
 
     name = models.CharField(_("nome"), max_length=200)
     created = models.DateTimeField(auto_now_add=True)
+    # who must log in with a second step (web/mfa.py)
+    mfa_required = models.CharField(_("verifica in due passaggi obbligatoria per"), max_length=16, blank=True, choices=[
+        ("", _("nessuno")), ("admins", _("amministratori")), ("managers", _("amministratori e responsabili")), ("all", _("tutti")),
+    ])
 
     def __str__(self):
         return self.name
@@ -31,6 +35,13 @@ class Profile(models.TextChoices):
 class User(AbstractUser):
     org = models.ForeignKey(Organization, on_delete=models.PROTECT, null=True, related_name="users")
     profile = models.CharField(_("profilo"), max_length=16, choices=Profile.choices, default=Profile.USER)
+    # second login step: "" none, "totp" an authenticator app, "email" a code by email (web/mfa.py)
+    mfa_method = models.CharField(max_length=8, blank=True)
+    totp_secret = models.CharField(max_length=64, blank=True)
+    # the last TOTP step used: a code works once
+    totp_last = models.BigIntegerField(default=0)
+    # hashes of the unused recovery codes
+    mfa_recovery = models.JSONField(default=list, blank=True)
     # the manager whose team this user is in
     manager = models.ForeignKey("self", on_delete=models.SET_NULL, null=True, blank=True, related_name="team")
     # a reader: the companies whose closed entries they see; a manager: the companies

@@ -25,6 +25,16 @@ CSRF_TRUSTED_ORIGINS = sorted({f"{_base.scheme}://{_base.netloc}"} | {f"https://
 
 FILES_DIR = DATA_DIR / "files"
 FILES_MAX_MB = INI.getint("files", "max_mb", fallback=25)
+# mail, for the login codes by email (web/mfa.py); without a host, no mail
+EMAIL_HOST = INI.get("mail", "host", fallback="").strip()
+EMAIL_PORT = INI.getint("mail", "port", fallback=587)
+EMAIL_HOST_USER = INI.get("mail", "user", fallback="")
+EMAIL_HOST_PASSWORD = INI.get("mail", "password", fallback="")
+EMAIL_USE_TLS = INI.get("mail", "security", fallback="starttls").strip() == "starttls"
+EMAIL_USE_SSL = INI.get("mail", "security", fallback="starttls").strip() == "ssl"
+DEFAULT_FROM_EMAIL = INI.get("mail", "from", fallback="") or f"ActivityTrack <noreply@{urlsplit(BASE_URL).hostname or 'localhost'}>"
+if not EMAIL_HOST:
+    EMAIL_BACKEND = "django.core.mail.backends.dummy.EmailBackend"
 # a push carries up to 500 changes (sync.engine.MAX_CHANGES) with free texts: more
 # than Django's 2.5 MB; files are streamed and checked against FILES_MAX_MB
 DATA_UPLOAD_MAX_MEMORY_SIZE = 16 * 1024 * 1024
@@ -64,6 +74,7 @@ MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
+    "web.mfa.enforce",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 

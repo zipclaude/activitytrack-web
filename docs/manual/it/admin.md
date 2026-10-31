@@ -38,6 +38,7 @@ avvia il servizio. Prima si scrive `/etc/activitytrack-web/settings.ini`:
 | `[database]` | SQLite (predefinito) o PostgreSQL |
 | `[files] max_mb`, `offload` | dimensione massima degli allegati; chi li invia: Django, nginx o Apache |
 | `[policy] key`, `cert` | chiave e certificato per firmare le policy (facoltativi) |
+| `[mail]` | server di posta per i codici di accesso via email (facoltativo) |
 
 Poi si crea l'organizzazione con il primo amministratore e si avvia il
 servizio:
@@ -67,6 +68,20 @@ Django con l'utente del servizio, per esempio `migrate`,
 Ognuno accede con il nome utente e la password che gli ha dato
 l'amministratore. Dopo 10 tentativi sbagliati di fila dallo stesso
 indirizzo, il login si blocca per qualche minuto.
+
+**Verifica in due passaggi.** Da **"Sicurezza dell'account"** (il proprio
+nome in fondo al menu) ognuno può chiedere, dopo la password, un codice di
+6 cifre:
+- da un'**app di autenticazione** sul telefono (Aegis, FreeOTP, Google
+  Authenticator…): si inquadra il codice QR e si conferma con il primo
+  codice;
+- oppure via **email**, se l'utente ha un indirizzo e sul server è
+  configurata la posta (`[mail]` in `settings.ini`).
+
+Attivandola si ricevono **10 codici di recupero**, da conservare: ognuno
+vale una volta al posto del codice, se si perde il telefono o la posta.
+Dopo 5 codici sbagliati si ricomincia dalla password. I telefoni associati
+non cambiano: sincronizzano con il loro token.
 
 Il menu a sinistra (sul telefono, la barra in basso) contiene **Home**,
 **Da fare**, **Agenda**, **Report**, **Attività**, **Anagrafiche** e
@@ -106,6 +121,13 @@ Nella scheda di un utente:
 Un amministratore non può togliersi il profilo né disattivarsi. L'altro
 amministratore, o il comando `activitytrack-web-manage createsuperuser`,
 rimedia se serve.
+
+In fondo alla pagina Utenti, **"Verifica in due passaggi obbligatoria
+per"**: nessuno, amministratori, amministratori e responsabili, tutti. Chi è
+indicato e non l'ha ancora attivata, al primo accesso può solo attivarla.
+Nella scheda di un utente, **"Azzera"** la toglie a chi ha perso il
+telefono: la riattiva al prossimo accesso. Il lucchetto 🔒 nell'elenco
+indica chi l'ha attiva.
 
 La vecchia amministrazione di Django resta raggiungibile dal fondo della
 pagina Utenti (**"amministrazione avanzata"**), per l'organizzazione e i
@@ -256,6 +278,8 @@ Con PostgreSQL si usa `pg_dump activitytrack`.
 | Il telefono dice "certificato non valido" | certificato autofirmato senza `tls_pin`, o creato come CA (`docs/INSTALL.md` §4) |
 | Il QR non viene letto | aumentare la luminosità dello schermo, o copiare nell'app il collegamento sotto "Non riesci a inquadrarlo?" |
 | "Codice scaduto" | il codice vale 10 minuti e una volta: generarne un altro |
+| Un utente ha perso il telefono con l'app di autenticazione | usa un codice di recupero, o l'amministratore **"Azzera"** la verifica nella sua scheda |
+| Il codice dell'app è sempre "non valido" | l'ora del telefono o del server è sbagliata: va sincronizzata (NTP) |
 | Un utente non sincronizza più | è disattivato, o il telefono è stato revocato (Utenti → la sua scheda) |
 | Gli allegati non si aprono sul web | con `offload = nginx` o `apache` serve la configurazione del web server dell'esempio |
 | Una modifica dal web non arriva subito | arriva entro 15 minuti; aprire l'app la fa arrivare subito |

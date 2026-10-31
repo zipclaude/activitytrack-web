@@ -8,6 +8,7 @@ do, and the review of 2026-10-30 (ROADMAP phase 9).
 | Area | Protection |
 |---|---|
 | Web login | Django sessions over HTTPS (`Secure` cookies when `base_url` is https), CSRF on every form, passwords hashed with Argon2, at least 10 characters, not common, not like the name |
+| Two-step login | optional per user, required by the organisation for admins, managers or everyone (Utenti page): after the password a code from an authenticator app (TOTP, RFC 6238, implemented in `web/mfa.py`, each code once) or sent by email (`[mail]` in settings.ini), 5 tries; ten single-use recovery codes, stored hashed; an admin resets it for a lost phone. Phones are not concerned: they use their device token |
 | Password guessing | 10 failures of one name from one address, or 50 from one address, in 15 minutes hold the login back (`web/auth.py`) |
 | Phones | pairing codes of 160 random bits, single use, 10 minutes; device tokens of 256 bits stored as SHA-256 only; a revoked phone or a disabled user is refused at once |
 | Self-signed certificates | the pairing QR code carries the key's fingerprint and the app pins it (`[server] tls_pin`) |
@@ -59,7 +60,7 @@ query, open redirects (`next` checked against the host), the users page
 (an admin cannot lock themselves out), template escaping (`|safe` only on
 the QR code made by segno).
 
-Left for later: two-factor login (#25).
-
 Afterwards (#24): a Content-Security-Policy on every page; the inline
 scripts and `on…` handlers moved to `app.js`, a test keeps them out.
+
+Afterwards (#25): two-step login, by authenticator app or email (§1).

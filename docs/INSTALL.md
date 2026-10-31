@@ -216,7 +216,8 @@ under `/var/db/activitytrack-web/files/`.
 
 `settings.ini` is the only file to edit: `base_url` (the address the phones
 use, written in the pairing QR codes), `allowed_hosts`, `time_zone`, the
-database and who sends the attachments (`[files] offload`, §4). The comments
+database and who sends the attachments (`[files] offload`, §4); optionally
+the mail server for the login codes by email (`[mail]`). The comments
 in the file say what each line does.
 
 PostgreSQL with peer authentication (Debian/Ubuntu; the same users

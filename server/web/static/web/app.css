@@ -329,6 +329,7 @@ pre.json { background: var(--surface-2); padding: 12px; border-radius: 10px; ove
 .me a.who:hover { background: var(--surface-3); }
 .checks { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0 16px; }
 .checks label.check { margin: 6px 0; }
+.codes { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 6px 16px; padding: 0; list-style: none; font-size: 17px; }
 .version { display: block; color: var(--muted); font-size: 11px; padding: 4px 16px 0; }
 .guest main { grid-template-rows: 1fr auto; }
 .guest p.version { text-align: center; margin: 12px 0 0; }
