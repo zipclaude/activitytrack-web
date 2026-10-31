@@ -34,6 +34,7 @@
 		<a class="who" href="{% url 'my_password' %}" title="{% translate 'Cambia password' %}">{% icon "person" %}<span>{{ user.get_full_name|default:user.username }}<small>{{ user.get_profile_display }}</small></span></a>
 		<form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="icon-button" title="{% translate 'Esci' %}">{% icon "logout" _("Esci") %}</button></form>
 	</div>
+	<small class="version">ActivityTrack Web {{ server_version }}</small>
 </aside>
 {% if user.syncs %}
 <nav class="bottom" aria-label="{% translate 'Menu' %}">
@@ -50,6 +51,7 @@
 			{% if user.is_admin %}<a href="{% url 'policies:index' %}">{% icon "tune" %}{% translate "Policy" %}</a>
 			<a href="{% url 'users' %}">{% icon "settings" %}{% translate "Utenti" %}</a>{% endif %}
 			<a href="{% url 'my_password' %}">{% icon "person" %}{% translate "Cambia password" %}</a>
+			<small class="version">ActivityTrack Web {{ server_version }}</small>
 			<form method="post" action="{% url 'logout' %}">{% csrf_token %}<button>{% icon "logout" %}{% translate "Esci" %} · {{ user.get_full_name|default:user.username }}</button></form>
 		</div>
 	</details>

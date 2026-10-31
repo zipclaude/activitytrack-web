@@ -254,7 +254,7 @@ pre.json { background: var(--surface-2); padding: 12px; border-radius: 10px; ove
 @media (max-width: 1100px) and (min-width: 841px) {
 	:root { --rail: 88px; }
 	.rail { padding: 12px 8px; align-items: center; }
-	.brand span, .me .who { display: none; }
+	.brand span, .me .who, .rail .version { display: none; }
 	.brand { padding: 4px 0 12px; }
 	.rail nav a { flex-direction: column; gap: 4px; height: auto; padding: 6px 4px; width: 72px; font-size: 11px; text-align: center; border-radius: 16px; }
 	.me { padding: 8px 0 0; border: 0; }
@@ -329,3 +329,7 @@ pre.json { background: var(--surface-2); padding: 12px; border-radius: 10px; ove
 .me a.who:hover { background: var(--surface-3); }
 .checks { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0 16px; }
 .checks label.check { margin: 6px 0; }
+.version { display: block; color: var(--muted); font-size: 11px; padding: 4px 16px 0; }
+.guest main { grid-template-rows: 1fr auto; }
+.guest p.version { text-align: center; margin: 12px 0 0; }
+nav.bottom .sheet .version { padding: 8px 16px 0; }
