@@ -17,6 +17,6 @@
 	{% if model != "Preset" %}<label class="check"><input type="checkbox" name="archived" {% if r.archived %}checked{% endif %}> {% translate "Archiviata" %}</label>{% endif %}
 	{% if can_central %}<label class="check"><input type="checkbox" name="central" checked> {% translate "Centrale: la vedono tutti, la modificano amministratori e responsabili" %}</label>{% endif %}
 	<button class="primary">{% translate "Salva" %}</button>
-	{% if r %}<button name="delete" value="1" class="danger" onclick="return confirm('{% translate "Eliminare? Si elimina anche sui telefoni." %}')">{% translate "Elimina" %}</button>{% endif %}
+	{% if r %}<button name="delete" value="1" class="danger" data-confirm="{% translate "Eliminare? Si elimina anche sui telefoni." %}">{% translate "Elimina" %}</button>{% endif %}
 </form>
 {% endblock %}

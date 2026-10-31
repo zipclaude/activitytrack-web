@@ -20,7 +20,7 @@
 <section class="card muted">{% translate "Nessuna attività in corso." %}</section>
 {% endfor %}
 
-<form class="filters homefilters" method="get" id="homefilters">
+<form class="filters homefilters" method="get" id="homefilters" data-autosubmit>
 	<input type="hidden" name="f" value="1">
 	<label>{% translate "Periodo" %}<select name="period">{% for w in windows %}<option value="{{ w }}" {% if w == f.period %}selected{% endif %}>{% if w == -1 %}{% translate "Oggi" %}{% elif w == 0 %}{% translate "Tutti" %}{% elif w == 24 %}24 h{% elif w == 72 %}{% translate "3 gg" %}{% elif w == 168 %}{% translate "7 gg" %}{% else %}{% translate "30 gg" %}{% endif %}</option>{% endfor %}</select></label>
 	<details class="dropdown{% if show_changed %} changed{% endif %}"><summary class="button">{% translate "Stato" %} ▾</summary><div class="menu">
@@ -38,10 +38,3 @@
 {% endfor %}
 {% if todos_on %}<p><a href="{% url 'todos' %}">{% translate "Tutte le Da fare" %} →</a></p>{% endif %}
 {% endblock %}
-{% block scripts %}<script>
-(function () {
-	/* the filters apply at once, as in the app */
-	var form = document.getElementById("homefilters");
-	form.addEventListener("change", function () { form.submit(); });
-})();
-</script>{% endblock %}

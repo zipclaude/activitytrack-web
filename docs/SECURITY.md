@@ -13,7 +13,7 @@ do, and the review of 2026-10-30 (ROADMAP phase 9).
 | Self-signed certificates | the pairing QR code carries the key's fingerprint and the app pins it (`[server] tls_pin`) |
 | Data | every query is filtered by organisation and by what the profile may read (ARCHITECTURE §5); the sync engine checks ownership on every change |
 | Attachments | sent by the server only to whom may read the entry; shown in the browser only for images, PDF, audio and video, anything else downloaded, with a `sandbox` Content-Security-Policy |
-| Pages | `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: same-origin`, templates escaped |
+| Pages | a Content-Security-Policy (scripts and styles from the site only, no frames, no plugins, forms to the site), `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: same-origin`, templates escaped; no inline script (`web/static/web/app.js` reads data attributes) |
 | Policies | signed with the organisation's key when configured; the app checks the signature |
 | Secret key | generated on first start in the data folder, mode 0600 |
 
@@ -59,5 +59,7 @@ query, open redirects (`next` checked against the host), the users page
 (an admin cannot lock themselves out), template escaping (`|safe` only on
 the QR code made by segno).
 
-Left for later: a Content-Security-Policy for the pages (they still have a
-few inline scripts), two-factor login.
+Left for later: two-factor login (#25).
+
+Afterwards (#24): a Content-Security-Policy on every page; the inline
+scripts and `on…` handlers moved to `app.js`, a test keeps them out.
