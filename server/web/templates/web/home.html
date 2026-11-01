@@ -2,7 +2,7 @@
 {% block content %}
 <div class="head"><h1>{% blocktranslate with name=user.first_name|default:user.username %}Ciao {{ name }}{% endblocktranslate %}</h1>
 <a class="button primary" href="{% url 'entry_new' %}">{% icon "play" %}{% translate "Nuova attività" %}</a></div>
-{% if first %}<section class="card"><h2>{% translate "Associa il telefono" %}</h2><p>{% translate "Collega l'app ActivityTrack a questo server: i dati restano sincronizzati nei due sensi." %}</p><a class="button tonal" href="{% url 'phones' %}">{% icon "phone" %}{% translate "Associa un telefono" %}</a></section>{% endif %}
+{% if first %}<section class="card"><h2>{% translate "Associa il telefono o il PC" %}</h2><p>{% translate "Collega l'app ActivityTrack a questo server: i dati restano sincronizzati nei due sensi." %}</p><a class="button tonal" href="{% url 'phones' %}">{% icon "devices" %}{% translate "Associa un dispositivo" %}</a></section>{% endif %}
 
 {% for r in running %}
 <section class="card running" style="--band: {{ r.e.client.color|color|default:'var(--accent)' }}">{% tag_dots r.e.tags tag_colors %}

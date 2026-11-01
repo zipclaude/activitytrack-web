@@ -21,7 +21,7 @@
 <form method="post" class="card inline-form">{% csrf_token %}
 	<label>{% translate "Verifica in due passaggi obbligatoria per" %}<select name="mfa_required" data-autosubmit>{% for v, l in mfa_levels %}<option value="{{ v }}" {% if org.mfa_required == v %}selected{% endif %}>{{ l }}</option>{% endfor %}</select></label>
 	<noscript><button>{% translate "Salva" %}</button></noscript>
-	<p class="doc">{% translate "Chi è indicato deve attivarla (app di autenticazione o email) al primo accesso; gli altri possono attivarla da «Sicurezza dell'account». I telefoni già associati non cambiano." %}</p>
+	<p class="doc">{% translate "Chi è indicato deve attivarla (app di autenticazione o email) al primo accesso; gli altri possono attivarla da «Sicurezza dell'account». I dispositivi già associati non cambiano." %}</p>
 </form>
 <p class="doc">{% translate "L'organizzazione e i dati grezzi restano nell'" %}<a href="{% url 'admin:index' %}">{% translate "amministrazione avanzata" %}</a>.</p>
 {% endblock %}

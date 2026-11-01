@@ -82,7 +82,7 @@ sync with their token.
 
 The menu on the left (on a phone, the bar at the bottom) has **Home**,
 **Da fare** (To-dos), **Agenda**, **Report**, **Attività** (Activities),
-**Anagrafiche** (Master data) and **Telefoni** (Phones); administrators
+**Anagrafiche** (Master data) and **Dispositivi** (Devices); administrators
 also have **Policy** and **Utenti** (Users). At the bottom is one's own
 name: a click opens **"Cambia password"** (change password).
 
@@ -112,11 +112,11 @@ On a user's sheet:
   the companies whose activities they all read; for a reader, those whose
   report they see.
 - **Attivo** (active): unticked, the user can no longer log in and their
-  phones stop syncing at once. The data stay.
-- **Telefoni**: the paired phones, with their last sync and **"Revoca"**
+  devices stop syncing at once. The data stay.
+- **Dispositivi**: the paired phones and PCs, with their last sync and **"Revoca"**
   (revoke).
 - **Policy dell'utente**: opens their own policy (§7).
-- **Nuova password**: the user is logged out of the web; the phones stay
+- **Nuova password**: the user is logged out of the web; the devices stay
   paired.
 
 An administrator cannot drop their own profile nor deactivate themselves.
@@ -133,14 +133,16 @@ it up again at the next login. The padlock 🔒 in the list marks who has it.
 Django's old administration stays reachable from the bottom of the Users
 page (**"amministrazione avanzata"**), for the organisation and raw data.
 
-## 5. Phones
+## 5. Devices
 
-![Phones](../img/phones.png)
+![Devices](../img/phones.png)
 
-Each user pairs their phones from **Telefoni** → **"Associa un telefono"**:
-a **QR code** appears, to be scanned in the app with Settings → Sync →
-"Scan the QR code". The code is good for 10 minutes and once; the page
-shows the phone as soon as it is paired.
+Each user pairs their phones and PCs from **Dispositivi** → **"Associa un
+dispositivo"**: a **QR code** appears, to be scanned in the app with
+Settings → Sync → "Scan the QR code", and below it the link to paste in
+ActivityTrack Desktop on the PC. The code is good for 10 minutes and once;
+the page shows the device as soon as it is paired. A PC never sends to the
+management systems.
 
 - **Revoke**: the phone stops syncing at once and says the server revoked its pairing.
   Its data stay on the phone and on the server. A new code pairs it again.

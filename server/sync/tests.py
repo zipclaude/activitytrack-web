@@ -11,7 +11,7 @@ from django.db import transaction
 from django.test import TestCase, override_settings
 from django.utils import timezone
 
-from accounts.models import Organization, PairingCode, Profile, User
+from accounts.models import Device, Organization, PairingCode, Profile, User
 from records.models import Company, Contact, Entry, Segment
 from sync import engine
 
@@ -44,9 +44,10 @@ class SyncTestCase(TestCase):
         self.files = tempfile.mkdtemp()
         self.addCleanup(shutil.rmtree, self.files)
 
-    def pair(self, user, name="Telefono"):
+    def pair(self, user, name="Telefono", **more):
         _, code = PairingCode.issue(user)
-        r = self.client.post("/api/v1/pair", json.dumps({"code": code, "deviceName": name}), content_type="application/json")
+        body = {"code": code, "deviceName": name, **more}
+        r = self.client.post("/api/v1/pair", json.dumps(body), content_type="application/json")
         self.assertEqual(r.status_code, 200, r.content)
         return r.json()["token"]
 
@@ -89,6 +90,18 @@ class PairingTests(SyncTestCase):
         holders = [d.name for d in self.alice.devices.filter(plugin_holder=True)]
         self.assertEqual(holders, ["uno"])
 
+    def test_a_desktop_never_holds_the_plugins(self):
+        self.pair(self.alice, "pc", kind="desktop")
+        self.pair(self.alice, "uno")
+        self.pair(self.bob, "pc", kind="desktop")
+        self.pair(self.bob, "strano", kind="tablet")
+        kinds = {d.name: (d.kind, d.plugin_holder) for d in Device.objects.filter(user=self.alice)}
+        self.assertEqual(kinds, {"pc": ("desktop", False), "uno": ("phone", True)})
+        self.assertEqual(self.bob.devices.get(name="strano").kind, "phone")
+        pc = self.bob.devices.get(name="pc")
+        self.client.force_login(self.bob)
+        self.assertEqual(self.client.post(f"/dispositivi/{pc.pk}/gestionali/").status_code, 404)
+
     def test_one_holder_per_user(self):
         first = self.pair(self.alice, "uno")
         second = self.pair(self.alice, "due")
@@ -96,7 +109,7 @@ class PairingTests(SyncTestCase):
         self.assertEqual((head(first), head(second)), (True, False))
         self.client.force_login(self.alice)
         due = self.alice.devices.get(name="due")
-        self.client.post(f"/telefoni/{due.pk}/gestionali/")
+        self.client.post(f"/dispositivi/{due.pk}/gestionali/")
         self.assertEqual((head(first), head(second)), (False, True))
 
     def test_head_names_the_file_limit(self):
@@ -486,6 +499,8 @@ class PolicyCompatTests(SyncTestCase):
         from policies.models import Policy
 
         self.pair(self.alice, name="Pixel")
+        # a PC ignores the keys it does not use: never in the warning
+        self.pair(self.alice, name="Ufficio", kind="desktop")
         Device.objects.filter(user=self.alice).update(app_version="0.9.2")
         Policy.objects.create(org=self.org, data={"settings": {"editableTimes": {"value": False, "locked": True}}})
         self.client.force_login(self.admin)
@@ -495,3 +510,4 @@ class PolicyCompatTests(SyncTestCase):
         self.assertIn("rifiutano tutta la policy", page)
         self.assertIn("settings.editableTimes", page)
         self.assertIn("Pixel, 0.9.2", page)
+        self.assertNotIn("Ufficio", page)

@@ -193,12 +193,13 @@ def edit(request, scope):
         values = {k: (request.POST.getlist(k) if len(request.POST.getlist(k)) > 1 else request.POST.get(k)) for k in request.POST}
     else:
         errors, values = {}, _initial(policy.data if policy else {})
-    # the phones of the scope whose app would refuse this policy
+    # the phones of the scope whose app would refuse this policy; a PC ignores the keys it does not use
     from accounts.models import Device
 
     from .catalog import unknown_to_phones
 
-    devices = Device.objects.filter(user__org=lookup["org"], revoked__isnull=True).select_related("user")
+    devices = Device.objects.filter(
+        user__org=lookup["org"], revoked__isnull=True, kind=Device.PHONE).select_related("user")
     if lookup["user"] is not None:
         devices = devices.filter(user=lookup["user"])
     elif lookup["profile"]:

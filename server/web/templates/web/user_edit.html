@@ -14,7 +14,7 @@
 		<label data-for="admin manager user">{% translate "Team di (responsabile)" %}<select name="manager"><option value="">—</option>{% for m in managers %}<option value="{{ m.pk }}" {% if form.manager_id == m.pk %}selected{% endif %}>{{ m.get_full_name|default:m.username }}</option>{% endfor %}</select></label>
 	</div>
 	<p class="doc" id="profile-doc">
-		<span data-for="admin">{% translate "Amministratore: tutto, compresi utenti, telefoni e policy." %}</span>
+		<span data-for="admin">{% translate "Amministratore: tutto, compresi utenti, dispositivi e policy." %}</span>
 		<span data-for="manager">{% translate "Responsabile: anagrafiche centrali; legge e corregge le attività del suo team, legge quelle delle sue aziende; assegna le Da fare al team." %}</span>
 		<span data-for="user">{% translate "Utente: le sue attività e Da fare, dal telefono e dal web." %}</span>
 		<span data-for="reader">{% translate "Lettore azienda: solo il report delle attività chiuse delle sue aziende. Niente telefono." %}</span>
@@ -23,7 +23,7 @@
 		<p class="doc"><span data-for="manager">{% translate "Il responsabile legge tutte le attività fatte per queste aziende, chiunque le abbia fatte." %}</span><span data-for="reader">{% translate "Il lettore vede le attività chiuse di queste aziende." %}</span></p>
 		<div class="checks">{% for c in companies %}<label class="check"><input type="checkbox" name="companies" value="{{ c.uid }}" {% if c.uid|stringformat:"s" in chosen %}checked{% endif %}> {{ c.name }}</label>{% empty %}<span class="muted">{% translate "Nessuna azienda centrale." %}</span>{% endfor %}</div>
 	</fieldset>
-	<label class="check"><input type="checkbox" name="active" {% if not form or form.is_active %}checked{% endif %}> {% translate "Attivo: può accedere e i suoi telefoni sincronizzano" %}</label>{% if errors.active %}<span class="err">{{ errors.active }}</span>{% endif %}
+	<label class="check"><input type="checkbox" name="active" {% if not form or form.is_active %}checked{% endif %}> {% translate "Attivo: può accedere e i suoi dispositivi sincronizzano" %}</label>{% if errors.active %}<span class="err">{{ errors.active }}</span>{% endif %}
 	{% if not u %}<div class="fields">
 		<label>{% translate "Password" %}<input type="password" name="password" autocomplete="new-password" required></label>
 		<label>{% translate "Ripeti la password" %}<input type="password" name="password2" autocomplete="new-password" required></label>
@@ -33,10 +33,10 @@
 </form>
 
 {% if u %}
-<section class="card"><h2>{% translate "Telefoni" %}</h2>
-{% for d in devices %}<div class="line{% if d.revoked %} muted{% endif %}">{% icon "phone" %}<b>{{ d.name }}</b> <span class="sub">{{ d.model }} · {{ d.app_version }} · {% if d.revoked %}{% translate "revocato" %} {{ d.revoked|date:"SHORT_DATETIME_FORMAT" }}{% else %}{% translate "ultima sincronizzazione" %} {{ d.last_seen|date:"SHORT_DATETIME_FORMAT"|default:"—" }}{% endif %}</span>
-	{% if not d.revoked %}<form method="post" action="{% url 'device_revoke' d.pk %}" data-confirm="{% translate "Revocare questo telefono? Smette subito di sincronizzare." %}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.path }}"><button class="danger">{% translate "Revoca" %}</button></form>{% endif %}</div>
-{% empty %}<p class="muted">{% translate "Nessun telefono associato." %}</p>{% endfor %}
+<section class="card"><h2>{% translate "Dispositivi" %}</h2>
+{% for d in devices %}<div class="line{% if d.revoked %} muted{% endif %}">{% if d.kind == "desktop" %}{% icon "computer" %}{% else %}{% icon "phone" %}{% endif %}<b>{{ d.name }}</b> <span class="sub">{{ d.model }} · {{ d.app_version }} · {% if d.revoked %}{% translate "revocato" %} {{ d.revoked|date:"SHORT_DATETIME_FORMAT" }}{% else %}{% translate "ultima sincronizzazione" %} {{ d.last_seen|date:"SHORT_DATETIME_FORMAT"|default:"—" }}{% endif %}</span>
+	{% if not d.revoked %}<form method="post" action="{% url 'device_revoke' d.pk %}" data-confirm="{% translate "Revocare questo dispositivo? Smette subito di sincronizzare." %}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.path }}"><button class="danger">{% translate "Revoca" %}</button></form>{% endif %}</div>
+{% empty %}<p class="muted">{% translate "Nessun dispositivo associato." %}</p>{% endfor %}
 </section>
 {% if team %}<section class="card"><h2>{% translate "Team" %}</h2>{% for m in team %}<div class="line"><a href="{% url 'user_edit' m.pk %}">{{ m.get_full_name|default:m.username }}</a></div>{% endfor %}</section>{% endif %}
 <section class="card"><h2>{% translate "Policy" %}</h2><p>{% translate "Oltre a quelle dell'organizzazione e del profilo, questo utente può avere una policy sua." %}</p><a class="button" href="{% url 'policies:index' %}user-{{ u.pk }}/">{% icon "tune" %}{% translate "Policy dell'utente" %}</a></section>
@@ -46,7 +46,7 @@
 	{% else %}<p class="muted">{% translate "Non attiva." %}</p>{% endif %}
 </section>
 <form method="post" action="{% url 'user_password' u.pk %}" class="card">{% csrf_token %}<h2>{% translate "Nuova password" %}</h2>
-	<p class="doc">{% translate "L'utente esce dal web; i telefoni restano associati." %}</p>
+	<p class="doc">{% translate "L'utente esce dal web; i dispositivi restano associati." %}</p>
 	<div class="fields"><label>{% translate "Password" %}<input type="password" name="password" autocomplete="new-password" required></label>
 	<label>{% translate "Ripeti la password" %}<input type="password" name="password2" autocomplete="new-password" required></label></div>
 	<ul class="doc">{% for h in help %}<li>{{ h }}</li>{% endfor %}</ul>

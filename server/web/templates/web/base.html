@@ -24,7 +24,7 @@
 		{% if user.syncs %}
 		<a class="{% nav_on 'entries' 'entry' 'entry_new' %}" href="{% url 'entries' %}">{% icon "list" %}{% translate "Attività" %}</a>
 		<a class="{% nav_on 'masters_home' 'masters' 'master_new' 'master_edit' %}" href="{% url 'masters_home' %}">{% icon "folder" %}{% translate "Anagrafiche" %}</a>
-		<a class="{% nav_on 'phones' 'pair_new' %}" href="{% url 'phones' %}">{% icon "phone" %}{% translate "Telefoni" %}</a>
+		<a class="{% nav_on 'phones' 'pair_new' %}" href="{% url 'phones' %}">{% icon "devices" %}{% translate "Dispositivi" %}</a>
 		{% endif %}
 		{% if user.is_admin %}
 		<a class="{% nav_on 'policies:index' 'policies:edit' %}" href="{% url 'policies:index' %}">{% icon "tune" %}{% translate "Policy" %}</a>
@@ -48,7 +48,7 @@
 		<div class="sheet">
 			<a href="{% url 'entries' %}">{% icon "list" %}{% translate "Attività" %}</a>
 			<a href="{% url 'masters_home' %}">{% icon "folder" %}{% translate "Anagrafiche" %}</a>
-			<a href="{% url 'phones' %}">{% icon "phone" %}{% translate "Telefoni" %}</a>
+			<a href="{% url 'phones' %}">{% icon "devices" %}{% translate "Dispositivi" %}</a>
 			{% if user.is_admin %}<a href="{% url 'policies:index' %}">{% icon "tune" %}{% translate "Policy" %}</a>
 			<a href="{% url 'users' %}">{% icon "settings" %}{% translate "Utenti" %}</a>{% endif %}
 			<a href="{% url 'security' %}">{% icon "person" %}{% translate "Sicurezza dell'account" %}</a>

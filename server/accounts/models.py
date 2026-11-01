@@ -76,12 +76,16 @@ class DeviceManager(models.Manager):
 
 
 class Device(models.Model):
-    """A paired phone; its bearer token is kept only as a hash."""
+    """A paired phone or PC (ActivityTrack Desktop); its bearer token is kept only as a hash."""
+
+    PHONE, DESKTOP = "phone", "desktop"
+    KINDS = [(PHONE, _("telefono")), (DESKTOP, _("PC"))]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="devices")
     name = models.CharField(_("nome"), max_length=100)
     model = models.CharField(_("modello"), max_length=100, blank=True)
+    kind = models.CharField(_("tipo"), max_length=16, choices=KINDS, default=PHONE)
     app_version = models.CharField(_("versione app"), max_length=40, blank=True)
     # the wire schema it last spoke (sync/compat.py)
     schema = models.PositiveIntegerField(_("schema"), default=1)
@@ -102,7 +106,9 @@ class Device(models.Model):
     def create_for(cls, user, **fields):
         """The new device and its token, returned once."""
         token = secrets.token_urlsafe(32)
-        holder = not user.devices.filter(revoked__isnull=True, plugin_holder=True).exists()
+        # only a phone runs the plugins
+        holder = fields.get("kind", cls.PHONE) == cls.PHONE and not user.devices.filter(
+            revoked__isnull=True, plugin_holder=True).exists()
         device = cls.objects.create(user=user, token_hash=_hash(token), plugin_holder=holder, **fields)
         return device, token
 

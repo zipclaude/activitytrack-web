@@ -55,7 +55,7 @@ def pair_status(request, pk):
 def device_holder(request, pk):
     """This phone becomes the one of its user that sends to the management systems."""
     devices = Device.objects.filter(user__org=request.user.org) if request.user.is_admin else request.user.devices
-    device = get_object_or_404(devices, pk=pk, revoked__isnull=True)
+    device = get_object_or_404(devices, pk=pk, revoked__isnull=True, kind=Device.PHONE)
     Device.objects.filter(user=device.user).update(plugin_holder=False)
     Device.objects.filter(pk=device.pk).update(plugin_holder=True)
     messages.success(request, _("«%(name)s» invia ora ai gestionali.") % {"name": device.name})
