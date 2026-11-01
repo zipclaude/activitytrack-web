@@ -35,8 +35,11 @@ jobs:
           case "$GITHUB_REF" in refs/tags/v*) test "v$V" = "${GITHUB_REF#refs/tags/}" ;; esac
           # Debian: a beta 1.1.0-beta.1 is 1.1.0~beta.1 (sorts before 1.1.0)
           DV=$(echo "$V" | tr '-' '~')
-          grep -q "^activitytrack-web ($DV)" debian/changelog
-          sed -i "1s/($DV)/($DV~${{ matrix.suffix }})/" debian/changelog
+          # the package: that version and a Debian revision, 1.1.0~beta.1-1
+          PV=$(dpkg-parsechangelog -S Version)
+          test "$(dpkg-parsechangelog -S Source)" = activitytrack-web && test "${PV%-*}" = "$DV" && test "$PV" != "$DV"
+          # the distribution goes in the revision: 1.1.0~beta.1-1~deb13 still satisfies (>= 1.1.0~beta.1)
+          sed -i "1s/($PV)/($PV~${{ matrix.suffix }})/" debian/changelog
           head -1 debian/changelog
       - name: Package
         run: |
@@ -226,6 +229,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           V="${GITHUB_REF#refs/tags/v}"
+          R=$(dpkg-parsechangelog -S Version) && R="${R##*-}"   # the Debian revision
           # GitHub turns the "~" of the package versions into "." in asset names: "-" instead
           cd artifacts
           for f in activitytrack-web_*~*_all.deb; do mv "$f" "$(echo "$f" | tr '~' '-')"; done
@@ -233,7 +237,7 @@ jobs:
           {
             echo "ActivityTrack Web $V, the server for ActivityTrack $V."
             echo
-            echo "- Debian 13 / 14, Ubuntu 24.04 / 26.04: \`apt install ./activitytrack-web_${V}-<distro>_all.deb\` (deb13, deb14, ubuntu24.04, ubuntu26.04)"
+            echo "- Debian 13 / 14, Ubuntu 24.04 / 26.04: \`apt install ./activitytrack-web_${V}-${R}-<distro>_all.deb\` (deb13, deb14, ubuntu24.04, ubuntu26.04)"
             echo "- Other systems (RHEL / Oracle Linux, Arch, FreeBSD) and installs by hand: \`activitytrack-web-$V.tar.gz\` or a clone of the repository"
             echo
             echo "Administrator's manual: \`ActivityTrack-Web-Amministratore-$V.pdf\` (it), \`ActivityTrack-Web-Administrator-$V.pdf\` (en)."
