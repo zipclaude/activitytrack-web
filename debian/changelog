@@ -1,3 +1,12 @@
+activitytrack-web (0.9.4~beta1) unstable; urgency=medium
+
+  * Devices: a PC paired as ActivityTrack Desktop (Device.kind); it never
+    sends to the management systems and stays out of the policy editor's
+    old-app warning. The Telefoni page becomes Dispositivi, with the link
+    to paste on the PC; /telefoni/ redirects.
+
+ -- ActivityTrack Web <flavio-claude@zipman.it>  Sun, 01 Nov 2026 18:00:00 +0100
+
 activitytrack-web (0.9.3) unstable; urgency=medium
 
   * Versions and compatibility (docs/SYNC.md §12): wire schema 1, the server
