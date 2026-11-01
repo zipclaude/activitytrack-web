@@ -1,3 +1,11 @@
+activitytrack-web (0.9.4~beta2) unstable; urgency=medium
+
+  * Beta with ActivityTrack on the PC: the library python3-activitytrack,
+    the command line and the text interface pair as one PC device.
+  * The manual's PDFs carry the version with its suffix.
+
+ -- ActivityTrack Web <flavio-claude@zipman.it>  Sun, 01 Nov 2026 23:45:00 +0100
+
 activitytrack-web (0.9.4~beta1) unstable; urgency=medium
 
   * Devices: a PC paired as ActivityTrack Desktop (Device.kind); it never
