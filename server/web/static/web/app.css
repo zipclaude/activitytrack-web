@@ -149,6 +149,7 @@ table.list th, table.list td { text-align: left; padding: 12px 10px; border-bott
 table.list th { color: var(--muted); font-weight: 500; font-size: 12px; text-transform: uppercase; letter-spacing: .4px; }
 table.list tfoot th { font-size: 14px; text-transform: none; color: var(--text); border-bottom: 0; }
 table.list td form { display: inline-block; margin: 0 4px 4px 0; }
+table.list td > .i:first-child { margin-right: 8px; }
 table.totals td, table.totals th { white-space: nowrap; font-variant-numeric: tabular-nums; }
 tr.dim { opacity: .55; }
 .card > table.list:first-child, .card > h2 + table.list { margin-top: 0; }
