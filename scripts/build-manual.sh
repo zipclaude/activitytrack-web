@@ -11,7 +11,7 @@
 set -eu
 cd "$(dirname "$0")/.."
 
-VERSION=${1:-$(sed -n 's/^Versione \([0-9][0-9.]*\).*/\1/p' docs/manual/it/admin.md | head -n 1)}
+VERSION=${1:-$(sed -n 's/^Versione \([^ ]*\) .*/\1/p' docs/manual/it/admin.md | head -n 1)}
 OUT=build/manual
 CHROME=$(command -v chromium || command -v chromium-headless-shell || command -v google-chrome || true)
 [ -n "$CHROME" ] || { echo "no Chromium for the PDF" >&2; exit 1; }
