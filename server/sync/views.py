@@ -90,9 +90,11 @@ def pair(request):
         user = pairing.user
         if not user.is_active or not user.syncs:
             return _error(403, "user_disabled")
+        kind = Device.DESKTOP if body.get("kind") == Device.DESKTOP else Device.PHONE
         device, token = Device.create_for(
             user,
-            name=str(body.get("deviceName") or "Telefono")[:100],
+            kind=kind,
+            name=str(body.get("deviceName") or ("PC" if kind == Device.DESKTOP else "Telefono"))[:100],
             model=str(body.get("model") or "")[:100],
             app_version=str(body.get("appVersion") or version)[:40],
             schema=schema,

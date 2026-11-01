@@ -16,12 +16,12 @@ class PathTests(TestCase):
     def test_links_and_pairing_code_carry_the_path(self):
         set_script_prefix("/activitytrack")
         self.addCleanup(clear_script_prefix)
-        self.assertEqual(reverse("phones"), "/activitytrack/telefoni/")
-        r = self.client.get("/telefoni/")
+        self.assertEqual(reverse("phones"), "/activitytrack/dispositivi/")
+        r = self.client.get("/dispositivi/")
         self.assertEqual(r.status_code, 302)
         self.assertTrue(r["Location"].startswith("/activitytrack/login/"), r["Location"])
         self.client.login(username="alice", password="x-x-x-x-x-x")
-        page = self.client.post("/telefoni/associa/").content.decode()
+        page = self.client.post("/dispositivi/associa/").content.decode()
         self.assertIn("u=https%3A%2F%2Fat.example.com%2Factivitytrack&amp;", page)
 
 
@@ -48,7 +48,7 @@ class WorkTests(TestCase):
         return Entry.objects.filter(owner=self.alice, deleted=False).latest("created_utc")
 
     def test_pages_render(self):
-        for url in ["/", "/attivita/", "/attivita/nuova/", "/dafare/", "/dafare/nuova/", "/anagrafiche/", "/anagrafiche/clienti/", "/report/", "/telefoni/", "/agenda/"]:
+        for url in ["/", "/attivita/", "/attivita/nuova/", "/dafare/", "/dafare/nuova/", "/anagrafiche/", "/anagrafiche/clienti/", "/report/", "/dispositivi/", "/agenda/"]:
             self.assertEqual(self.client.get(url).status_code, 200, url)
 
     def test_an_activity_from_start_to_closed(self):
@@ -761,7 +761,7 @@ class CspTests(TestCase):
         root = User.objects.create_user("root", password="x-x-x-x-x-x", org=org, profile=Profile.ADMIN)
         self.assertIn("script-src 'self'", self.client.get("/login/")["Content-Security-Policy"])
         self.client.force_login(root)
-        for url in ["/", "/attivita/", "/attivita/nuova/", "/dafare/", "/agenda/", "/agenda/?view=month", "/report/", "/anagrafiche/", "/telefoni/",
+        for url in ["/", "/attivita/", "/attivita/nuova/", "/dafare/", "/agenda/", "/agenda/?view=month", "/report/", "/anagrafiche/", "/dispositivi/",
                     "/utenti/", f"/utenti/{root.pk}/", "/password/", "/sicurezza/", "/policy/", "/policy/org/"]:
             r = self.client.get(url)
             self.assertEqual(r.status_code, 200, url)

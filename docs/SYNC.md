@@ -164,7 +164,7 @@ revision): the phones then drop the locks they had.
 
 ## 9. Pairing
 
-1. On the web (Profile → Phones → "Associa un telefono") the server makes a
+1. On the web (Dispositivi → "Associa un dispositivo") the server makes a
    one-time code: 160 random bits, valid 10 minutes, shown as a QR code:
 
    `activitytrack://pair?v=1&u=https%3A%2F%2Fat.example.com&c=<code>&f=<sha256 of the server's public key>`
@@ -173,9 +173,12 @@ revision): the phones then drop the locks they had.
    the system (self-signed): the app then pins that key.
 2. The app (Settings → Sync → "Associa a un server") reads the QR code with
    the camera (ZXing; no Google services needed) or accepts the link
-   pasted by hand.
-3. `POST api/v1/pair { code, deviceName, model, appVersion }` →
-   `{ deviceId, token, user, org }`. The token (256 random bits) is stored
+   pasted by hand. ActivityTrack Desktop takes the link pasted.
+3. `POST api/v1/pair { code, deviceName, model, appVersion, kind }` →
+   `{ deviceId, token, user, org }`. `kind` is `phone` (default) or
+   `desktop`: a desktop speaks the same protocol, never sends to the
+   management systems (not the plugin holder) and applies only the policy
+   keys it uses, so the policy editor's warning (§12.3) counts phones only. The token (256 random bits) is stored
    hashed on the server and in the app's `SecretStore` on the phone.
 4. The page that showed the QR code reports the paired phone; the admin
    and the user see the phones and can revoke them (the token stops working
@@ -245,7 +248,7 @@ X-ActivityTrack-Schema: 1
 ```
 
 An app without them (0.9.x) speaks schema 1. The server records the app's
-version and schema of each phone at every request (the Phones and Users
+version and schema of each phone at every request (the Dispositivi and Users
 pages show them). `pair` and `sync/head` answer, besides their fields,
 `server` (its version), `schema` and `minSchema`.
 

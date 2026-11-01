@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 from django.contrib.auth import views as auth
 from django.urls import path
+from django.views.generic import RedirectView
 
 from . import agenda, auth as login, mfa, masters, reports, users, views, work
 
@@ -31,9 +32,11 @@ urlpatterns = [
     path("login/codice/", mfa.login_step, name="login_code"),
     path("sicurezza/", mfa.security, name="security"),
     path("logout/", auth.LogoutView.as_view(), name="logout"),
-    path("telefoni/", views.phones, name="phones"),
-    path("telefoni/associa/", views.pair_new, name="pair_new"),
-    path("telefoni/associa/<int:pk>/stato/", views.pair_status, name="pair_status"),
-    path("telefoni/<uuid:pk>/revoca/", views.device_revoke, name="device_revoke"),
-    path("telefoni/<uuid:pk>/gestionali/", views.device_holder, name="device_holder"),
+    path("dispositivi/", views.phones, name="phones"),
+    path("dispositivi/associa/", views.pair_new, name="pair_new"),
+    path("dispositivi/associa/<int:pk>/stato/", views.pair_status, name="pair_status"),
+    path("dispositivi/<uuid:pk>/revoca/", views.device_revoke, name="device_revoke"),
+    path("dispositivi/<uuid:pk>/gestionali/", views.device_holder, name="device_holder"),
+    # before 0.9.4 the page was "Telefoni"
+    path("telefoni/", RedirectView.as_view(pattern_name="phones", permanent=True)),
 ]

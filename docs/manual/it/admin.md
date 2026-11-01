@@ -85,7 +85,7 @@ non cambiano: sincronizzano con il loro token.
 
 Il menu a sinistra (sul telefono, la barra in basso) contiene **Home**,
 **Da fare**, **Agenda**, **Report**, **Attività**, **Anagrafiche** e
-**Telefoni**; per gli amministratori anche **Policy** e **Utenti**. In
+**Dispositivi**; per gli amministratori anche **Policy** e **Utenti**. In
 fondo c'è il proprio nome: un clic apre **"Cambia password"**.
 
 ## 4. Utenti e profili
@@ -112,11 +112,11 @@ Nella scheda di un utente:
   aziende di cui legge tutte le attività; per un lettore, quelle di cui
   vede il report.
 - **Attivo**: togliendo la spunta l'utente non entra più nel web e i suoi
-  telefoni smettono subito di sincronizzare. I dati restano.
-- **Telefoni**: i telefoni associati, con l'ultima sincronizzazione e
+  dispositivi smettono subito di sincronizzare. I dati restano.
+- **Dispositivi**: i telefoni e i PC associati, con l'ultima sincronizzazione e
   **"Revoca"**.
 - **Policy dell'utente**: apre la sua policy personale (§7).
-- **Nuova password**: l'utente esce dal web; i telefoni restano associati.
+- **Nuova password**: l'utente esce dal web; i dispositivi restano associati.
 
 Un amministratore non può togliersi il profilo né disattivarsi. L'altro
 amministratore, o il comando `activitytrack-web-manage createsuperuser`,
@@ -133,15 +133,16 @@ La vecchia amministrazione di Django resta raggiungibile dal fondo della
 pagina Utenti (**"amministrazione avanzata"**), per l'organizzazione e i
 dati grezzi.
 
-## 5. Telefoni
+## 5. Dispositivi
 
-![Telefoni](../img/phones.png)
+![Dispositivi](../img/phones.png)
 
-Ogni utente associa i suoi telefoni da **Telefoni** → **"Associa un
-telefono"**: compare un **codice QR**, da inquadrare nell'app con
-Impostazioni → Sincronizzazione → "Inquadra il codice QR". Il codice vale
-10 minuti e una sola volta; la pagina mostra il telefono appena è
-associato.
+Ogni utente associa i suoi telefoni e PC da **Dispositivi** → **"Associa un
+dispositivo"**: compare un **codice QR**, da inquadrare nell'app con
+Impostazioni → Sincronizzazione → "Inquadra il codice QR", e sotto il
+collegamento da incollare in ActivityTrack Desktop sul PC. Il codice vale
+10 minuti e una sola volta; la pagina mostra il dispositivo appena è
+associato. Un PC non manda mai ai gestionali.
 
 - **Revoca**: il telefono smette subito di sincronizzare e avvisa
   che il server ha revocato l'associazione. I suoi dati restano sul telefono e sul server.
