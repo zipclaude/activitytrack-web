@@ -75,7 +75,7 @@ After an update of the code: `activitytrack-web-manage migrate`,
 `activitytrack-web-manage collectstatic --noinput`, then restart the
 service.
 
-Updating from 0.9.4-beta5 or earlier: the server now checks the shape of
+Updating from 0.9.4-beta4 or earlier: the server now checks the shape of
 the JSON fields phones send (tags, contact phone numbers, plugin fields).
 Records stored before with a wrong shape, which made some pages fail, are
 repaired once with `activitytrack-web-manage clean_json_fields`
