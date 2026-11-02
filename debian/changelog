@@ -1,3 +1,17 @@
+activitytrack-web (0.9.4~beta5-1) unstable; urgency=medium
+
+  * Security review fixes: the Django admin only for administrators and
+    through the site's login (second step, brake on password guessing),
+    with the site's look; JSON fields of the sync checked by shape
+    (manage.py clean_json_fields repairs stored values); the time grid's
+    busy minutes of another person only to whom can fix them; CSV cells
+    that a spreadsheet would run as formulas quoted; one e-mail code per
+    minute; bad parameters no longer errors 500; setup checks the
+    password rules.
+  * CI: actions pinned to commit SHAs.
+
+ -- ActivityTrack <flavio-claude@zipman.it>  Mon, 02 Nov 2026 18:54:03 +0100
+
 activitytrack-web (0.9.4~beta4-1) unstable; urgency=medium
 
   * Preferences of every user: dates European, American or ISO, 24 or 12
