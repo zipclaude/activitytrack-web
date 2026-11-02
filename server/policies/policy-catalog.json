@@ -46,7 +46,7 @@
     {
       "key": "concurrentEntries",
       "essential": false,
-      "doc": "leaving an activity running when another starts (it is closed or suspended)"
+      "doc": "leaving an activity running when another starts or resumes (off: the others are suspended, a paused one stopped; issue #132)"
     },
     {
       "key": "travel",
