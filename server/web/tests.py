@@ -149,6 +149,65 @@ class WorkTests(TestCase):
         self.assertEqual(self.client.get("/dafare/").status_code, 403)
 
 
+class PreferencesTests(WorkTests):
+    """Dates, times and theme as each user prefers them (issues #38, #39)."""
+
+    def test_preferences_change_the_pages(self):
+        self.client.post("/attivita/nuova/", {"when": "past", "client": "22222222-2222-4222-8222-222222222222", "activity": "Riunione",
+                                              "start": "2026-10-27T14:05", "end": "2026-10-27T15:30"})
+        page = self.client.get("/attivita/?from=2026-10-01").content.decode()
+        self.assertIn("14:05–15:30", page)
+        self.assertIn('data-theme="system" data-accent="green"', page)
+        r = self.client.post("/preferenze/", {"date_format": "us", "time_format": "12", "theme": "dark", "accent": "blue"})
+        self.assertRedirects(r, "/preferenze/")
+        page = self.client.get("/attivita/?from=2026-10-01").content.decode()
+        self.assertIn("2:05 PM–3:30 PM", page)
+        self.assertIn('data-theme="dark" data-accent="blue"', page)
+        self.assertIn('data-date="us" data-time="12"', page)
+        # the forms keep ISO values for the pickers
+        e = self.entry()
+        self.assertIn('value="2026-10-27T14:05"', self.client.get(f"/attivita/{e.uid}/").content.decode())
+        # unknown values are ignored
+        self.client.post("/preferenze/", {"date_format": "xx", "time_format": "24", "theme": "neon", "accent": "blue"})
+        self.alice.refresh_from_db()
+        self.assertEqual((self.alice.date_format, self.alice.time_format, self.alice.theme), ("us", "24", "dark"))
+
+    def test_formats(self):
+        from datetime import date
+
+        from web import formats
+
+        token = formats._current.set((formats.ISO, formats.H12))
+        try:
+            self.assertEqual(formats.date(date(2026, 12, 31)), "2026-12-31")
+            self.assertEqual(formats.clock(0), "12:00 AM")
+            self.assertEqual(formats.clock(12 * 60 + 5), "12:05 PM")
+        finally:
+            formats._current.reset(token)
+        self.assertEqual(formats.date(date(2026, 12, 31)), "31/12/2026")
+        self.assertEqual(formats.clock(9 * 60), "09:00")
+
+    def test_busy_minutes_of_a_day_for_the_grid(self):
+        from records.models import Segment
+
+        for start, end in (("2026-10-27T09:00", "2026-10-27T10:30"), ("2026-10-27T14:00", "2026-10-27T15:00")):
+            self.client.post("/attivita/nuova/", {"when": "past", "client": "22222222-2222-4222-8222-222222222222", "activity": "x",
+                                                  "start": start, "end": end})
+        self.assertEqual(self.client.get("/attivita/occupato/?day=2026-10-27").json(), {"busy": [[540, 630], [840, 900]]})
+        e = self.entry()
+        seg = Segment.objects.get(entry=e)
+        self.assertEqual(self.client.get(f"/attivita/occupato/?day=2026-10-27&entry={e.uid}&segment={seg.uid}").json(), {"busy": [[540, 630]]})
+        self.assertEqual(self.client.get("/attivita/occupato/?day=x").json(), {"busy": []})
+        # another user's day is not shown
+        self.client.force_login(self.boss)
+        self.assertEqual(self.client.get("/attivita/occupato/?day=2026-10-27").json(), {"busy": []})
+
+    def test_company_comes_before_the_client(self):
+        page = self.client.get("/attivita/nuova/").content.decode()
+        self.assertLess(page.index('name="company"'), page.index('name="client"'))
+        self.assertIn(f'data-company="{self.acme.uid}"', page)
+
+
 class TimesPolicyTests(TestCase):
     """Times locked by the policy: the owner only adds travel and pauses; an admin or the manager fixes them."""
 

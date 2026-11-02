@@ -17,7 +17,7 @@ from django.utils import timezone
 from accounts.models import Profile
 from records.models import WorkSchedule
 
-from . import data, reporting
+from . import data, formats, reporting
 
 VIEWS = ("day", "week", "month")
 # companies without a colour: the app's neutral grey (Colors.kt NO_COLOR)
@@ -80,7 +80,7 @@ def _minute(t, day, tz):
 
 
 def _clock(m):
-    return f"{m // 60 % 24:02d}:{m % 60:02d}"
+    return formats.clock(m)
 
 
 def _plannable(user, person):

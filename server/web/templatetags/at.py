@@ -4,6 +4,8 @@ from django.utils.html import format_html, format_html_join
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 
+from web import formats
+
 register = template.Library()
 
 STATUS = {
@@ -45,7 +47,33 @@ def color(value):
 
 @register.filter
 def minutes_hm(m):
-    return "" if m is None else f"{m // 60:02d}:{m % 60:02d}"
+    """Minutes from midnight as a time of day, in the user's format."""
+    return formats.clock(m)
+
+
+@register.filter
+def hour_label(h):
+    """An hour of the agenda's timeline: 09, or 9 AM."""
+    if formats.current()[1] == formats.H12:
+        return f"{(h + 11) % 12 + 1} {'AM' if h % 24 < 12 else 'PM'}"
+    return f"{h:02d}"
+
+
+@register.filter(expects_localtime=True)
+def udate(value, style="date"):
+    """A date in the user's format (issue #38): date, day, short, long, month_day, month_day_year."""
+    return formats.date(value, style)
+
+
+@register.filter(expects_localtime=True)
+def utime(value):
+    """A time in the user's format, 24 or 12 hours (issue #38)."""
+    return formats.time(value)
+
+
+@register.filter(expects_localtime=True)
+def udatetime(value, style="date"):
+    return f"{formats.date(value, style)} {formats.time(value)}" if value else ""
 
 
 # dots of a list row; the entry sheet shows every tag (issue #133)

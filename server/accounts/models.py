@@ -32,6 +32,13 @@ class Profile(models.TextChoices):
     READER = "reader", _("Lettore azienda")
 
 
+# preferences of the web pages (issues #38, #39)
+DATE_FORMATS = [("eu", _("europeo (31/12/2026)")), ("us", _("americano (12/31/2026)")), ("iso", _("ISO (2026-12-31)"))]
+TIME_FORMATS = [("24", _("24 ore (18:30)")), ("12", _("12 ore (6:30 PM)"))]
+THEMES = [("system", _("come il sistema")), ("light", _("chiaro")), ("dark", _("scuro"))]
+ACCENTS = [("green", _("verde")), ("blue", _("blu")), ("violet", _("viola")), ("orange", _("arancione")), ("grey", _("grigio"))]
+
+
 class User(AbstractUser):
     org = models.ForeignKey(Organization, on_delete=models.PROTECT, null=True, related_name="users")
     profile = models.CharField(_("profilo"), max_length=16, choices=Profile.choices, default=Profile.USER)
@@ -49,6 +56,11 @@ class User(AbstractUser):
     companies = models.ManyToManyField(
         "records.Company", blank=True, related_name="readers", verbose_name=_("aziende"),
         help_text=_("Lettore azienda: le attività chiuse di queste aziende. Responsabile: tutte le attività fatte per queste aziende, oltre a quelle del suo team."))
+
+    date_format = models.CharField(_("formato delle date"), max_length=4, choices=DATE_FORMATS, default="eu")
+    time_format = models.CharField(_("formato degli orari"), max_length=2, choices=TIME_FORMATS, default="24")
+    theme = models.CharField(_("tema"), max_length=8, choices=THEMES, default="system")
+    accent = models.CharField(_("colore del tema"), max_length=8, choices=ACCENTS, default="green")
 
     objects = UserManager()
 

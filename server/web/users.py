@@ -12,7 +12,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 
-from accounts.models import Organization, Profile, User
+from accounts.models import ACCENTS, DATE_FORMATS, THEMES, TIME_FORMATS, Organization, Profile, User
 from records.models import Company
 
 
@@ -156,3 +156,19 @@ def my_password(request):
             messages.success(request, _("Password cambiata."))
             return redirect("home")
     return render(request, "web/my_password.html", {"help": password_validators_help_texts()})
+
+
+@login_required
+def preferences(request):
+    """Everyone's own look of the pages: dates, times, theme (issues #38, #39)."""
+    u = request.user
+    choices = {"date_format": DATE_FORMATS, "time_format": TIME_FORMATS, "theme": THEMES, "accent": ACCENTS}
+    if request.method == "POST":
+        for field, options in choices.items():
+            value = request.POST.get(field)
+            if value in dict(options):
+                setattr(u, field, value)
+        u.save(update_fields=list(choices))
+        messages.success(request, _("Preferenze salvate."))
+        return redirect("preferences")
+    return render(request, "web/preferences.html", {"choices": choices})

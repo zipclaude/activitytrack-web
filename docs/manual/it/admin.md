@@ -219,6 +219,34 @@ Ognuno trova sul web il proprio lavoro, come nell'app.
 
 ![Agenda: la settimana](../img/agenda.png)
 
+**Date e orari.** Nei moduli date e orari si scrivono nel formato scelto
+nelle preferenze, oppure si scelgono con il pulsante a destra del campo: un
+calendario che parte dal lunedì e, per gli orari, la **griglia a 5 minuti**
+dell'app (una riga per ora, 12 ore alla volta; **▲ Prima** / **Dopo ▼**
+spostano la finestra di 3 ore). Inizio e fine si scelgono insieme:
+trascinando dalla prima casella all'ultima, oppure toccando la prima e poi
+l'ultima, e **OK**; in alto l'intervallo e la durata, le caselle
+**tratteggiate** sono occupate da altre attività di quel giorno. **Orario
+esatto** accetta i minuti fuori griglia (es. 09:37). Nei moduli l'**azienda**
+viene prima del **cliente** e ne filtra l'elenco; scegliendo un cliente,
+l'azienda diventa la sua.
+
+![La griglia degli orari: 08:15–09:45, tratteggiata l'attività in corso](../img/picker.png)
+
+**Preferenze.** Dall'icona della tavolozza, accanto al proprio nome (sul
+telefono: *Altro → Preferenze*), ognuno sceglie:
+- il **formato delle date**: europeo (31/12/2026), americano (12/31/2026) o
+  ISO (2026-12-31);
+- il **formato degli orari**: 24 ore (18:30) o 12 ore (6:30 PM);
+- il **tema**: chiaro, scuro o come il sistema; le pagine restano bianche e
+  grigie (nere nel tema scuro);
+- il **colore del tema**, per le barre dei menu e i pulsanti: verde, blu,
+  viola, arancione o grigio.
+
+Le preferenze sono dell'utente: valgono su ogni browser con cui accede.
+
+![Preferenze](../img/preferences.png)
+
 **Da fare assegnate.** Un responsabile, o un amministratore, crea una voce
 e sceglie **"Assegnata a"**: la voce diventa della persona scelta e arriva
 sui suoi telefoni. Riassegnandola, sparisce dai telefoni di chi l'aveva.

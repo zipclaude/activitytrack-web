@@ -19,6 +19,6 @@
 </table></section>
 <p class="doc">{% translate "Tempi arrotondati come nel report dell'app, con le regole della policy di ciascuno (altrimenti quelle predefinite); sotto, in piccolo, i tempi registrati. Un'attività a cavallo di più giorni conta in ciascuno." %}</p>
 <h2>{% translate "Dettaglio" %}</h2>
-{% regroup rows by day as by_day %}{% for d in by_day %}<h3 class="sec">{{ d.grouper|date:"l j F Y" }}</h3>
+{% regroup rows by day as by_day %}{% for d in by_day %}<h3 class="sec">{{ d.grouper|udate:"long" }}</h3>
 {% for r in d.list %}{% include "web/_entry_row.html" with show_owner=people %}{% endfor %}{% endfor %}
 {% endblock %}

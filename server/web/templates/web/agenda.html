@@ -15,7 +15,7 @@
 
 <div class="period">
 	<a class="button" href="{{ prev }}" aria-label="{% translate 'Precedente' %}">{% icon "prev" %}</a>
-	<b>{% if view == "day" %}{{ anchor|date:"l j F Y" }}{% elif view == "week" %}{{ since|date:"j M" }} – {{ until|date:"j M Y" }}{% else %}{{ anchor|date:"F Y" }}{% endif %}</b>
+	<b>{% if view == "day" %}{{ anchor|udate:"long" }}{% elif view == "week" %}{{ since|udate:"month_day" }} – {{ until|udate:"month_day_year" }}{% else %}{{ anchor|date:"F Y" }}{% endif %}</b>
 	<span class="total" title="{% translate 'Rendicontato nel periodo' %}">{{ total }}</span>
 	<a class="button" href="{{ next }}" aria-label="{% translate 'Successivo' %}">{% icon "next" %}</a>
 </div>
@@ -35,7 +35,7 @@
 	{% if view == "week" %}<div class="tl-row tl-head"><span></span>{% for c in columns %}<a href="{{ c.link }}" class="{% if c.today %}today{% endif %}">{{ c.day|date:"D j" }}<span class="sub">{{ c.reported|default:"&nbsp;" }}</span></a>{% endfor %}</div>{% endif %}
 	{% if columns|length %}<div class="tl-row tl-band"><span class="sub">{% translate "giorno" %}</span>{% for c in columns %}<div>{% for t in c.band %}<a class="bandtodo" href="{{ t.url }}" style="--c: {{ t.color|color }}">☐ {{ t.title }}{% if t.due %} · {% translate "scade" %} {{ t.due }}{% endif %}</a>{% endfor %}</div>{% endfor %}</div>{% endif %}
 	<div class="tl-scroll"><div class="tl-grid">
-		<div class="tl-hours">{% for h in hours %}{% if h %}<span style="--m: {% widthratio h 1 60 %}">{{ h|stringformat:"02d" }}</span>{% endif %}{% endfor %}</div>
+		<div class="tl-hours">{% for h in hours %}{% if h %}<span style="--m: {% widthratio h 1 60 %}">{{ h|hour_label }}</span>{% endif %}{% endfor %}</div>
 		{% for c in columns %}<div class="tl-col{% if c.today %} today{% endif %}" data-day="{{ c.day|date:'Y-m-d' }}">
 			{% for b in c.blocks %}<a class="blk {{ b.kind }}{% if b.running %} running{% endif %}" href="{{ b.url }}{% if b.kind == 'todo' %}?next={{ request.get_full_path|urlencode }}{% endif %}"
 				style="--top: {{ b.top }}; --h: {{ b.height }}; --lane: {{ b.lane }}; --lanes: {{ b.lanes }}; --c: {{ b.color|color }}; --ink: {{ b.color|ink }}"

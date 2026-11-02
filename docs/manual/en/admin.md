@@ -218,6 +218,34 @@ Everyone finds their own work on the web, as in the app.
 
 ![Agenda: the week](../img/agenda.png)
 
+**Dates and times.** In the forms dates and times are typed in the format
+chosen in the preferences, or picked with the button at the right of the
+field: a calendar starting on Monday and, for times, the app's **5-minute
+grid** (one row per hour, 12 hours at a time; **▲ Prima** / **Dopo ▼**
+move the window by 3 hours). Start and end are chosen together: drag from
+the first cell to the last, or tap the first and then the last, and **OK**;
+at the top the range and its length, the **hatched** cells are taken by
+other activities of that day. **Orario esatto** (exact time) takes the
+minutes off the grid (e.g. 09:37). In the forms the **company** comes before
+the **client** and filters its list; a client chosen brings its company.
+
+![The time grid: 08:15–09:45, the running activity hatched](../img/picker.png)
+
+**Preferences.** From the palette icon next to one's name (on a phone:
+*Altro → Preferenze*), everyone chooses:
+- the **date format**: European (31/12/2026), American (12/31/2026) or ISO
+  (2026-12-31);
+- the **time format**: 24 hours (18:30) or 12 hours (6:30 PM);
+- the **theme**: light, dark or as the system; the pages stay white and
+  grey (black in the dark theme);
+- the **theme colour**, for the menu bars and the buttons: green, blue,
+  violet, orange or grey.
+
+The preferences are the user's: they hold on every browser they sign in
+with.
+
+![Preferences](../img/preferences.png)
+
 **Assigned to-dos.** A manager, or an administrator, creates a to-do and
 picks **"Assegnata a"** (assigned to): the to-do becomes the chosen
 person's and reaches their phones. Reassigned, it leaves the phones of

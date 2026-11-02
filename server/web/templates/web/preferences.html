@@ -1,0 +1,17 @@
+{% extends "web/base.html" %}{% load i18n at %}
+{% block title %}{% translate "Preferenze" %} · ActivityTrack{% endblock %}
+{% block content %}
+<h1>{% translate "Preferenze" %}</h1>
+<form method="post" class="card narrowform">{% csrf_token %}
+	<fieldset><legend>{% translate "Date e orari" %}</legend>
+		<label>{% translate "Formato delle date" %}<select name="date_format">{% for v, l in choices.date_format %}<option value="{{ v }}" {% if user.date_format == v %}selected{% endif %}>{{ l }}</option>{% endfor %}</select></label>
+		<label>{% translate "Formato degli orari" %}<select name="time_format">{% for v, l in choices.time_format %}<option value="{{ v }}" {% if user.time_format == v %}selected{% endif %}>{{ l }}</option>{% endfor %}</select></label>
+	</fieldset>
+	<fieldset><legend>{% translate "Aspetto" %}</legend>
+		<div class="seg">{% for v, l in choices.theme %}<label><input type="radio" name="theme" value="{{ v }}" {% if user.theme == v %}checked{% endif %}>{{ l|capfirst }}</label>{% endfor %}</div>
+		<p class="doc">{% translate "Il colore del tema va sulle barre dei menu e sui pulsanti; le pagine restano bianche e grigie, o nere nel tema scuro." %}</p>
+		<div class="swatches accents">{% for v, l in choices.accent %}<label title="{{ l }}"><input type="radio" name="accent" value="{{ v }}" {% if user.accent == v %}checked{% endif %}><i class="sw" data-accent="{{ v }}"></i>{{ l|capfirst }}</label>{% endfor %}</div>
+	</fieldset>
+	<button class="primary">{% translate "Salva" %}</button>
+</form>
+{% endblock %}
