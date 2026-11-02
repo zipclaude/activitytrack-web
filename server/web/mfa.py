@@ -8,6 +8,7 @@ lost phone. The organisation may require it for admins, managers or all.
 import base64
 import hashlib
 import hmac
+import math
 import secrets
 import struct
 import time
@@ -26,6 +27,8 @@ from django.utils.translation import gettext as _
 from accounts.models import Profile, User
 
 STEP, DIGITS, CODE_TTL, MAX_TRIES, RECOVERY = 30, 6, 600, 5, 10
+# seconds between two codes by email at login: no flood of mail on a known password
+RESEND_AFTER = 60
 
 
 # TOTP (RFC 6238: HMAC-SHA1, 30 s, 6 digits), one step of clock skew allowed
@@ -132,8 +135,14 @@ def login_step(request):
         return redirect("login")
     if request.method == "POST":
         if request.POST.get("resend") and user.mfa_method == "email":
-            send_code(request, user, "mfa_login_code")
-            messages.info(request, _("Nuovo codice inviato a %(email)s.") % {"email": _masked(user.email)})
+            wait = math.ceil(pending.get("sent", 0) + RESEND_AFTER - time.time())
+            if wait > 0:
+                messages.error(request, _("Puoi chiedere un nuovo codice tra %(seconds)d secondi.") % {"seconds": wait})
+            else:
+                send_code(request, user, "mfa_login_code")
+                pending["sent"] = time.time()
+                request.session["mfa_pending"] = pending
+                messages.info(request, _("Nuovo codice inviato a %(email)s.") % {"email": _masked(user.email)})
             return redirect("login_code")
         if verify(request, user, request.POST.get("code", "")):
             del request.session["mfa_pending"]

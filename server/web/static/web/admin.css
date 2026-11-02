@@ -1,0 +1,42 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/*
+ * The Django admin in the site's look (templates/admin/base_site.html):
+ * neutral pages as Django draws them, the user's theme colour on the header,
+ * the module titles, the links and the buttons. Django 4.2 and 5.2 take the
+ * same variables; the tones are app.css's, kept in step.
+ */
+:root, [data-accent=green] { --a10: #002116; --a20: #003827; --a30: #00513b; --a40: #1f6b52; --a80: #8bd6b6; --a90: #a6f2d1; --a-bar: #1f5c4a; --a-bar-d: #173f34; }
+[data-accent=blue] { --a10: #001b3e; --a20: #002f65; --a30: #00458e; --a40: #2b5fad; --a80: #a8c8ff; --a90: #d6e3ff; --a-bar: #1d4f91; --a-bar-d: #17355e; }
+[data-accent=violet] { --a10: #21005d; --a20: #381e72; --a30: #4f378b; --a40: #6750a4; --a80: #cfbcff; --a90: #e9ddff; --a-bar: #4a3a8c; --a-bar-d: #2f2560; }
+[data-accent=orange] { --a10: #2f1500; --a20: #4f2500; --a30: #713700; --a40: #8f4c0d; --a80: #ffb77c; --a90: #ffdcc2; --a-bar: #8a4a12; --a-bar-d: #5a300b; }
+[data-accent=grey] { --a10: #141c22; --a20: #29323a; --a30: #3f4850; --a40: #565f68; --a80: #bec7d0; --a90: #dae3ec; --a-bar: #3a3f44; --a-bar-d: #26292c; }
+/* light: as base.css, which names html[data-theme="light"] too */
+:root, html[data-theme=light] {
+	--primary: var(--a40); --secondary: var(--a-bar); --accent: #ffffff; --primary-fg: #ffffff;
+	--header-color: rgb(255 255 255 / .78); --header-branding-color: #ffffff; --header-bg: var(--a-bar); --header-link-color: #ffffff;
+	--breadcrumbs-fg: rgb(255 255 255 / .78); --breadcrumbs-link-fg: #ffffff; --breadcrumbs-bg: var(--a40);
+	--link-fg: var(--a40); --link-hover-color: var(--a20); --link-selected-fg: var(--a30);
+	--selected-row: var(--a90);
+	--button-fg: #ffffff; --button-bg: var(--a40); --button-hover-bg: var(--a30);
+	--default-button-bg: var(--a30); --default-button-hover-bg: var(--a20);
+	--font-family-primary: "Roboto", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+/* dark: chosen, or the system's when the user follows it (after dark_mode.css) */
+html[data-theme=dark] {
+	--primary: var(--a30); --primary-fg: #ffffff; --secondary: var(--a-bar-d); --header-bg: var(--a-bar-d);
+	--breadcrumbs-link-fg: #ffffff; --breadcrumbs-bg: var(--a30);
+	--link-fg: var(--a80); --link-hover-color: var(--a90); --link-selected-fg: var(--a80);
+	--selected-row: var(--a20);
+}
+@media (prefers-color-scheme: dark) {
+	html:not([data-theme=light]) {
+		--primary: var(--a30); --primary-fg: #ffffff; --secondary: var(--a-bar-d); --header-bg: var(--a-bar-d);
+		--breadcrumbs-link-fg: #ffffff; --breadcrumbs-bg: var(--a30);
+		--link-fg: var(--a80); --link-hover-color: var(--a90); --link-selected-fg: var(--a80);
+		--selected-row: var(--a20);
+	}
+}
+
+#site-name a { display: inline-flex; align-items: center; gap: 10px; }
+#site-name small { font-size: .7em; opacity: .78; }
+.at-logo { width: 32px; height: 32px; flex: none; }

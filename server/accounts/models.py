@@ -68,6 +68,14 @@ class User(AbstractUser):
     def is_admin(self):
         return self.profile == Profile.ADMIN or self.is_superuser
 
+    # permissions are profiles: an administrator may do everything in the
+    # Django admin too (web/adminsite.py); nothing else asks Django's permissions
+    def has_perm(self, perm, obj=None):
+        return (self.is_active and self.is_admin) or super().has_perm(perm, obj)
+
+    def has_module_perms(self, app_label):
+        return (self.is_active and self.is_admin) or super().has_module_perms(app_label)
+
     @property
     def can_edit_central(self):
         return self.is_admin or self.profile == Profile.MANAGER

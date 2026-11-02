@@ -109,7 +109,7 @@ def agenda(request):
     except ValueError:
         anchor = today
     people = data.readable_people(user)
-    person = people.filter(pk=g.get("person")).first() if g.get("person") else None
+    person = people.filter(pk=data.parse_pk(g.get("person"))).first() if g.get("person") else None
     person = person or user
     tag = g.get("tag") or ""
     since, until = period(view, anchor)

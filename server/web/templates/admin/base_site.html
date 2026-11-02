@@ -1,0 +1,22 @@
+{% extends "admin/base.html" %}{% load static i18n %}
+{% comment %}
+The Django admin dressed as the site (web/adminsite.py): the user's theme
+and colour, the logo; Django's own theme toggle is left out (the theme is a
+preference, web/users.py).
+{% endcomment %}
+
+{% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | {{ site_title }}{% endblock %}
+
+{% block dark-mode-vars %}
+<meta name="color-scheme" content="{% if user.is_authenticated and user.theme != 'system' %}{{ user.theme }}{% else %}light dark{% endif %}">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 108 108'%3E%3Crect width='108' height='108' rx='26' fill='%231F5C4A'/%3E%3Ccircle cx='54' cy='58' r='20' fill='none' stroke='%23fff' stroke-width='5'/%3E%3Cpath d='M48 30h12v6H48z' fill='%23fff'/%3E%3Cpath d='M54 58V46m0 12 8 4' fill='none' stroke='%23fff' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E">
+{% if user.theme != "light" %}<link rel="stylesheet" href="{% static 'admin/css/dark_mode.css' %}">{% endif %}
+<link rel="stylesheet" href="{% static 'web/admin.css' %}">
+<script src="{% static 'web/admin.js' %}"{% if user.is_authenticated %} data-theme="{{ user.theme }}" data-accent="{{ user.accent }}"{% endif %}></script>
+{% endblock %}
+
+{% block branding %}
+<h1 id="site-name"><a href="{% url 'admin:index' %}"><svg class="at-logo" viewBox="0 0 108 108" aria-hidden="true"><rect width="108" height="108" rx="26" fill="#1F5C4A"/><circle cx="54" cy="58" r="20" fill="none" stroke="#fff" stroke-width="5"/><path d="M48,30h12v6h-12z" fill="#fff"/><path d="M54,58L54,46M54,58L62,62" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round"/></svg>{{ site_header }}{% if user.org %} <small>{{ user.org.name }}</small>{% endif %}</a></h1>
+{% endblock %}
+
+{% block nav-global %}{% endblock %}

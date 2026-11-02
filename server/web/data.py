@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 """What a web user sees (docs/ARCHITECTURE.md §5) and the numbers the pages show."""
 
+import uuid
 from datetime import datetime, time, timedelta
 
 from django.db.models import Q
@@ -8,6 +9,20 @@ from django.utils import timezone
 
 from accounts.models import Profile, User
 from records.models import Client, Company, Entry, EntryStatus, Expense, Role, Segment, Tag, Todo
+
+
+def parse_pk(value):
+    """A number id from a request (?person=…), None when it is not one: a bad link is no server error."""
+    value = str(value or "").strip()
+    return int(value) if value.isascii() and value.isdigit() else None
+
+
+def parse_uid(value):
+    """A record's uid from a request, None when it is not one."""
+    try:
+        return uuid.UUID(str(value or "").strip())
+    except ValueError:
+        return None
 
 
 def own_or_central(user):

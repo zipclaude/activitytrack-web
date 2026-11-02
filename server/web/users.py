@@ -15,6 +15,8 @@ from django.views.decorators.http import require_POST
 from accounts.models import ACCENTS, DATE_FORMATS, THEMES, TIME_FORMATS, Organization, Profile, User
 from records.models import Company
 
+from . import data
+
 
 def _admin(request):
     if not request.user.is_admin:
@@ -86,11 +88,11 @@ def user_edit(request, pk=None):
         if not errors:
             with transaction.atomic():
                 target.profile, target.is_active = profile, active
-                target.manager = managers.filter(pk=p.get("manager")).first() if p.get("manager") and profile != Profile.READER else None
+                target.manager = managers.filter(pk=data.parse_pk(p.get("manager"))).first() if p.get("manager") and profile != Profile.READER else None
                 if u is None:
                     target.set_password(p["password"])
                 target.save()
-                target.companies.set(companies.filter(uid__in=p.getlist("companies")) if profile in (Profile.READER, Profile.MANAGER) else [])
+                target.companies.set(companies.filter(uid__in=[u for u in map(data.parse_uid, p.getlist("companies")) if u]) if profile in (Profile.READER, Profile.MANAGER) else [])
             messages.success(request, _("Utente «%(name)s» salvato.") % {"name": target.get_full_name() or target.username})
             return redirect("user_edit", pk=target.pk)
         u_form = target

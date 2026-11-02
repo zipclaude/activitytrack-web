@@ -33,7 +33,8 @@ def _parse_dt(text):
 
 
 def _pick(user, model, uid):
-    if not uid:
+    uid = data.parse_uid(uid)
+    if uid is None:
         return None
     return data.masters(user, model).filter(uid=uid).first()
 
@@ -101,7 +102,8 @@ def home(request):
     else:
         f = {"period": -1, "show": list(homelist.DEFAULT_SHOW), "company": "", "tag": "", **saved}
     show = [x for x in f["show"] if x in offered]
-    company = data.companies(user).filter(uid=f["company"]).first() if f["company"] else None
+    company = _pick(user, Company, f["company"])
+    company = company if company and not company.archived else None
 
     mine = Entry.objects.filter(org=user.org, owner=user, deleted=False).select_related("company", "client", "role")
     running = _rows(list(mine.filter(status__in=[EntryStatus.ACTIVE, EntryStatus.SUSPENDED]).order_by("-created_utc")))
@@ -144,7 +146,8 @@ def entry_new(request):
     if not user.syncs:
         raise PermissionDenied
     fixed = data.owner_times_fixed_for(user)
-    todo = data.todos(user).filter(uid=request.GET.get("todo") or request.POST.get("todo") or None).first() if (request.GET.get("todo") or request.POST.get("todo")) else None
+    todo_uid = data.parse_uid(request.GET.get("todo") or request.POST.get("todo"))
+    todo = data.todos(user).filter(uid=todo_uid).first() if todo_uid else None
     if request.method == "POST":
         p = request.POST
         try:
@@ -176,12 +179,13 @@ def entries(request):
     except ValueError:
         since, until = today - timedelta(days=30), today
     q = q.filter(created_utc__gte=data.day_bounds(since)[0] - timedelta(days=1), created_utc__lt=data.day_bounds(until)[1])
-    if g.get("company"):
-        q = q.filter(company__uid=g["company"])
+    # a filter that is not an id is left out, as a bad link
+    if data.parse_uid(g.get("company")):
+        q = q.filter(company__uid=data.parse_uid(g["company"]))
     if g.get("status"):
         q = q.filter(status=g["status"])
-    if g.get("person"):
-        q = q.filter(owner_id=g["person"])
+    if data.parse_pk(g.get("person")) is not None:
+        q = q.filter(owner_id=data.parse_pk(g["person"]))
     rows = _rows(list(q.order_by("-created_utc")[:500]))
     rows = [r for r in rows if not r["start"] or (data.day_bounds(since)[0] <= r["start"] < data.day_bounds(until)[1])]
     days = {}
@@ -223,8 +227,8 @@ def busy(request):
     """
     The minutes of a day taken by the segments of whose times are being
     chosen, for the hatched cells of the time grid (pickers.js, issue #38):
-    the user's own, or the entry's owner's on its sheet; one segment, the
-    one being changed, left out.
+    the user's own, or the entry's owner's on its sheet for who fixes its
+    times; one segment, the one being changed, left out.
     """
     try:
         day = date.fromisoformat(request.GET.get("day", ""))
@@ -232,7 +236,14 @@ def busy(request):
         segment_uid = uuid.UUID(request.GET["segment"]) if request.GET.get("segment") else None
     except ValueError:
         return JsonResponse({"busy": []})
-    owner = _entry(request, entry_uid).owner if entry_uid else request.user
+    owner = request.user
+    if entry_uid:
+        e = _entry(request, entry_uid)
+        if e.owner_id != request.user.pk and not data.can_fix_times(request.user, e):
+            # someone else's day only to who may change that entry's times: a
+            # reader, or a manager for a company, sees just the entry itself
+            return JsonResponse({"busy": []})
+        owner = e.owner
     tz = timezone.get_current_timezone()
     start = timezone.make_aware(datetime.combine(day, datetime.min.time()), tz)
     end = start + timedelta(days=1)
@@ -291,7 +302,7 @@ def entry(request, uid):
                 messages.success(request, _("Attività eliminata."))
                 return redirect("entries")
             elif action == "segment":
-                seg = get_object_or_404(Segment, entry=e, uid=p.get("segment"), deleted=False)
+                seg = get_object_or_404(Segment, entry=e, uid=data.parse_uid(p.get("segment")), deleted=False)
                 if p.get("remove"):
                     ops.remove_segment(user, seg)
                 else:
@@ -302,7 +313,7 @@ def entry(request, uid):
                 cents = round(float(p.get("amount", "0").replace(",", ".")) * 100)
                 ops.add_expense(user, e, cents=cents, description=p.get("description", ""))
             elif action == "remove_expense":
-                x = get_object_or_404(Expense, entry=e, uid=p.get("expense"), deleted=False)
+                x = get_object_or_404(Expense, entry=e, uid=data.parse_uid(p.get("expense")), deleted=False)
                 ops.delete(user, "expense", x.uid)
             else:
                 raise ops.OpError(_("azione sconosciuta"))
@@ -342,7 +353,7 @@ def todos(request):
     q = data.team_todos(user)
     if who == "all" and people.count() > 1:
         pass
-    elif who and people.filter(pk=who).exists():
+    elif who and people.filter(pk=data.parse_pk(who)).exists():
         q = q.filter(owner_id=who)
     else:
         who = ""
@@ -381,7 +392,7 @@ def todo_edit(request, uid=None):
             if not title:
                 raise ops.OpError(_("il titolo è obbligatorio"))
             owner = todo.owner if todo else user
-            to = people.filter(pk=p.get("owner")).first() if p.get("owner") else owner
+            to = people.filter(pk=data.parse_pk(p.get("owner"))).first() if p.get("owner") else owner
             if to is None:
                 raise PermissionDenied
             client = _pick(user, Client, p.get("client"))

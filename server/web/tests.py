@@ -202,6 +202,31 @@ class PreferencesTests(WorkTests):
         self.client.force_login(self.boss)
         self.assertEqual(self.client.get("/attivita/occupato/?day=2026-10-27").json(), {"busy": []})
 
+    def test_busy_minutes_of_another_only_to_who_fixes_the_times(self):
+        from accounts.models import Profile
+        from records.models import EntryStatus
+
+        for start, end in (("2026-10-27T09:00", "2026-10-27T10:30"), ("2026-10-27T14:00", "2026-10-27T15:00")):
+            self.client.post("/attivita/nuova/", {"when": "past", "client": "22222222-2222-4222-8222-222222222222", "activity": "x",
+                                                  "start": start, "end": end})
+        e = self.entry()
+        self.assertEqual(e.status, EntryStatus.CLOSED)
+        url = f"/attivita/occupato/?day=2026-10-27&entry={e.uid}"
+        both = {"busy": [[540, 630], [840, 900]]}
+        self.assertEqual(self.client.get(url).json(), both)
+        # alice's manager fixes her times: her day
+        self.client.force_login(self.boss)
+        self.assertEqual(self.client.get(url).json(), both)
+        # a reader of the company, a manager for the company: the entry, not her day
+        reader = User.objects.create_user("acme", password="x-x-x-x-x-x", org=self.org, profile=Profile.READER)
+        reader.companies.add(self.acme)
+        other = User.objects.create_user("other", password="x-x-x-x-x-x", org=self.org, profile=Profile.MANAGER)
+        other.companies.add(self.acme)
+        for who in (reader, other):
+            self.client.force_login(who)
+            self.assertEqual(self.client.get(f"/attivita/{e.uid}/").status_code, 200)
+            self.assertEqual(self.client.get(url).json(), {"busy": []})
+
     def test_company_comes_before_the_client(self):
         page = self.client.get("/attivita/nuova/").content.decode()
         self.assertLess(page.index('name="company"'), page.index('name="client"'))
@@ -792,6 +817,26 @@ class MfaTests(TestCase):
         # without mail on the server, no email choice
         self.assertNotContains(self.client.get("/sicurezza/"), 'value="email_start"')
 
+    def test_one_new_email_code_a_minute(self):
+        from unittest import mock
+
+        from django.core import mail
+
+        self.alice.mfa_method = "email"
+        self.alice.save()
+        with self.settings(EMAIL_HOST="smtp.example.com"):
+            self.login()
+            self.assertEqual(len(mail.outbox), 1)
+            r = self.client.post("/login/codice/", {"resend": "1"}, follow=True)
+            self.assertContains(r, "Puoi chiedere un nuovo codice tra")
+            self.assertEqual(len(mail.outbox), 1)
+            later = self.client.session["mfa_pending"]["sent"] + 61
+            with mock.patch("web.mfa.time.time", return_value=later):
+                self.assertContains(self.client.post("/login/codice/", {"resend": "1"}, follow=True), "Nuovo codice inviato")
+                self.assertEqual(len(mail.outbox), 2)
+                self.client.post("/login/codice/", {"resend": "1"})
+            self.assertEqual(len(mail.outbox), 2)
+
     def test_the_organisation_requires_it(self):
         self.client.force_login(self.root)
         self.client.post("/utenti/", {"mfa_required": "admins"})
@@ -841,3 +886,153 @@ class CspTests(TestCase):
             page = r.content.decode()
             self.assertFalse(re.search(r"<script(?![^>]*\bsrc=)", page), url)
             self.assertFalse(re.search(r"\son(click|submit|change|load)=", page), url)
+
+
+class AdminSiteTests(TestCase):
+    """The Django admin: administrators only, through the site's login (web/adminsite.py)."""
+
+    def setUp(self):
+        from accounts.models import Profile
+
+        self.org = Organization.objects.create(name="Infra")
+        self.root = User.objects.create_user("root", password="x-x-x-x-x-x", org=self.org, profile=Profile.ADMIN)
+        self.alice = User.objects.create_user("alice", password="x-x-x-x-x-x", org=self.org)
+
+    def test_the_admin_login_is_the_sites(self):
+        r = self.client.get("/admin/")
+        self.assertRedirects(r, "/admin/login/?next=/admin/", fetch_redirect_response=False)
+        self.assertRedirects(self.client.get(r["Location"]), "/login/?next=/admin/", fetch_redirect_response=False)
+        # its form is not there: a password posted to it logs nobody in
+        self.client.post("/admin/login/", {"username": "root", "password": "x-x-x-x-x-x", "next": "/admin/"})
+        self.assertNotIn("_auth_user_id", self.client.session)
+        r = self.client.post("/login/?next=/admin/", {"username": "root", "password": "x-x-x-x-x-x", "next": "/admin/"})
+        self.assertRedirects(r, "/admin/", fetch_redirect_response=False)
+        self.assertEqual(self.client.get("/admin/").status_code, 200)
+        # out through the site's logout
+        self.assertRedirects(self.client.post("/admin/logout/"), "/login/", fetch_redirect_response=False)
+        self.assertNotIn("_auth_user_id", self.client.session)
+
+    def test_an_administrator_with_a_second_step_passes_it_first(self):
+        import time
+
+        from web.mfa import new_secret, totp
+
+        self.root.mfa_method, self.root.totp_secret = "totp", new_secret()
+        self.root.save()
+        r = self.client.post("/login/?next=/admin/", {"username": "root", "password": "x-x-x-x-x-x", "next": "/admin/"})
+        self.assertRedirects(r, "/login/codice/", fetch_redirect_response=False)
+        self.assertRedirects(self.client.get("/admin/"), "/admin/login/?next=/admin/", fetch_redirect_response=False)
+        r = self.client.post("/login/codice/", {"code": totp(self.root.totp_secret, int(time.time() // 30))})
+        self.assertRedirects(r, "/admin/", fetch_redirect_response=False)
+        self.assertEqual(self.client.get("/admin/").status_code, 200)
+
+    def test_others_get_no_admin(self):
+        from accounts.models import Profile
+
+        self.client.force_login(self.alice)
+        self.assertEqual(self.client.get("/admin/login/").status_code, 403)
+        self.assertRedirects(self.client.get("/admin/"), "/admin/login/?next=/admin/", fetch_redirect_response=False)
+        self.assertEqual(self.client.get("/admin/accounts/user/").status_code, 302)
+        boss = User.objects.create_user("boss", password="x-x-x-x-x-x", org=self.org, profile=Profile.MANAGER, is_staff=True)
+        self.client.force_login(boss)
+        self.assertEqual(self.client.get("/admin/login/").status_code, 403)
+        self.root.is_active = False
+        self.root.save()
+        self.client.force_login(self.root)
+        self.assertNotEqual(self.client.get("/admin/").status_code, 200)
+
+    def test_the_brake_holds(self):
+        for _ in range(10):
+            self.client.post("/login/?next=/admin/", {"username": "root", "password": "wrong", "next": "/admin/"})
+        r = self.client.post("/login/?next=/admin/", {"username": "root", "password": "x-x-x-x-x-x", "next": "/admin/"})
+        self.assertContains(r, "Troppi tentativi")
+        self.assertNotIn("_auth_user_id", self.client.session)
+
+    def test_an_administrator_profile_manages_the_models(self):
+        import re
+
+        self.root.theme, self.root.accent = "dark", "violet"
+        self.root.save()
+        self.client.force_login(self.root)
+        for url in ["/admin/", "/admin/accounts/user/", f"/admin/accounts/user/{self.alice.pk}/change/", "/admin/records/entry/"]:
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200, url)
+            page = r.content.decode()
+            self.assertFalse(re.search(r"<script(?![^>]*\bsrc=)", page), url)
+            self.assertIn('data-theme="dark" data-accent="violet"', page)
+            self.assertIn("web/admin.css", page)
+            self.assertNotIn("theme-toggle", page)
+        # light: Django's dark stylesheet stays out
+        self.root.theme = "light"
+        self.root.save()
+        self.assertNotIn("dark_mode.css", self.client.get("/admin/").content.decode())
+        r = self.client.post(f"/admin/accounts/user/{self.alice.pk}/change/", {
+            "username": "alice", "first_name": "Alice", "last_name": "", "email": "", "is_active": "on", "profile": "user",
+            "org": self.org.pk, "date_joined_0": "2026-01-01", "date_joined_1": "10:00:00", "manager": "", "companies": [],
+        })
+        self.assertEqual(r.status_code, 302, r.content.decode()[:2000] if r.status_code == 200 else "")
+        self.alice.refresh_from_db()
+        self.assertEqual(self.alice.first_name, "Alice")
+
+
+class BadParameterTests(WorkTests):
+    """A link or form with an id that is not one: no server error (web/data.py parse_pk, parse_uid)."""
+
+    def test_bad_ids_are_no_server_error(self):
+        from accounts.models import Profile
+
+        root = User.objects.create_user("root", password="x-x-x-x-x-x", org=self.org, profile=Profile.ADMIN)
+        self.client.force_login(root)
+        for url in ["/agenda/?person=abc", "/attivita/?person=abc", "/attivita/?company=xyz", "/report/?person=abc", "/report/?company=xyz",
+                    "/report/csv/?person=abc&company=xyz", "/attivita/nuova/?todo=xyz", "/dafare/?person=abc", "/?f=1&company=xyz",
+                    "/agenda/?person=%C2%B2", "/report/?person=%C2%B2"]:
+            self.assertEqual(self.client.get(url).status_code, 200, url)
+        self.assertEqual(self.client.get("/policy/user-abc/").status_code, 404)
+        self.assertEqual(self.client.get("/policy/user-%C2%B2/").status_code, 404)
+        self.client.force_login(self.alice)
+        self.assertEqual(self.client.post("/attivita/nuova/", {"when": "now", "client": "nope", "role": "x", "todo": "xyz"}).status_code, 302)
+        e = self.entry()
+        for body in ({"action": "segment", "segment": "xyz"}, {"action": "remove_expense", "expense": "xyz"}):
+            self.assertEqual(self.client.post(f"/attivita/{e.uid}/", body).status_code, 404, body)
+        self.assertEqual(self.client.post("/dafare/nuova/", {"title": "x", "owner": "abc"}).status_code, 403)
+        self.assertEqual(self.client.post("/anagrafiche/clienti/nuova/", {"name": "C", "company": "xyz"}).status_code, 302)
+        self.client.force_login(root)
+        r = self.client.post(f"/utenti/{self.alice.pk}/", {"username": "alice", "profile": "manager", "active": "on", "manager": "abc", "companies": ["xyz"]})
+        self.assertEqual(r.status_code, 302)
+
+    def test_csv_cells_are_no_formulas(self):
+        from records.models import Client
+        from sync import engine
+
+        engine.apply(self.boss, {"type": "client", "uid": "33333333-3333-4333-8333-333333333333", "fields": {"name": "@SUM(1)", "companyUid": str(self.acme.uid)}}, central=True)
+        self.assertTrue(Client.objects.filter(name="@SUM(1)").exists())
+        self.client.post("/attivita/nuova/", {"when": "past", "client": "33333333-3333-4333-8333-333333333333", "activity": '=HYPERLINK("http://x/";"y")',
+                                              "start": "2026-10-27T09:00", "end": "2026-10-27T10:00"})
+        self.client.post("/attivita/nuova/", {"when": "past", "client": "22222222-2222-4222-8222-222222222222", "activity": "-1+2",
+                                              "start": "2026-10-27T11:00", "end": "2026-10-27T12:00"})
+        rows = self.client.get("/report/csv/?from=2026-10-01&to=2026-10-31").content.decode().splitlines()
+        body = "\n".join(rows[1:])
+        self.assertIn(";'@SUM(1);", body)
+        self.assertIn(""";"'=HYPERLINK(""http://x/"";""y"")";""", body)
+        self.assertIn(";'-1+2;", body)
+        self.assertIn(";Acme;Banca;", body)
+
+
+class SetupCommandTests(TestCase):
+    """manage.py setup: the first administrator's password follows the web's rules."""
+
+    def test_a_weak_password_is_refused(self):
+        from io import StringIO
+        from unittest import mock
+
+        from django.core.management import CommandError, call_command
+
+        for weak in ("admin", "password123", "1234567890"):
+            with self.assertRaises(CommandError) as e:
+                call_command("setup", org="Infra", admin="admin", password=weak, stdout=StringIO())
+            self.assertTrue(str(e.exception), weak)
+        self.assertFalse(Organization.objects.exists())
+        with mock.patch("getpass.getpass", return_value="short"), self.assertRaises(CommandError):
+            call_command("setup", org="Infra", admin="admin", stdout=StringIO())
+        call_command("setup", org="Infra", admin="admin", password="try-it-once", stdout=StringIO())
+        self.assertTrue(User.objects.get(username="admin").check_password("try-it-once"))

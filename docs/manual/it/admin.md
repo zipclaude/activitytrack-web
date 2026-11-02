@@ -59,7 +59,11 @@ servizio.
 
 **Comandi di gestione.** `activitytrack-web-manage` esegue i comandi di
 Django con l'utente del servizio, per esempio `migrate`,
-`createsuperuser` o `shell`.
+`createsuperuser` o `shell`. `setup` e le pagine web chiedono una password
+di almeno 10 caratteri, non comune e diversa dal nome utente.
+`clean_json_fields` ripara, una volta dopo l'aggiornamento da 0.9.4-beta4 o
+precedenti, i tag, i numeri di telefono e i campi dei gestionali salvati da
+un telefono in una forma sbagliata (`--dry-run` li elenca soltanto).
 
 ## 3. Accesso
 
@@ -131,7 +135,9 @@ indica chi l'ha attiva.
 
 La vecchia amministrazione di Django resta raggiungibile dal fondo della
 pagina Utenti (**"amministrazione avanzata"**), per l'organizzazione e i
-dati grezzi.
+dati grezzi. La usa solo chi ha il profilo Amministratore, e ci si entra
+dall'accesso normale, con la verifica in due passaggi e il blocco dei
+tentativi sbagliati; ha il tema e il colore scelti nelle preferenze.
 
 ## 5. Dispositivi
 

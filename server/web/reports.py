@@ -31,10 +31,12 @@ def _period(request):
 def _lines(request, since, until):
     """The report lines of the period; an entry's expenses go with its first line in it."""
     q = data.readable_entries(request.user)
-    if request.GET.get("company"):
-        q = q.filter(company__uid=request.GET["company"])
-    if request.GET.get("person"):
-        q = q.filter(owner_id=request.GET["person"])
+    # a filter that is not an id is left out, as a bad link
+    company, person = data.parse_uid(request.GET.get("company")), data.parse_pk(request.GET.get("person"))
+    if company:
+        q = q.filter(company__uid=company)
+    if person is not None:
+        q = q.filter(owner_id=person)
     days = reporting.report(q, since, until)
     lines = [x for d in sorted(days) for x in days[d].lines]
     exps = data.expenses_of([x.entry for x in lines])
@@ -89,6 +91,12 @@ def report(request):
     })
 
 
+def _cell(text):
+    """A free text for the CSV: one a spreadsheet would read as a formula starts with an apostrophe."""
+    text = text or ""
+    return "'" + text if text.startswith(("=", "+", "-", "@", "\t", "\r")) else text
+
+
 @login_required
 def report_csv(request):
     since, until = _period(request)
@@ -104,10 +112,10 @@ def report_csv(request):
         e = x.entry
         local = lambda t: timezone.localtime(t).strftime("%Y-%m-%d %H:%M") if t else ""  # noqa: E731
         w.writerow([
-            x.day.isoformat(), e.owner.username if e.owner else "",
-            e.company.name if e.company else "", e.client.name if e.client else "", e.role.name if e.role else "",
-            e.activity or "", e.status, local(x.start), "" if x.running else local(x.end),
+            x.day.isoformat(), _cell(e.owner.username if e.owner else ""),
+            _cell(e.company.name if e.company else ""), _cell(e.client.name if e.client else ""), _cell(e.role.name if e.role else ""),
+            _cell(e.activity), e.status, local(x.start), "" if x.running else local(x.end),
             x.work // 60, x.travel // 60, x.pause // 60, f"{x.expenses / 100:.2f}",
-            " ".join(e.tags or []), str(e.uid), x.r_work, x.r_travel, x.r_pause,
+            _cell(" ".join(e.tags or [])), str(e.uid), x.r_work, x.r_travel, x.r_pause,
         ])
     return response

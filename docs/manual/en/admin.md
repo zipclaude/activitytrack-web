@@ -58,6 +58,10 @@ replace the code, then `activitytrack-web-manage migrate`,
 
 **Management commands.** `activitytrack-web-manage` runs Django's commands
 as the service user, for example `migrate`, `createsuperuser` or `shell`.
+`setup` and the web pages ask for a password of at least 10 characters, not
+a common one and unlike the user name. `clean_json_fields` repairs, once
+after updating from 0.9.4-beta4 or earlier, the tags, phone numbers and
+plugin fields a phone stored in a wrong shape (`--dry-run` only lists them).
 
 ## 3. Logging in
 
@@ -132,6 +136,9 @@ it up again at the next login. The padlock 🔒 in the list marks who has it.
 
 Django's old administration stays reachable from the bottom of the Users
 page (**"amministrazione avanzata"**), for the organisation and raw data.
+Only users with the Administrator profile get in, through the normal login,
+with the two-step login and the hold on wrong attempts; it takes the theme
+and colour of their preferences.
 
 ## 5. Devices
 
