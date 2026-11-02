@@ -7,6 +7,8 @@
  *   data-policy-user   the policy index: opens the chosen user's policy
  *   data-when          the new-activity form: the fields of "now", "started", "past"
  *   data-profile       the user form: the parts of the chosen profile
+ *   data-company-filter the company of a form filters its clients, as in the
+ *                      app; a client chosen brings its company (issue #38)
  */
 (function () {
 	"use strict";
@@ -40,6 +42,30 @@
 		when.addEventListener("change", syncWhen);
 		syncWhen();
 	}
+
+	document.querySelectorAll("select[data-company-filter]").forEach(function (company) {
+		var client = company.form && company.form.elements.client;
+		if (!client)
+			return;
+		var filter = function () {
+			var chosen = company.value;
+			client.querySelectorAll("option[data-company]").forEach(function (o) {
+				o.hidden = o.disabled = !!chosen && o.dataset.company !== chosen;
+			});
+			client.querySelectorAll("optgroup").forEach(function (g) {
+				g.hidden = !g.querySelector("option:not([hidden])");
+			});
+			if (client.selectedOptions[0] && client.selectedOptions[0].disabled)
+				client.value = "";
+		};
+		company.addEventListener("change", filter);
+		client.addEventListener("change", function () {
+			var o = client.selectedOptions[0];
+			if (o && o.dataset.company)
+				company.value = o.dataset.company;
+		});
+		filter();
+	});
 
 	var profile = document.querySelector("select[data-profile]");
 	if (profile) {

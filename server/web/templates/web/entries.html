@@ -11,7 +11,7 @@
 	<button>{% translate "Filtra" %}</button>
 </form>
 {% for day, rows in days %}
-<h3 class="sec">{{ day|date:"l j F Y" }}</h3>
+<h3 class="sec">{{ day|udate:"long" }}</h3>
 {% for r in rows %}{% include "web/_entry_row.html" with show_owner=people %}{% endfor %}
 {% empty %}<p class="muted">{% translate "Nessuna attività nel periodo." %}</p>{% endfor %}
 {% endblock %}

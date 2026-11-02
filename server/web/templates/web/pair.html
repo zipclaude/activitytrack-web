@@ -1,4 +1,4 @@
-{% extends "web/base.html" %}{% load i18n static %}
+{% extends "web/base.html" %}{% load i18n static at %}
 {% block title %}{% translate "Associa un dispositivo" %} · ActivityTrack{% endblock %}
 {% block content %}
 <section class="card narrow" id="pairing" data-status="{% url 'pair_status' pairing.pk %}">
@@ -8,7 +8,7 @@
 		<li>{% translate "PC: in ActivityTrack Desktop scegli «Associa a un server» e incolla il collegamento qui sotto." %}</li>
 	</ol>
 	<div class="qr">{{ qr|safe }}</div>
-	<p class="state" data-waiting>{% blocktranslate with time=pairing.expires|time:"H:i" %}In attesa del dispositivo… il codice vale fino alle {{ time }}.{% endblocktranslate %}</p>
+	<p class="state" data-waiting>{% blocktranslate with time=pairing.expires|utime %}In attesa del dispositivo… il codice vale fino alle {{ time }}.{% endblocktranslate %}</p>
 	<p class="state note success" data-paired hidden>{% translate "Dispositivo associato:" %} <b></b></p>
 	<p class="state note error" data-expired hidden>{% translate "Codice scaduto." %}</p>
 	<p>{% translate "Collegamento (per il PC, o se il telefono non riesce a inquadrare il codice):" %}</p><code class="wrap">{{ link }}</code>

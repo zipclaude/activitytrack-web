@@ -10,7 +10,7 @@
 		<td>{% if d.kind == "desktop" %}{% icon "computer" %}{% else %}{% icon "phone" %}{% endif %}{{ d.name }}{% if d.plugin_holder %} <span class="chip">{% translate "invia ai gestionali" %}</span>{% endif %}</td>
 		<td>{{ d.model }}</td>
 		<td>{{ d.app_version }}</td>
-		<td>{% if d.revoked %}{% translate "revocato" %} {{ d.revoked|date:"SHORT_DATETIME_FORMAT" }}{% else %}{{ d.last_seen|date:"SHORT_DATETIME_FORMAT"|default:"—" }}{% endif %}</td>
+		<td>{% if d.revoked %}{% translate "revocato" %} {{ d.revoked|udatetime }}{% else %}{{ d.last_seen|udatetime|default:"—" }}{% endif %}</td>
 		<td>{% if not d.revoked %}
 			{% if not d.plugin_holder and d.kind == "phone" %}<form method="post" action="{% url 'device_holder' d.pk %}">{% csrf_token %}<button>{% translate "Invia ai gestionali" %}</button></form>{% endif %}
 			<form method="post" action="{% url 'device_revoke' d.pk %}">{% csrf_token %}<button class="danger">{% translate "Revoca" %}</button></form>

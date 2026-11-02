@@ -1,4 +1,4 @@
-{% extends "web/base.html" %}{% load i18n %}
+{% extends "web/base.html" %}{% load i18n at %}
 {% block title %}{% translate "Policy" %} · ActivityTrack{% endblock %}
 {% block content %}
 <h1>{% translate "Policy delle app" %}</h1>
@@ -9,7 +9,7 @@
 	{% for scope, label, p in scopes %}
 	<tr>
 		<td>{{ label }}</td>
-		<td>{% if p %}{% blocktranslate with r=p.revision d=p.updated|date:"SHORT_DATETIME_FORMAT" %}revisione {{ r }}, {{ d }}{% endblocktranslate %}{% else %}—{% endif %}</td>
+		<td>{% if p %}{% blocktranslate with r=p.revision d=p.updated|udatetime %}revisione {{ r }}, {{ d }}{% endblocktranslate %}{% else %}—{% endif %}</td>
 		<td><a class="button" href="{% url 'policies:edit' scope %}">{% if p %}{% translate "Modifica" %}{% else %}{% translate "Crea" %}{% endif %}</a></td>
 	</tr>
 	{% endfor %}

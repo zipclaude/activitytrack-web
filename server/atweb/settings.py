@@ -75,6 +75,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "web.mfa.enforce",
+    "web.formats.middleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
@@ -93,6 +94,7 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
                 "web.context.tags",
                 "web.context.version",
+                "web.context.picker_texts",
             ],
         },
     },

@@ -34,7 +34,7 @@
 
 {% if u %}
 <section class="card"><h2>{% translate "Dispositivi" %}</h2>
-{% for d in devices %}<div class="line{% if d.revoked %} muted{% endif %}">{% if d.kind == "desktop" %}{% icon "computer" %}{% else %}{% icon "phone" %}{% endif %}<b>{{ d.name }}</b> <span class="sub">{{ d.model }} · {{ d.app_version }} · {% if d.revoked %}{% translate "revocato" %} {{ d.revoked|date:"SHORT_DATETIME_FORMAT" }}{% else %}{% translate "ultima sincronizzazione" %} {{ d.last_seen|date:"SHORT_DATETIME_FORMAT"|default:"—" }}{% endif %}</span>
+{% for d in devices %}<div class="line{% if d.revoked %} muted{% endif %}">{% if d.kind == "desktop" %}{% icon "computer" %}{% else %}{% icon "phone" %}{% endif %}<b>{{ d.name }}</b> <span class="sub">{{ d.model }} · {{ d.app_version }} · {% if d.revoked %}{% translate "revocato" %} {{ d.revoked|udatetime }}{% else %}{% translate "ultima sincronizzazione" %} {{ d.last_seen|udatetime|default:"—" }}{% endif %}</span>
 	{% if not d.revoked %}<form method="post" action="{% url 'device_revoke' d.pk %}" data-confirm="{% translate "Revocare questo dispositivo? Smette subito di sincronizzare." %}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.path }}"><button class="danger">{% translate "Revoca" %}</button></form>{% endif %}</div>
 {% empty %}<p class="muted">{% translate "Nessun dispositivo associato." %}</p>{% endfor %}
 </section>

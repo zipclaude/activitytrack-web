@@ -1,13 +1,14 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 """Home, activities and to-dos in the browser (docs/ROADMAP.md phase 4)."""
 
+import uuid
 from datetime import date, datetime, timedelta
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db.models import Q
-from django.http import QueryDict
+from django.http import JsonResponse, QueryDict
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.urls import reverse
@@ -215,6 +216,36 @@ def _tags(entry, text):
         if unknown:
             raise ops.OpError(_("solo i tag dell'anagrafica: %(t)s non c'è") % {"t": ", ".join(unknown)})
     return sorted(tags)
+
+
+@login_required
+def busy(request):
+    """
+    The minutes of a day taken by the segments of whose times are being
+    chosen, for the hatched cells of the time grid (pickers.js, issue #38):
+    the user's own, or the entry's owner's on its sheet; one segment, the
+    one being changed, left out.
+    """
+    try:
+        day = date.fromisoformat(request.GET.get("day", ""))
+        entry_uid = uuid.UUID(request.GET["entry"]) if request.GET.get("entry") else None
+        segment_uid = uuid.UUID(request.GET["segment"]) if request.GET.get("segment") else None
+    except ValueError:
+        return JsonResponse({"busy": []})
+    owner = _entry(request, entry_uid).owner if entry_uid else request.user
+    tz = timezone.get_current_timezone()
+    start = timezone.make_aware(datetime.combine(day, datetime.min.time()), tz)
+    end = start + timedelta(days=1)
+    q = Segment.objects.filter(owner=owner, deleted=False, entry__deleted=False, start_utc__lt=end).filter(Q(end_utc__isnull=True) | Q(end_utc__gt=start))
+    if segment_uid:
+        q = q.exclude(uid=segment_uid)
+    now = timezone.now()
+    out = []
+    for s in q:
+        a, b = max(s.start_utc, start), min(s.end_utc or now, end)
+        if b > a:
+            out.append([int((a - start).total_seconds() // 60), int(-(-(b - start).total_seconds() // 60))])
+    return JsonResponse({"busy": sorted(out)})
 
 
 @login_required
