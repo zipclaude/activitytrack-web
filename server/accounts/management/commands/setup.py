@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 import getpass
 
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
@@ -23,6 +25,11 @@ class Command(BaseCommand):
             password = getpass.getpass("Password: ")
             if password != getpass.getpass("Password (again): "):
                 raise CommandError("the passwords differ")
+        # the rules of the web pages (settings.AUTH_PASSWORD_VALIDATORS), for scripts too
+        try:
+            validate_password(password, User(username=admin, email=email))
+        except ValidationError as e:
+            raise CommandError(" ".join(e.messages)) from None
         with transaction.atomic():
             o = Organization.objects.create(name=org)
             User.objects.create_superuser(username=admin, email=email, password=password, org=o, profile=Profile.ADMIN)

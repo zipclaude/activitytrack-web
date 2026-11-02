@@ -52,7 +52,6 @@ POLICY_CERT = INI.get("policy", "cert", fallback="").strip()
 POLICY_CHAIN = INI.get("policy", "chain", fallback="").strip()
 
 INSTALLED_APPS = [
-    "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
@@ -63,6 +62,8 @@ INSTALLED_APPS = [
     "sync",
     "policies",
     "web",
+    # after web: its admin/ templates come first (web/adminsite.py)
+    "web.adminsite.AdminConfig",
 ]
 
 MIDDLEWARE = [

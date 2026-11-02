@@ -68,7 +68,7 @@ def _fields(request, model):
         return {"name": p.get("name", "").strip(), "archived": bool(p.get("archived")), "color": _color(p),
                 "externalCode": p.get("external_code", "").strip() or None}
     if model is Client:
-        company = data.masters(user, Company).filter(uid=p.get("company")).first() if p.get("company") else None
+        company = data.masters(user, Company).filter(uid=data.parse_uid(p.get("company"))).first() if p.get("company") else None
         return {"name": p.get("name", "").strip(), "archived": bool(p.get("archived")), "companyUid": str(company.uid) if company else None,
                 "color": _color(p), "externalCode": p.get("external_code", "").strip() or None}
     if model is Role:

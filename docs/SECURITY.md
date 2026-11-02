@@ -64,3 +64,22 @@ Afterwards (#24): a Content-Security-Policy on every page; the inline
 scripts and `on…` handlers moved to `app.js`, a test keeps them out.
 
 Afterwards (#25): two-step login, by authenticator app or email (§1).
+
+## 4. Review of 2026-11-02
+
+Fixed:
+- **Django's admin had its own login**, with the password only: no second
+  step, no brake. It now goes through the site's login (`web/adminsite.py`)
+  and is open to the Administrator profile only.
+- **JSON fields of the sync not checked**: a phone could store `tags: 5`
+  and break the pages of whoever read the entry. Each field has its shape
+  (`sync/wire.py` `JSON_SHAPES`); `manage.py clean_json_fields` repairs
+  what was stored before.
+- **Busy cells of the time grid** showed a company reader, or a manager for
+  a company, the owner's whole day: now only to who may fix the entry's times.
+- **CSV of the report**: texts a spreadsheet would run as formulas start
+  with an apostrophe.
+- **Email codes at login**: one new code a minute at most.
+- **Ids that are not ids** in links and forms (`?person=x`, a bad uid):
+  ignored or 404, not a server error.
+- **`manage.py setup --password`** follows the password rules of the pages.

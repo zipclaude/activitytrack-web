@@ -6,6 +6,7 @@ import json
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
+from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.translation import gettext as _
 
@@ -34,6 +35,8 @@ def _scope(request, scope):
             raise PermissionDenied
         return _("Profilo: %(p)s") % {"p": Profile(p).label}, {"org": org, "profile": p, "user": None}
     if scope.startswith("user-"):
+        if not scope[5:].isascii() or not scope[5:].isdigit():
+            raise Http404
         u = get_object_or_404(User, pk=scope[5:], org=org)
         return _("Utente: %(u)s") % {"u": u.get_full_name() or u.username}, {"org": org, "profile": "", "user": u}
     raise PermissionDenied

@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 """The web login with a brake on password guessing."""
 
+import time
 from datetime import timedelta
 
 from django.contrib.auth.views import LoginView
@@ -47,9 +48,12 @@ class Login(LoginView):
         if user.mfa_method:
             from . import mfa
 
-            self.request.session["mfa_pending"] = {"user": user.pk, "next": self.get_success_url(), "tries": 0}
+            pending = {"user": user.pk, "next": self.get_success_url(), "tries": 0}
             if user.mfa_method == "email":
                 mfa.send_code(self.request, user, "mfa_login_code")
+                # when, for the wait before another one
+                pending["sent"] = time.time()
+            self.request.session["mfa_pending"] = pending
             return redirect("login_code")
         return super().form_valid(form)
 
