@@ -115,6 +115,19 @@ class WorkTests(TestCase):
         self.client.post("/anagrafiche/ruoli/nuova/", {"name": "Formatore", "central": "on"})
         self.assertIsNone(Role.objects.get(name="Formatore").owner_id)
 
+    def test_companies_and_clients_take_a_colour(self):
+        from records.models import Client, Company
+
+        self.client.force_login(self.boss)
+        self.assertContains(self.client.get(f"/anagrafiche/aziende/{self.acme.uid}/"), 'name="color"')
+        self.client.post(f"/anagrafiche/aziende/{self.acme.uid}/", {"name": "Acme", "color": str(0x3D7BEA)})
+        self.assertEqual(Company.objects.get(uid=self.acme.uid).color, 0x3D7BEA)
+        self.client.post("/anagrafiche/clienti/nuova/", {"name": "Beta srl", "company": str(self.acme.uid), "color": str(0xD64545)})
+        self.assertEqual(Client.objects.get(name="Beta srl").color, 0xD64545)
+        # outside the app's palette: no colour
+        self.client.post(f"/anagrafiche/aziende/{self.acme.uid}/", {"name": "Acme", "color": "123"})
+        self.assertIsNone(Company.objects.get(uid=self.acme.uid).color)
+
     def test_manager_reads_the_team_reader_the_closed_entries_of_its_companies(self):
         from accounts.models import Profile
 
