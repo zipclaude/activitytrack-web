@@ -55,21 +55,26 @@ def index(request, kind="aziende"):
     return render(request, "web/masters.html", {"kind": kind, "kinds": KINDS, "title": title, "items": q, "can_central": user.can_edit_central})
 
 
+def _color(p):
+    """The colour chosen among the app's palette, None for no colour."""
+    color = p.get("color", "")
+    return int(color) if color and int(color) in {c for c, _l in PALETTE} else None
+
+
 def _fields(request, model):
     p = request.POST
     user = request.user
     if model is Company:
-        return {"name": p.get("name", "").strip(), "archived": bool(p.get("archived")), "externalCode": p.get("external_code", "").strip() or None}
+        return {"name": p.get("name", "").strip(), "archived": bool(p.get("archived")), "color": _color(p),
+                "externalCode": p.get("external_code", "").strip() or None}
     if model is Client:
         company = data.masters(user, Company).filter(uid=p.get("company")).first() if p.get("company") else None
         return {"name": p.get("name", "").strip(), "archived": bool(p.get("archived")), "companyUid": str(company.uid) if company else None,
-                "externalCode": p.get("external_code", "").strip() or None}
+                "color": _color(p), "externalCode": p.get("external_code", "").strip() or None}
     if model is Role:
         return {"name": p.get("name", "").strip(), "archived": bool(p.get("archived"))}
     if model is Tag:
-        color = p.get("color", "")
-        return {"name": tag_name(p.get("name", "")), "archived": bool(p.get("archived")),
-                "color": int(color) if color and int(color) in {c for c, _l in PALETTE} else None}
+        return {"name": tag_name(p.get("name", "")), "archived": bool(p.get("archived")), "color": _color(p)}
     if model is Preset:
         return {"text": p.get("text", "").strip()}
     cents = p.get("unit_cost", "").replace(",", ".").strip()

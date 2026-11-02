@@ -9,8 +9,8 @@
 	{% if model == "Client" %}<label>{% translate "Azienda" %}<select name="company"><option value="">—</option>{% for c in companies %}<option value="{{ c.uid }}" {% if r.company_id == c.uid %}selected{% endif %}>{{ c.name }}</option>{% endfor %}</select></label>{% endif %}
 	{% if model == "Company" or model == "Client" %}<label>{% translate "Codice nel gestionale" %}<input name="external_code" value="{{ r.external_code|default:'' }}"></label>{% endif %}
 	{% if model == "Material" %}<div class="pair"><label>{% translate "Unità" %}<input name="unit" value="{{ r.unit|default:'' }}" size="6"></label><label>{% translate "Costo unitario (€)" %}<input name="unit_cost" inputmode="decimal" value="{% if r.unit_cost_cents %}{% widthratio r.unit_cost_cents 100 1 %}{% endif %}"></label></div>{% endif %}
-	{% if model == "Tag" %}<p class="muted">{% translate "Una parola: minuscole, lettere e numeri; gli spazi diventano «-»." %}</p>
-	<fieldset class="swatches"><legend>{% translate "Colore" %}</legend>
+	{% if model == "Tag" %}<p class="muted">{% translate "Una parola: minuscole, lettere e numeri; gli spazi diventano «-»." %}</p>{% endif %}
+	{% if model == "Tag" or model == "Company" or model == "Client" %}<fieldset class="swatches"><legend>{% translate "Colore" %}</legend>
 		<label><input type="radio" name="color" value="" {% if not r.color %}checked{% endif %}> {% translate "nessun colore" %}</label>
 		{% for c, label in palette %}<label title="{{ label }}"><input type="radio" name="color" value="{{ c }}" {% if r.color == c %}checked{% endif %}><i class="sw" style="--sw: {{ c|color }}"></i></label>{% endfor %}
 	</fieldset>{% endif %}

@@ -164,7 +164,8 @@ waits and leaves when the network is back.
 Companies, clients, roles, tags, quick choices and materials are
 **central** (everyone sees them; administrators and managers change them)
 or **personal** (a user's own, when the policy allows it). The app and the
-web show which is which.
+web show which is which. Companies, clients and tags have an optional
+**colour**, chosen among the app's, from the web too.
 
 When the phone and the server have master data with the same name, they
 become one at the first sync, with the server's data. For tags the text

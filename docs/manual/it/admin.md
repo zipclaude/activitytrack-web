@@ -164,7 +164,8 @@ ritorno della rete.
 Aziende, clienti, ruoli, tag, scelte rapide e materiali sono **centrali**
 (le vedono tutti; le modificano amministratori e responsabili) o
 **personali** (di un utente, se la policy lo consente). L'app e il web
-mostrano quale è quale.
+mostrano quale è quale. Aziende, clienti e tag hanno un **colore** facoltativo,
+scelto tra quelli dell'app, anche dal web.
 
 Se sul telefono e sul server c'è un'anagrafica con lo stesso nome,
 diventano una sola alla prima sincronizzazione, con i dati del server. Per i
