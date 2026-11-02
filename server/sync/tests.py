@@ -3,6 +3,7 @@ import hashlib
 import json
 import shutil
 import tempfile
+import time
 import uuid
 from pathlib import Path
 from datetime import timedelta
@@ -13,7 +14,7 @@ from django.utils import timezone
 
 from accounts.models import Device, Organization, PairingCode, Profile, User
 from records.models import Company, Contact, Entry, Segment
-from sync import engine
+from sync import engine, wire
 
 T0 = 1761600000000  # 2025-10-27T21:20:00Z
 
@@ -511,3 +512,91 @@ class PolicyCompatTests(SyncTestCase):
         self.assertIn("settings.editableTimes", page)
         self.assertIn("Pixel, 0.9.2", page)
         self.assertNotIn("Ufficio", page)
+
+
+class JsonShapeTests(SyncTestCase):
+    """JSON fields come in their shape (sync/wire.py JSON_SHAPES): a wrong one would break everyone's pages."""
+
+    def entry_with(self, phone, **fields):
+        # a closed entry of an hour, so the pages show it
+        now = int(time.time() * 1000) - 4 * 3600000
+        e = uid()
+        res = self.push(phone, [
+            self.upsert("entry", e, entry_fields(status="CLOSED", mode=None, createdUtcMs=now, updatedUtcMs=now, **fields), now),
+            self.upsert("segment", uid(), {"entryUid": e, "kind": "WORK", "startUtcMs": now, "endUtcMs": now + 3600000, "zoneId": "Europe/Rome"}, now),
+        ])
+        return e, res[0]
+
+    def test_every_json_field_has_a_shape(self):
+        from django.db import models
+
+        from records.models import SYNCED_MODELS
+
+        for m in SYNCED_MODELS:
+            for f in m._meta.concrete_fields:
+                if isinstance(f, models.JSONField) and f.name not in wire.BOOKKEEPING:
+                    self.assertIn(f.name, wire.JSON_SHAPES, f"{m.__name__}.{f.name}")
+
+    def test_wrong_shapes_are_refused(self):
+        phone = self.pair(self.alice)
+        for bad in (5, "abc", [1, 2], {"a": 1}, True, [["x"]]):
+            _, res = self.entry_with(phone, tags=bad)
+            self.assertEqual((res["status"], res["error"]), ("error", "invalid"), bad)
+        for bad in ([1], "x", 5):
+            _, res = self.entry_with(phone, pluginFields=bad)
+            self.assertEqual(res.get("error"), "invalid", bad)
+        _, res = self.entry_with(phone, pluginFields={"service": "A1"})
+        self.assertEqual(res["status"], "applied")
+        _, res = self.entry_with(phone, pluginFields=None)
+        self.assertEqual(res["status"], "applied")
+        cl = uid()
+        self.push(phone, [self.upsert("client", cl, {"name": "Banca"}, T0)])
+        for bad, error in ((["+39055", 3], "invalid"), ("+39055", "invalid"), (["+39055"], None)):
+            res = self.push(phone, [self.upsert("contact", uid(), {"clientUid": cl, "name": "Rossi", "phones": bad}, T0)])[0]
+            self.assertEqual(res.get("error"), error, bad)
+
+    def test_tags_are_normalised(self):
+        from records.models import Entry
+
+        phone = self.pair(self.alice)
+        e, res = self.entry_with(phone, tags=["#Rete LAN", "rete-lan", "Urgente!", "#", "x" * 40])
+        self.assertEqual(res["record"]["fields"]["tags"], ["rete-lan", "urgente", "x" * 30])
+        self.assertEqual(Entry.objects.get(uid=e).tags, ["rete-lan", "urgente", "x" * 30])
+
+    def test_stored_bad_values_are_repaired(self):
+        from io import StringIO
+
+        from django.core.management import call_command
+
+        from records.models import Contact, Entry
+
+        phone = self.pair(self.alice)
+        kept = {}
+        for i, bad in enumerate((5, "Rete lan", [1, "#Ok"], {"a": 1})):
+            e, _ = self.entry_with(phone, tags=[f"t{i}"])
+            Entry.objects.filter(uid=e).update(tags=bad, plugin_fields=[1] if i == 0 else None)
+            kept[e] = bad
+        self.client.force_login(self.admin)
+        cl = uid()
+        self.push(phone, [self.upsert("client", cl, {"name": "Banca"}, T0)])
+        ct = uid()
+        self.push(phone, [self.upsert("contact", ct, {"clientUid": cl, "name": "Rossi"}, T0)])
+        Contact.objects.filter(uid=ct).update(phones="+39055")
+        before = Entry.objects.order_by("-rev").first().rev
+        out = StringIO()
+        call_command("clean_json_fields", "--dry-run", stdout=out)
+        self.assertIn("5 record(s) to repair", out.getvalue())
+        self.assertEqual(Entry.objects.filter(uid__in=kept, tags=5).count(), 1)
+        call_command("clean_json_fields", stdout=StringIO())
+        got = {e.uid: e for e in Entry.objects.filter(uid__in=kept)}
+        self.assertEqual(sorted(tuple(e.tags) for e in got.values()), [(), (), ("ok",), ("rete", "lan")])
+        self.assertTrue(all(e.plugin_fields is None and e.rev > before for e in got.values()))
+        self.assertEqual(Contact.objects.get(uid=ct).phones, ["+39055"])
+        alice = self.client.__class__()
+        alice.force_login(self.alice)
+        for url in ("/", "/attivita/", "/agenda/", "/report/", "/report/csv/"):
+            self.assertEqual(self.client.get(url).status_code, 200, url)
+            self.assertEqual(alice.get(url).status_code, 200, url)
+        out = StringIO()
+        call_command("clean_json_fields", stdout=out)
+        self.assertIn("0 record(s) repaired", out.getvalue())

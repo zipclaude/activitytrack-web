@@ -7,6 +7,8 @@ from functools import cache
 
 from django.db import models
 
+from records.models import tag_name
+
 BOOKKEEPING = {"uid", "org", "owner", "rev", "deleted", "clock"}
 
 
@@ -17,6 +19,33 @@ class WireError(ValueError):
 def _camel(name):
     head, *rest = name.split("_")
     return head + "".join(p.capitalize() for p in rest)
+
+
+def _strings(name, value):
+    if not isinstance(value, list) or not all(isinstance(x, str) for x in value):
+        raise WireError(f"{name}: a list of strings expected")
+    return value
+
+
+def _tags(name, value):
+    """Normalised as the app and the web do (records.models.tag_name), once each."""
+    out = []
+    for t in _strings(name, value):
+        t = tag_name(t)
+        if t and t not in out:
+            out.append(t)
+    return out
+
+
+def _object(name, value):
+    if not isinstance(value, dict):
+        raise WireError(f"{name}: an object expected")
+    return value
+
+
+# the shape of each JSON field: the pages read them as such, a phone's
+# wrong value would break them for everyone who reads the record
+JSON_SHAPES = {"tags": _tags, "phones": _strings, "plugin_fields": _object, "extra": _object}
 
 
 class WireField:
@@ -96,7 +125,7 @@ class WireField:
                 if self.field.max_length and len(value) > self.field.max_length:
                     raise WireError(f"{self.name}: longer than {self.field.max_length}")
                 return value
-            return value
+            return JSON_SHAPES[self.field.name](self.name, value)
         except (TypeError, ValueError) as e:
             if isinstance(e, WireError):
                 raise
