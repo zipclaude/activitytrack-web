@@ -41,7 +41,11 @@ class CatalogTest(SimpleTestCase):
         self.assertTrue(committed.exists(), "run manage.py compilemessages and commit django.mo")
         with open(out, "rb") as a, open(committed, "rb") as b:
             fresh, kept = gettext.GNUTranslations(a), gettext.GNUTranslations(b)
-        self.assertEqual(fresh._catalog, kept._catalog, "django.po changed: run manage.py compilemessages")
+        # the messages, not the header (key ""): the package build normalises its dates
+        # (dh_strip_nondeterminism sets PO-Revision-Date to the changelog's), so the
+        # installed file differs from the committed one there and nowhere else
+        without_header = lambda c: {k: v for k, v in c.items() if k != ""}  # noqa: E731
+        self.assertEqual(without_header(fresh._catalog), without_header(kept._catalog), "django.po changed: run manage.py compilemessages")
 
     def test_no_message_keeps_its_italian_by_accident(self):
         # a catalog entry equal to its msgid is fine for loan words ("Report"), but never for a sentence
