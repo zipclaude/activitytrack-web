@@ -84,6 +84,16 @@
       "doc": "location tracking (its settings)"
     },
     {
+      "key": "trackMap",
+      "essential": false,
+      "doc": "the map of the movements of an activity, day, week or month"
+    },
+    {
+      "key": "trackExport",
+      "essential": false,
+      "doc": "the GPX / KML export of the track and the clean-up of the recorded tracks (a person who can see the map can export it unless this is off)"
+    },
+    {
       "key": "calls",
       "essential": false,
       "doc": "call recognition (its settings)"
@@ -441,6 +451,50 @@
       "key": "tilesEnabled",
       "kind": "BOOLEAN",
       "doc": "true/false"
+    },
+    {
+      "key": "offlineMapsEnabled",
+      "kind": "BOOLEAN",
+      "since": "0.9.4",
+      "doc": "true/false — the offline maps (the server's and those in the data folder) for the track map"
+    },
+    {
+      "key": "trackMapEnabled",
+      "kind": "BOOLEAN",
+      "since": "0.9.4",
+      "doc": "true/false — the track map; it needs `tilesEnabled` or a downloaded offline map"
+    },
+    {
+      "key": "workSampleMin",
+      "kind": "INT",
+      "allowed": [
+        1,
+        2,
+        5,
+        10,
+        15,
+        20,
+        30,
+        60
+      ],
+      "since": "0.9.4",
+      "doc": "minutes — 1, 2, 5, 10, 15, 20, 30, 60"
+    },
+    {
+      "key": "travelSampleSec",
+      "kind": "INT",
+      "allowed": [
+        15,
+        30,
+        60,
+        120,
+        300,
+        600,
+        900,
+        1800
+      ],
+      "since": "0.9.4",
+      "doc": "seconds — 15, 30, 60, 120, 300, 600, 900, 1800"
     },
     {
       "key": "stationaryRadiusM",

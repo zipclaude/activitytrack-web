@@ -166,6 +166,31 @@ There are no push notifications: a change made on the web reaches the
 phone within 15 minutes, at once with the app open. Without a network it
 waits and leaves when the network is back.
 
+### Offline maps for the phones
+
+The app's track map can use an **offline map**: a basic map (roads, rivers, lakes,
+borders, place names) kept on the phone, which works without a network. The **Mappe** page
+(admins only) prepares it:
+
+1. Tick **Rendi disponibili le mappe offline ai telefoni** (offer offline maps to the
+   phones). Off, the phones receive nothing and remove the maps they got from here.
+2. In **Aree** (areas) add the places you need: a **centre** (latitude and longitude), a
+   **radius** (5-250 km) and a **zoom level**. As you type, the form tells how many tiles
+   and how many MB the map will be. Or start from one of the 23 ready-made areas (a town
+   and 100 km around it) and change it.
+3. Level 10 (about 1:400 000, 2-3 MB for 100 km) is enough for roads and towns; 11 (about
+   1:200 000, 5 MB) adds the railway and more detail. The highest level is set in
+   `settings.ini` (`[maps]`); a map above 48 MB is refused.
+4. On saving, the server prepares the map (some tens of seconds), reading the
+   OpenStreetMap data in Protomaps' format: it must reach `build.protomaps.com`. The row
+   shows *in preparazione* (being prepared), then *pronta* (ready) or *non riuscita*
+   (failed, with the reason; the previous version stays on offer). **Aggiorna** prepares it again.
+
+The phones fetch the maps with the sync, on Wi-Fi (within 15 minutes, at once if the app
+is open) and remove those you remove. A phone without a server can have the same maps by
+copying `.pmtiles` files into the `maps` folder of its data folder. Details and commands
+(`build_maps`, periodic refresh): `docs/OFFLINE-MAPS.md`.
+
 ## 6. Master data
 
 Companies, clients, roles, tags, quick choices and materials are

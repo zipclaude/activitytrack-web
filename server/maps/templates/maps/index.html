@@ -1,0 +1,59 @@
+{% extends "web/base.html" %}{% load i18n at static %}
+{% block title %}{% translate "Mappe offline" %} · ActivityTrack{% endblock %}
+{% block content %}
+<h1>{% translate "Mappe offline" %}</h1>
+<p>{% blocktranslate %}Una mappa basilare (strade, fiumi, laghi, confini, nomi dei luoghi) delle aree che scegli. I telefoni la scaricano da qui con la sincronizzazione e la usano per la mappa degli spostamenti quando non c'è rete o le mappe online sono spente.{% endblocktranslate %}</p>
+
+<form method="post" action="{% url 'maps:toggle' %}" class="card">{% csrf_token %}
+	<label class="check"><input type="checkbox" name="offline_maps" {% if org.offline_maps %}checked{% endif %} data-autosubmit> {% translate "Rendi disponibili le mappe offline ai telefoni" %}</label>
+	<p class="doc">{% translate "Spento, i telefoni non ricevono nulla e tolgono le mappe che avevano ricevuto da qui. Le aree restano preparate." %}</p>
+	<noscript><button>{% translate "Salva" %}</button></noscript>
+</form>
+
+<section class="card" id="areas" data-status="{% url 'maps:status' %}" {% if building %}data-busy{% endif %}>
+	<h2>{% translate "Aree" %}</h2>
+	{% if areas %}
+	<table class="list">
+		<thead><tr><th>{% translate "Area" %}</th><th>{% translate "Raggio" %}</th><th>{% translate "Zoom" %}</th><th>{% translate "Stato" %}</th><th>{% translate "Peso" %}</th><th></th></tr></thead>
+		<tbody>
+		{% for a in areas %}
+		<tr data-area="{{ a.pk }}">
+			<td><b>{{ a.name }}</b><br><span class="sub">{{ a.lat|floatformat:3 }} · {{ a.lon|floatformat:3 }}</span></td>
+			<td>{{ a.radius_km }} km</td>
+			<td>{{ a.max_zoom }}{% if a.scale %} <span class="sub">(1:{{ a.scale|floatformat:"0g" }})</span>{% endif %}</td>
+			<td data-state>{% if a.busy %}{% translate "in preparazione" %} <span data-progress>{{ a.progress }}</span>%
+				{% elif a.state == "failed" or a.stale %}<span class="err">{% translate "non riuscita" %}</span>{% if a.message %}<br><span class="sub">{{ a.message }}</span>{% endif %}{% if a.usable %}<br><span class="sub">{% translate "resta disponibile la versione precedente" %}</span>{% endif %}
+				{% elif a.state == "ready" %}{% translate "pronta" %}<br><span class="sub">{{ a.built|udatetime }}{% if a.source %} · {{ a.source }}{% endif %}</span>{% else %}—{% endif %}</td>
+			<td data-size>{% if a.size %}{{ a.size|filesizeformat }}{% else %}—{% endif %}</td>
+			<td class="actions">
+				<form method="post" action="{% url 'maps:rebuild' a.pk %}">{% csrf_token %}<button {% if a.busy %}disabled{% endif %}>{% if a.usable %}{% translate "Aggiorna" %}{% else %}{% translate "Prepara" %}{% endif %}</button></form>
+				<a class="button" href="{% url 'maps:edit' a.pk %}">{% translate "Modifica" %}</a>
+				<form method="post" action="{% url 'maps:delete' a.pk %}" data-confirm="{% translate "Eliminare quest'area? I telefoni la tolgono alla prossima sincronizzazione." %}">{% csrf_token %}<button class="danger">{% translate "Elimina" %}</button></form>
+			</td>
+		</tr>
+		{% endfor %}
+		</tbody>
+	</table>
+	{% else %}<p class="muted">{% translate "Nessuna area. Aggiungine una qui sotto." %}</p>{% endif %}
+</section>
+
+<section class="card">
+	<h2>{% translate "Aggiungi un'area" %}</h2>
+	<p><a class="button primary" href="{% url 'maps:new' %}">{% translate "Scegli un'area e uno zoom" %}</a></p>
+	{% if presets %}
+	<form method="get" action="{% url 'maps:new' %}" class="fields">
+		<label>{% translate "Oppure parti da un'area predefinita (100 km intorno a una città)" %}
+			<select name="preset">{% for slug, name, lat, lon in presets %}<option value="{{ slug }}">{{ name }}</option>{% endfor %}</select>
+		</label>
+		<div class="actions"><button>{% translate "Continua" %}</button></div>
+	</form>
+	{% endif %}
+</section>
+
+<section class="card">
+	<h2>{% translate "Da dove vengono i dati" %}</h2>
+	<p class="doc">{% blocktranslate with source=source mb=max_mb %}I dati sono di OpenStreetMap (ODbL), nel formato di Protomaps; il server li legge da «{{ source }}» (impostazione <code>[maps] source</code>) senza scaricare l'intero pianeta e ne ritaglia l'area. Una mappa non può superare i {{ mb }} MB.{% endblocktranslate %}</p>
+	<p class="doc">© OpenStreetMap contributors · Protomaps</p>
+</section>
+{% endblock %}
+{% block scripts %}<script src="{% static 'maps/maps.js' %}"></script>{% endblock %}

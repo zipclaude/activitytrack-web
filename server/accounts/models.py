@@ -19,6 +19,8 @@ class Organization(models.Model):
     mfa_required = models.CharField(_("verifica in due passaggi obbligatoria per"), max_length=16, blank=True, choices=[
         ("", _("nessuno")), ("admins", _("amministratori")), ("managers", _("amministratori e responsabili")), ("all", _("tutti")),
     ])
+    # the phones receive the offline maps prepared in maps (docs/OFFLINE-MAPS.md)
+    offline_maps = models.BooleanField(_("mappe offline per i telefoni"), default=False)
 
     def __str__(self):
         return self.name
