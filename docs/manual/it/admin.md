@@ -276,6 +276,9 @@ telefono: *Altro → Preferenze*), ognuno sceglie:
 
 Le preferenze sono dell'utente: valgono su ogni browser con cui accede.
 
+La **lingua** (italiano o inglese) si sceglie nella stessa pagina e vale per il
+browser in uso; finché non la scegli, le pagine seguono la lingua del browser.
+
 ![Preferenze](../img/preferences.png)
 
 **Da fare assegnate.** Un responsabile, o un amministratore, crea una voce

@@ -8,7 +8,21 @@ progress live in the GitHub issues and pull requests.
 ## 1. Working rules
 
 - English for code, comments, commits and docs; Italian with the maintainer.
-  The UI is Italian first (Django i18n, English translation).
+  The UI is Italian first (Django i18n, English translation): the message ids
+  are the Italian texts, `server/locale/en/LC_MESSAGES/django.po` is the English
+  catalog and `django.mo` its compilation, which is committed (the package and
+  a tarball install need no `msgfmt`). Changing a UI text:
+  ```sh
+  cd server
+  python3 manage.py makemessages -l en --no-location --no-obsolete
+  # translate the empty entries of locale/en/LC_MESSAGES/django.po
+  python3 manage.py compilemessages -l en
+  ```
+  `web/test_i18n.py` fails on an untranslated or fuzzy entry and on a `django.mo`
+  that is not the `django.po` compiled. English is British ("organisation",
+  "colour"); use the app's terms (To-dos, Master data, Quick picks, management
+  system). The language is the browser's, or the one chosen in Preferences
+  (the `django_language` cookie).
 - Indentation: Python follows PEP 8 (4 spaces); everything else tabs (`.editorconfig`).
 - **Never use npm**, not even for tools. No CDN, no bundler: plain JS files
   in `server/web/static`.

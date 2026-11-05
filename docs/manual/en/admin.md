@@ -276,6 +276,11 @@ the **client** and filters its list; a client chosen brings its company.
 The preferences are the user's: they hold on every browser they sign in
 with.
 
+The **language** (Italian or English) is chosen on the same page and holds for
+the browser in use; until you choose one, the pages follow the browser's
+language. The buttons, labels and messages are translated; what you type
+(names, notes) stays as written.
+
 ![Preferences](../img/preferences.png)
 
 **Assigned to-dos.** A manager, or an administrator, creates a to-do and

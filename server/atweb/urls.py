@@ -7,5 +7,7 @@ urlpatterns = [
     path("api/v1/", include("sync.urls")),
     path("policy/", include("policies.urls")),
     path("mappe/", include("maps.urls")),
+    # the language chosen on the Preferences page (a cookie; without one the browser's language is followed)
+    path("i18n/", include("django.conf.urls.i18n")),
     path("", include("web.urls")),
 ]
