@@ -17,6 +17,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from accounts.models import Device, PairingCode
+from maps import catalog as maps_catalog
 from records.models import Attachment
 
 from . import compat, engine, wire
@@ -168,6 +169,8 @@ def head(request):
         "filesMaxMb": settings.FILES_MAX_MB,
         # this phone sends to the management systems (ARCHITECTURE.md §8)
         "pluginHolder": request.device.plugin_holder,
+        # the offline maps on offer (docs/OFFLINE-MAPS.md): "" without; the phone fetches `maps` when it changes
+        "mapsRev": maps_catalog.revision(request.device.user.org),
         **compat.describe(),
     })
 
@@ -253,3 +256,34 @@ def serve_file(att, path):
         response["X-Sendfile"] = str(path)
         return _guarded(response, att)
     return _guarded(FileResponse(open(path, "rb"), content_type=att.mime), att)
+
+
+@device_api
+@require_GET
+def maps(request):
+    """The offline maps this phone may download (docs/OFFLINE-MAPS.md): empty unless the organisation offers them."""
+    return JsonResponse(maps_catalog.document(request.device.user.org))
+
+
+@device_api
+@require_GET
+def map_file(request, slug):
+    area = maps_catalog.area_for(request.device.user.org, slug)
+    if area is None:
+        return _error(404, "unknown")
+    return serve_map(area)
+
+
+def serve_map(area):
+    """A map file: through the same offload as the attachments (it lives under the files folder)."""
+    path = area.path
+    if settings.FILES_OFFLOAD == "nginx":
+        response = HttpResponse(content_type="application/octet-stream")
+        response["X-Accel-Redirect"] = f"{settings.FILES_ACCEL_LOCATION.rstrip('/')}/{path.relative_to(settings.FILES_DIR)}"
+    elif settings.FILES_OFFLOAD == "apache":
+        response = HttpResponse(content_type="application/octet-stream")
+        response["X-Sendfile"] = str(path)
+    else:
+        response = FileResponse(open(path, "rb"), content_type="application/octet-stream")
+    response["Content-Disposition"] = f'attachment; filename="{area.file_name}"'
+    return response

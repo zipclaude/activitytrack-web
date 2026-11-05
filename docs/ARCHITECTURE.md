@@ -66,6 +66,7 @@ Django apps (`server/`):
 | `records` | the synced data: master data, to-dos, entries and their parts, calendar data |
 | `sync` | the sync protocol (`docs/SYNC.md`): push, pull, files, revision counter, conflicts |
 | `policies` | policy catalog (exported by the app), policies, assignments, signing |
+| `maps` | the offline maps: areas chosen by an admin, prepared from the Protomaps basemap, offered to the phones (`docs/OFFLINE-MAPS.md`) |
 | `web` | the browser UI |
 
 ## 4. Tenancy

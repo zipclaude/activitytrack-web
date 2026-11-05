@@ -23,5 +23,5 @@
 	<noscript><button>{% translate "Salva" %}</button></noscript>
 	<p class="doc">{% translate "Chi è indicato deve attivarla (app di autenticazione o email) al primo accesso; gli altri possono attivarla da «Sicurezza dell'account». I dispositivi già associati non cambiano." %}</p>
 </form>
-<p class="doc">{% translate "L'organizzazione e i dati grezzi restano nell'" %}<a href="{% url 'admin:index' %}">{% translate "amministrazione avanzata" %}</a>.</p>
+{% url 'admin:index' as admin_url %}<p class="doc">{% blocktranslate %}L'organizzazione e i dati grezzi restano nell'<a href="{{ admin_url }}">amministrazione avanzata</a>.{% endblocktranslate %}</p>
 {% endblock %}

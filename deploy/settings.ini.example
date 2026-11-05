@@ -30,6 +30,16 @@ offload = none
 ;offload = nginx
 ;accel_location = /_files/
 
+[maps]
+; offline maps for the phones' track map (docs/OFFLINE-MAPS.md): where the basemap
+; is read from, by byte ranges: "latest" (the newest daily build of Protomaps,
+; https://build.protomaps.com/), the URL of a PMTiles archive, or a file
+;source = latest
+; the highest zoom (12: about 1:100 000), the largest radius and the largest map an admin may ask for
+;max_zoom = 12
+;max_radius_km = 250
+;max_mb = 48
+
 [mail]
 ; for the login codes by email (two-step verification); without a host the
 ; codes come only from an authenticator app

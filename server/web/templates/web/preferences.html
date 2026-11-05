@@ -14,4 +14,12 @@
 	</fieldset>
 	<button class="primary">{% translate "Salva" %}</button>
 </form>
+<form method="post" action="{% url 'set_language' %}" class="card narrowform">{% csrf_token %}
+	<input type="hidden" name="next" value="{{ request.path }}">
+	<fieldset><legend>{% translate "Lingua" %}</legend>
+		{% get_available_languages as languages %}
+		<div class="actions">{% for code, name in languages %}<button name="language" value="{{ code }}" {% if code == LANGUAGE_CODE %}class="primary" aria-current="true"{% endif %}>{{ name }}</button>{% endfor %}</div>
+		<p class="doc">{% translate "La scelta vale per questo browser; senza una scelta si segue la lingua del browser." %}</p>
+	</fieldset>
+</form>
 {% endblock %}

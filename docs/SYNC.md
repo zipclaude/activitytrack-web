@@ -114,8 +114,10 @@ phone's `sync_change` is not overwritten: the pending push will settle it.
 
 ### `GET sync/head`
 
-`{ "rev": 4711, "serverTime": …, "filesMaxMb": 25 }`: cheap check while
-the app is in the foreground; the phone does not upload files above the limit.
+`{ "rev": 4711, "serverTime": …, "filesMaxMb": 25, "mapsRev": "9f3c…" }`: cheap
+check while the app is in the foreground; the phone does not upload files above
+the limit. `mapsRev` is the fingerprint of the offline maps on offer (see Maps):
+`""` when there are none; an older server leaves it out.
 
 ### Files
 
@@ -126,6 +128,33 @@ pushes the record first, then uploads the file (the upload sets `hasFile`
 and gives the record a new revision); until then the web shows "file in
 arrivo". Phones download files lazily (on open,
 or all on Wi-Fi after a restore). Limit: `files.max_mb` (default 25).
+
+### Maps
+
+The offline maps of the track map (`docs/OFFLINE-MAPS.md`) are files, not records:
+they have no revision and do not go through `sync/pull`.
+
+`GET maps`:
+
+```json
+{ "schema": 1, "rev": "9f3c1a…",
+  "maps": [ { "id": "trento", "name": "Trento e Alto Adige", "file": "trento.pmtiles",
+              "bytes": 2300794, "sha256": "<64 hex>", "bbox": [9.8252, 45.1717, 12.4148, 46.9683],
+              "maxZoom": 10, "updated": "2026-11-04" } ] }
+```
+
+`maps` is empty unless the organisation offers offline maps (Mappe page, admin);
+`bbox` is `[min lon, min lat, max lon, max lat]` of the file as built. `GET maps/<id>`
+answers the file (`application/octet-stream`; 404 for an unknown or not offered
+id), through the same offload as the attachments.
+
+The phone, after a sync, compares `mapsRev` with the one it kept: if it differs it
+reads `maps`, downloads the maps it lacks or whose `sha256` changed (only on an
+unmetered network; the file is checked against `bytes`, `sha256` and its PMTiles
+header), deletes the server's maps that are no longer listed, and keeps `mapsRev`
+only when everything is in place, so a missed download is tried again. Maps the user
+imported from the data folder are never touched. A phone without maps support ignores
+`mapsRev`; the wire schema does not change.
 
 ## 6. Deletes
 

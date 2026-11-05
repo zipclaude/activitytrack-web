@@ -45,6 +45,15 @@ if FILES_OFFLOAD not in ("none", "nginx", "apache"):
     raise ValueError(f"[files] offload: {FILES_OFFLOAD!r}, expected none, nginx or apache")
 FILES_ACCEL_LOCATION = INI.get("files", "accel_location", fallback="/_files/").strip()
 
+# offline maps (docs/OFFLINE-MAPS.md): where the Protomaps basemap is read from
+# (a URL of a PMTiles archive, a file, or "latest": the newest daily build), and the
+# limits of what an admin may ask for
+MAPS_SOURCE = INI.get("maps", "source", fallback="latest").strip() or "latest"
+MAPS_MAX_ZOOM = INI.getint("maps", "max_zoom", fallback=12)
+MAPS_MAX_RADIUS_KM = INI.getint("maps", "max_radius_km", fallback=250)
+# a phone refuses larger maps (the app caps them at 64 MB)
+MAPS_MAX_MB = min(INI.getint("maps", "max_mb", fallback=48), 64)
+
 # optional: phone policies signed with this certificate (the app's policy.json.sig);
 # needed only for phones whose policy CN is already pinned
 POLICY_KEY = INI.get("policy", "key", fallback="").strip()
@@ -61,6 +70,7 @@ INSTALLED_APPS = [
     "records",
     "sync",
     "policies",
+    "maps",
     "web",
     # after web: its admin/ templates come first (web/adminsite.py)
     "web.adminsite.AdminConfig",
@@ -91,6 +101,8 @@ TEMPLATES = [
         "OPTIONS": {
             "context_processors": [
                 "django.template.context_processors.request",
+                # LANGUAGE_CODE for <html lang> and the language chooser
+                "django.template.context_processors.i18n",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "web.context.tags",

@@ -1,0 +1,1655 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: ActivityTrack Web\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-05 21:25+0100\n"
+"PO-Revision-Date: 2026-11-05 22:00+0100\n"
+"Last-Translator: ActivityTrack\n"
+"Language-Team: English\n"
+"Language: en\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "nome"
+msgstr "name"
+
+msgid "verifica in due passaggi obbligatoria per"
+msgstr "two-step verification required for"
+
+msgid "nessuno"
+msgstr "nobody"
+
+msgid "amministratori"
+msgstr "administrators"
+
+msgid "amministratori e responsabili"
+msgstr "administrators and managers"
+
+msgid "tutti"
+msgstr "all"
+
+msgid "mappe offline per i telefoni"
+msgstr "offline maps for the phones"
+
+msgid "Amministratore"
+msgstr "Administrator"
+
+msgid "Responsabile"
+msgstr "Manager"
+
+msgid "Utente"
+msgstr "User"
+
+msgid "Lettore azienda"
+msgstr "Company reader"
+
+msgid "europeo (31/12/2026)"
+msgstr "European (31/12/2026)"
+
+msgid "americano (12/31/2026)"
+msgstr "American (12/31/2026)"
+
+msgid "ISO (2026-12-31)"
+msgstr "ISO (2026-12-31)"
+
+msgid "24 ore (18:30)"
+msgstr "24 hours (18:30)"
+
+msgid "12 ore (6:30 PM)"
+msgstr "12 hours (6:30 PM)"
+
+msgid "come il sistema"
+msgstr "like the system"
+
+msgid "chiaro"
+msgstr "light"
+
+msgid "scuro"
+msgstr "dark"
+
+msgid "verde"
+msgstr "green"
+
+msgid "blu"
+msgstr "blue"
+
+msgid "viola"
+msgstr "purple"
+
+msgid "arancione"
+msgstr "orange"
+
+msgid "grigio"
+msgstr "grey"
+
+msgid "profilo"
+msgstr "profile"
+
+msgid "aziende"
+msgstr "companies"
+
+msgid ""
+"Lettore azienda: le attività chiuse di queste aziende. Responsabile: tutte "
+"le attività fatte per queste aziende, oltre a quelle del suo team."
+msgstr ""
+"Company reader: the closed activities of these companies. Manager: all the "
+"activities done for these companies, besides those of their team."
+
+msgid "formato delle date"
+msgstr "date format"
+
+msgid "formato degli orari"
+msgstr "time format"
+
+msgid "tema"
+msgstr "theme"
+
+msgid "colore del tema"
+msgstr "theme colour"
+
+msgid "telefono"
+msgstr "phone"
+
+msgid "PC"
+msgstr "PC"
+
+msgid "modello"
+msgstr "model"
+
+msgid "tipo"
+msgstr "type"
+
+msgid "versione app"
+msgstr "app version"
+
+msgid "schema"
+msgstr "schema"
+
+msgid "invia ai gestionali"
+msgstr "sends to the management systems"
+
+msgid "in coda"
+msgstr "queued"
+
+msgid "in preparazione"
+msgstr "being prepared"
+
+msgid "pronta"
+msgstr "ready"
+
+msgid "non riuscita"
+msgstr "failed"
+
+msgid "latitudine"
+msgstr "latitude"
+
+msgid "longitudine"
+msgstr "longitude"
+
+msgid "raggio (km)"
+msgstr "radius (km)"
+
+msgid "livello di zoom"
+msgstr "zoom level"
+
+msgid "Torino e Piemonte"
+msgstr "Turin and Piedmont"
+
+msgid "Aosta e Valle d'Aosta"
+msgstr "Aosta and the Aosta Valley"
+
+msgid "Milano e Lombardia"
+msgstr "Milan and Lombardy"
+
+msgid "Genova e Liguria"
+msgstr "Genoa and Liguria"
+
+msgid "Trento e Alto Adige"
+msgstr "Trento and South Tyrol"
+
+msgid "Venezia e Veneto"
+msgstr "Venice and Veneto"
+
+msgid "Udine e Friuli"
+msgstr "Udine and Friuli"
+
+msgid "Bologna e Emilia"
+msgstr "Bologna and Emilia"
+
+msgid "Firenze e Toscana"
+msgstr "Florence and Tuscany"
+
+msgid "Ancona e Marche"
+msgstr "Ancona and the Marche"
+
+msgid "Perugia e Umbria"
+msgstr "Perugia and Umbria"
+
+msgid "Roma e Lazio"
+msgstr "Rome and Lazio"
+
+msgid "Pescara e Abruzzo"
+msgstr "Pescara and Abruzzo"
+
+msgid "Napoli e Campania"
+msgstr "Naples and Campania"
+
+msgid "Bari e Puglia"
+msgstr "Bari and Apulia"
+
+msgid "Lecce e Salento"
+msgstr "Lecce and Salento"
+
+msgid "Potenza e Basilicata"
+msgstr "Potenza and Basilicata"
+
+msgid "Cosenza e Calabria"
+msgstr "Cosenza and Calabria"
+
+msgid "Reggio Calabria e stretto"
+msgstr "Reggio Calabria and the Strait"
+
+msgid "Catania e Sicilia orientale"
+msgstr "Catania and eastern Sicily"
+
+msgid "Palermo e Sicilia occidentale"
+msgstr "Palermo and western Sicily"
+
+msgid "Cagliari e Sardegna meridionale"
+msgstr "Cagliari and southern Sardinia"
+
+msgid "Sassari e Sardegna settentrionale"
+msgstr "Sassari and northern Sardinia"
+
+msgid "Nuova area"
+msgstr "New area"
+
+msgid "Mappe offline"
+msgstr "Offline maps"
+
+msgid "Correggi i campi segnati."
+msgstr "Correct the marked fields."
+
+msgid "Nome"
+msgstr "Name"
+
+msgid "Latitudine del centro"
+msgstr "Latitude of the centre"
+
+msgid "Longitudine del centro"
+msgstr "Longitude of the centre"
+
+msgid "Raggio (km)"
+msgstr "Radius (km)"
+
+msgid "Livello di zoom"
+msgstr "Zoom level"
+
+msgid ""
+"Più lo zoom è alto, più la mappa è dettagliata e pesa. Il livello 10 (circa "
+"1:400.000) basta per strade e paesi; il 11 (circa 1:200.000) aggiunge la "
+"ferrovia e più dettaglio."
+msgstr ""
+"The higher the zoom, the more detailed and heavier the map. Level 10 (about "
+"1:400,000) is enough for roads and towns; level 11 (about 1:200,000) adds "
+"the railway and more detail."
+
+#, python-format
+msgid "Una mappa non può superare i %(mb)s MB."
+msgstr "A map cannot exceed %(mb)s MB."
+
+msgid "Salva"
+msgstr "Save"
+
+msgid "Salva e prepara"
+msgstr "Save and prepare"
+
+msgid ""
+"Se cambi centro, raggio o zoom, la mappa viene preparata di nuovo; i "
+"telefoni tengono la precedente finché la nuova non è pronta."
+msgstr ""
+"If you change the centre, radius or zoom, the map is prepared again; the "
+"phones keep the previous one until the new one is ready."
+
+msgid ""
+"Una mappa basilare (strade, fiumi, laghi, confini, nomi dei luoghi) delle "
+"aree che scegli. I telefoni la scaricano da qui con la sincronizzazione e la"
+" usano per la mappa degli spostamenti quando non c'è rete o le mappe online "
+"sono spente."
+msgstr ""
+"A basic map (roads, rivers, lakes, borders, place names) of the areas you "
+"choose. The phones download it from here with the sync and use it for the "
+"movement map when there is no network or the online maps are off."
+
+msgid "Rendi disponibili le mappe offline ai telefoni"
+msgstr "Offer the offline maps to the phones"
+
+msgid ""
+"Spento, i telefoni non ricevono nulla e tolgono le mappe che avevano "
+"ricevuto da qui. Le aree restano preparate."
+msgstr ""
+"Off, the phones receive nothing and remove the maps they had received from "
+"here. The areas stay prepared."
+
+msgid "Aree"
+msgstr "Areas"
+
+msgid "Area"
+msgstr "Area"
+
+msgid "Raggio"
+msgstr "Radius"
+
+msgid "Zoom"
+msgstr "Zoom"
+
+msgid "Stato"
+msgstr "Status"
+
+msgid "Peso"
+msgstr "Size"
+
+msgid "resta disponibile la versione precedente"
+msgstr "the previous version stays available"
+
+msgid "Aggiorna"
+msgstr "Update"
+
+msgid "Prepara"
+msgstr "Prepare"
+
+msgid "Modifica"
+msgstr "Edit"
+
+msgid ""
+"Eliminare quest'area? I telefoni la tolgono alla prossima sincronizzazione."
+msgstr "Delete this area? The phones remove it at their next sync."
+
+msgid "Elimina"
+msgstr "Delete"
+
+msgid "Nessuna area. Aggiungine una qui sotto."
+msgstr "No areas. Add one below."
+
+msgid "Aggiungi un'area"
+msgstr "Add an area"
+
+msgid "Scegli un'area e uno zoom"
+msgstr "Choose an area and a zoom"
+
+msgid "Oppure parti da un'area predefinita (100 km intorno a una città)"
+msgstr "Or start from a ready-made area (100 km around a town)"
+
+msgid "Continua"
+msgstr "Continue"
+
+msgid "Da dove vengono i dati"
+msgstr "Where the data comes from"
+
+#, python-format
+msgid ""
+"I dati sono di OpenStreetMap (ODbL), nel formato di Protomaps; il server li "
+"legge da «%(source)s» (impostazione <code>[maps] source</code>) senza "
+"scaricare l'intero pianeta e ne ritaglia l'area. Una mappa non può superare "
+"i %(mb)s MB."
+msgstr ""
+"The data is from OpenStreetMap (ODbL), in Protomaps' format; the server "
+"reads it from “%(source)s” (setting <code>[maps] source</code>) without "
+"downloading the whole planet and cuts out the area. A map cannot exceed "
+"%(mb)s MB."
+
+msgid "Il nome è obbligatorio (al massimo 80 caratteri)."
+msgstr "The name is required (80 characters at most)."
+
+msgid "La latitudine va da -85 a 85."
+msgstr "The latitude goes from -85 to 85."
+
+msgid "La longitudine va da -180 a 180."
+msgstr "The longitude goes from -180 to 180."
+
+#, python-format
+msgid "Il raggio va da %(a)s a %(b)s km."
+msgstr "The radius goes from %(a)s to %(b)s km."
+
+#, python-format
+msgid "Il livello di zoom va da 8 a %(b)s."
+msgstr "The zoom level goes from 8 to %(b)s."
+
+#, python-format
+msgid ""
+"Con questo raggio e questo zoom la mappa supererebbe i %(m)s MB: abbassa lo "
+"zoom o riduci l'area."
+msgstr ""
+"With this radius and zoom the map would exceed %(m)s MB: lower the zoom or "
+"reduce the area."
+
+msgid "I telefoni ricevono le mappe offline."
+msgstr "The phones receive the offline maps."
+
+msgid "I telefoni non ricevono più le mappe offline."
+msgstr "The phones no longer receive the offline maps."
+
+msgid "Area salvata: la preparazione è iniziata."
+msgstr "Area saved: preparation has started."
+
+msgid "Area salvata."
+msgstr "Area saved."
+
+msgid "L'area è già in preparazione."
+msgstr "The area is already being prepared."
+
+msgid "La preparazione è iniziata."
+msgstr "Preparation has started."
+
+msgid "Area eliminata: i telefoni la tolgono alla prossima sincronizzazione."
+msgstr "Area deleted: the phones remove it at their next sync."
+
+msgid "Policy"
+msgstr "Policy"
+
+msgid ""
+"Ciò che resta «non impostato» segue l'ambito più generale, o l'app così "
+"com'è."
+msgstr ""
+"What stays “not set” follows the more general scope, or the app as it is."
+
+msgid ""
+"Alcuni telefoni hanno un'app che non conosce queste impostazioni: rifiutano "
+"tutta la policy e restano con la precedente finché non aggiornano l'app."
+msgstr ""
+"Some phones have an app that does not know these settings: they refuse the "
+"whole policy and keep the previous one until they update the app."
+
+#, python-format
+msgid "serve l'app %(since)s"
+msgstr "needs app %(since)s"
+
+msgid "Funzioni"
+msgstr "Features"
+
+msgid "non impostato"
+msgstr "not set"
+
+msgid "attiva"
+msgstr "on"
+
+msgid "disattivata"
+msgstr "off"
+
+msgid "Campi"
+msgstr "Fields"
+
+msgid "Visibile"
+msgstr "Visible"
+
+msgid "Modificabile"
+msgstr "Editable"
+
+msgid "Obbligatorio"
+msgstr "Required"
+
+msgid "Etichetta it / en"
+msgstr "Label it / en"
+
+msgid "sì"
+msgstr "yes"
+
+msgid "no"
+msgstr "no"
+
+msgid "Impostazioni"
+msgstr "Settings"
+
+msgid ""
+"Valore iniziale: l'utente lo può cambiare. Bloccato: grigio con il "
+"lucchetto. Nascosto: non compare."
+msgstr ""
+"Starting value: the user can change it. Locked: greyed out with the padlock."
+" Hidden: not shown."
+
+msgid "valore iniziale"
+msgstr "starting value"
+
+msgid "bloccato"
+msgstr "locked"
+
+msgid "nascosto"
+msgstr "hidden"
+
+msgid "Comportamenti e altro"
+msgstr "Behaviours and more"
+
+msgid "da dove partono le attività"
+msgstr "where activities can start from"
+
+msgid "chi crea le anagrafiche: importOnly = solo centrali, import e plugin"
+msgstr ""
+"who creates the master data: importOnly = central ones, imports and plugins "
+"only"
+
+msgid "nessuno selezionato = tutti"
+msgstr "none selected = all"
+
+msgid "lingua dell'app, imposta"
+msgstr "language of the app (sets it)"
+
+msgid "Eliminare la policy di questo ambito?"
+msgstr "Delete the policy of this scope?"
+
+msgid "JSON di questo ambito"
+msgstr "JSON of this scope"
+
+msgid "Policy delle app"
+msgstr "App policies"
+
+msgid ""
+"Ogni telefono e PC riceve la policy dell'organizzazione, poi quella del "
+"profilo dell'utente, poi quella dell'utente: chiave per chiave, la più "
+"specifica vince."
+msgstr ""
+"Every phone and PC receives the organisation's policy, then that of the "
+"user's profile, then the user's own: key by key, the most specific wins."
+
+msgid "Ambito"
+msgstr "Scope"
+
+#, python-format
+msgid "revisione %(r)s, %(d)s"
+msgstr "revision %(r)s, %(d)s"
+
+msgid "Crea"
+msgstr "Create"
+
+msgid "Policy per un utente"
+msgstr "Policy for a user"
+
+msgid "Organizzazione"
+msgstr "Organisation"
+
+#, python-format
+msgid "Profilo: %(p)s"
+msgstr "Profile: %(p)s"
+
+#, python-format
+msgid "Utente: %(u)s"
+msgstr "User: %(u)s"
+
+msgid "essenziale: non si disattiva"
+msgstr "essential: it cannot be switched off"
+
+msgid "essenziale: resta visibile, attivo e obbligatorio"
+msgstr "essential: it stays visible, enabled and required"
+
+msgid "un campo nascosto o non modificabile non può essere obbligatorio"
+msgstr "a hidden or non-editable field cannot be required"
+
+msgid "valore non valido"
+msgstr "invalid value"
+
+msgid "numero intero"
+msgstr "whole number"
+
+#, python-format
+msgid "Policy di «%(s)s» eliminata."
+msgstr "Policy of “%(s)s” deleted."
+
+#, python-format
+msgid "Policy di «%(s)s» salvata (revisione %(r)d)."
+msgstr "Policy of “%(s)s” saved (revision %(r)d)."
+
+msgid "Amministrazione dei dati"
+msgstr "Data administration"
+
+msgid "▲ Prima"
+msgstr "▲ Before"
+
+msgid "Dopo ▼"
+msgstr "After ▼"
+
+msgid "Orario esatto"
+msgstr "Exact time"
+
+msgid "OK"
+msgstr "OK"
+
+msgid "Annulla"
+msgstr "Cancel"
+
+msgid "Svuota"
+msgstr "Clear"
+
+msgid "Oggi"
+msgstr "Today"
+
+msgid "Adesso"
+msgstr "Now"
+
+msgid "Inizio"
+msgstr "Start"
+
+msgid "Fine"
+msgstr "End"
+
+msgid "Tocca l'ultima casella"
+msgstr "Tap the last cell"
+
+msgid "Data o ora non valida"
+msgstr "Invalid date or time"
+
+msgid "Data"
+msgstr "Date"
+
+msgid "Ora"
+msgstr "Time"
+
+msgid "gg/mm/aaaa"
+msgstr "dd/mm/yyyy"
+
+msgid "mm/gg/aaaa"
+msgstr "mm/dd/yyyy"
+
+msgid "aaaa-mm-gg"
+msgstr "yyyy-mm-dd"
+
+msgid "hh:mm"
+msgstr "hh:mm"
+
+msgid "h:mm AM"
+msgstr "h:mm AM"
+
+msgid "verde acqua"
+msgstr "teal"
+
+msgid "lime"
+msgstr "lime"
+
+msgid "giallo"
+msgstr "yellow"
+
+msgid "rosso"
+msgstr "red"
+
+msgid "magenta"
+msgstr "magenta"
+
+msgid "indaco"
+msgstr "indigo"
+
+msgid "marrone"
+msgstr "brown"
+
+msgid "Aziende"
+msgstr "Companies"
+
+msgid "Clienti"
+msgstr "Clients"
+
+msgid "Ruoli"
+msgstr "Roles"
+
+msgid "Tag"
+msgstr "Tags"
+
+msgid "Scelte rapide"
+msgstr "Quick picks"
+
+msgid "Materiali"
+msgstr "Materials"
+
+msgid "Eliminato."
+msgstr "Deleted."
+
+msgid "il nome è obbligatorio"
+msgstr "the name is required"
+
+msgid "Salvato."
+msgstr "Saved."
+
+#, python-format
+msgid "esiste già un tag «%(n)s»"
+msgstr "a tag “%(n)s” already exists"
+
+msgid "Codice di accesso ActivityTrack"
+msgstr "ActivityTrack login code"
+
+#, python-format
+msgid ""
+"Il codice per accedere ad ActivityTrack è %(code)s. Vale 10 minuti. Se non "
+"stai accedendo tu, avvisa l'amministratore."
+msgstr ""
+"Your ActivityTrack login code is %(code)s. It is valid for 10 minutes. If "
+"you are not the one logging in, tell the administrator."
+
+#, python-format
+msgid "Puoi chiedere un nuovo codice tra %(seconds)d secondi."
+msgstr "You can ask for a new code in %(seconds)d seconds."
+
+#, python-format
+msgid "Nuovo codice inviato a %(email)s."
+msgstr "New code sent to %(email)s."
+
+msgid "Troppi codici sbagliati: accedi di nuovo."
+msgstr "Too many wrong codes: log in again."
+
+msgid "Codice non valido."
+msgstr "Invalid code."
+
+msgid ""
+"Serve un indirizzo email nel tuo utente e la posta configurata sul server."
+msgstr ""
+"Your user needs an email address and the server needs its mail configured."
+
+#, python-format
+msgid "Codice inviato a %(email)s."
+msgstr "Code sent to %(email)s."
+
+msgid "Verifica in due passaggi attiva."
+msgstr "Two-step verification is on."
+
+msgid "La password non è corretta."
+msgstr "The password is not correct."
+
+msgid ""
+"L'organizzazione chiede la verifica in due passaggi: puoi cambiare metodo, "
+"non toglierla."
+msgstr ""
+"The organisation requires two-step verification: you can change the method, "
+"not remove it."
+
+msgid "Verifica in due passaggi disattivata."
+msgstr "Two-step verification is off."
+
+msgid ""
+"L'organizzazione chiede la verifica in due passaggi: attivala per "
+"continuare."
+msgstr ""
+"The organisation requires two-step verification: switch it on to continue."
+
+msgid "Azienda"
+msgstr "Company"
+
+msgid "Cliente"
+msgstr "Client"
+
+msgid "Ruolo"
+msgstr "Role"
+
+msgid "Descrizione"
+msgstr "Description"
+
+msgid "Senza cliente"
+msgstr "No client"
+
+msgid "senza descrizione"
+msgstr "no description"
+
+msgid "registrati"
+msgstr "recorded"
+
+msgid "da fare"
+msgstr "to do"
+
+msgid "scad."
+msgstr "due"
+
+msgid "Avvia"
+msgstr "Start"
+
+msgid "Agenda"
+msgstr "Agenda"
+
+msgid "Aggiungi"
+msgstr "Add"
+
+msgid "Vista"
+msgstr "View"
+
+msgid "Giorno"
+msgstr "Day"
+
+msgid "Settimana"
+msgstr "Week"
+
+msgid "Mese"
+msgstr "Month"
+
+msgid "Persona"
+msgstr "Person"
+
+msgid "Tutti i tag"
+msgstr "All tags"
+
+msgid "Filtra"
+msgstr "Filter"
+
+msgid "Precedente"
+msgstr "Previous"
+
+msgid "Rendicontato nel periodo"
+msgstr "Reported in the period"
+
+msgid "Successivo"
+msgstr "Next"
+
+msgid "giorno"
+msgstr "day"
+
+msgid "scade"
+msgstr "due"
+
+msgid "Riduci"
+msgstr "Zoom out"
+
+msgid "Ingrandisci"
+msgstr "Zoom in"
+
+msgid ""
+"Un clic su uno spazio libero pianifica una nuova voce Da fare a quell'ora."
+msgstr "A click on a free slot plans a new To-do at that time."
+
+msgid "Menu"
+msgstr "Menu"
+
+msgctxt "menu"
+msgid "Home"
+msgstr "Home"
+
+msgid "Da fare"
+msgstr "To-dos"
+
+msgid "Report"
+msgstr "Report"
+
+msgid "Attività"
+msgstr "Activities"
+
+msgid "Anagrafiche"
+msgstr "Master data"
+
+msgid "Dispositivi"
+msgstr "Devices"
+
+msgid "Mappe"
+msgstr "Maps"
+
+msgid "Utenti"
+msgstr "Users"
+
+msgid "Sicurezza dell’account"
+msgstr "Account security"
+
+msgid "Preferenze"
+msgstr "Preferences"
+
+msgid "Esci"
+msgstr "Log out"
+
+msgid "Altro"
+msgstr "More"
+
+msgid "Sicurezza dell'account"
+msgstr "Account security"
+
+msgid "Nuova"
+msgstr "New"
+
+msgid "Dal"
+msgstr "From"
+
+msgid "Al"
+msgstr "To"
+
+msgid "tutte"
+msgstr "all"
+
+msgid "Nessuna attività nel periodo."
+msgstr "No activities in the period."
+
+msgid ""
+"Da verificare: dopo una sincronizzazione due periodi si sovrappongono. "
+"Correggi gli orari."
+msgstr "To check: after a sync two periods overlap. Correct the times."
+
+msgid "Lavoro"
+msgstr "Work"
+
+msgid "Viaggio"
+msgstr "Travel"
+
+msgid "Pausa"
+msgstr "Pause"
+
+msgid "Riprendi"
+msgstr "Resume"
+
+msgid "Sospendi"
+msgstr "Suspend"
+
+msgid "Stop"
+msgstr "Stop"
+
+msgid "Servono cliente e descrizione"
+msgstr "A client and a description are needed"
+
+msgid "Completa"
+msgstr "Complete"
+
+msgid "Riapri"
+msgstr "Reopen"
+
+msgid "Dettagli"
+msgstr "Details"
+
+msgid "Località"
+msgstr "Locality"
+
+msgid "Note"
+msgstr "Notes"
+
+msgid "Solo i tag dell'anagrafica:"
+msgstr "Only the master data's tags:"
+
+msgid "Orari"
+msgstr "Times"
+
+msgid "Tipo"
+msgstr "Type"
+
+msgid "in corso"
+msgstr "running"
+
+msgid ""
+"La policy blocca gli orari: si possono aggiungere viaggi e pause; li "
+"corregge un amministratore o il responsabile."
+msgstr ""
+"The policy locks the times: travels and pauses can be added; an "
+"administrator or the manager corrects them."
+
+msgid "Spese"
+msgstr "Expenses"
+
+msgid "Parcheggio"
+msgstr "Parking"
+
+msgid "Allegati"
+msgstr "Attachments"
+
+msgid "file in arrivo"
+msgstr "file on its way"
+
+msgid "Si aggiungono dall'app."
+msgstr "They are added from the app."
+
+msgid "Eliminare questa attività? Si elimina anche sui dispositivi."
+msgstr "Delete this activity? It is deleted on the devices too."
+
+msgid "Elimina l'attività"
+msgstr "Delete the activity"
+
+msgid "Nuova attività"
+msgstr "New activity"
+
+#, python-format
+msgid "Dalla voce Da fare «%(t)s»."
+msgstr "From the To-do “%(t)s”."
+
+msgid "Registra"
+msgstr "Record"
+
+msgid "Già iniziata"
+msgstr "Already started"
+
+msgid "Passata"
+msgstr "Past"
+
+#, python-format
+msgid "Ciao %(name)s"
+msgstr "Hello %(name)s"
+
+msgid "Associa il telefono o il PC"
+msgstr "Pair the phone or the PC"
+
+msgid ""
+"Collega l'app ActivityTrack a questo server: i dati restano sincronizzati "
+"nei due sensi."
+msgstr ""
+"Connect the ActivityTrack app to this server: the data stays in sync both "
+"ways."
+
+msgid "Associa un dispositivo"
+msgstr "Pair a device"
+
+msgid "Nessuna attività in corso."
+msgstr "No running activities."
+
+msgid "Periodo"
+msgstr "Period"
+
+msgid "Tutti"
+msgstr "All"
+
+msgid "3 gg"
+msgstr "3 days"
+
+msgid "7 gg"
+msgstr "7 days"
+
+msgid "30 gg"
+msgstr "30 days"
+
+msgid "Dettagli mancanti"
+msgstr "Details missing"
+
+msgid "Fatte"
+msgstr "Done"
+
+msgid "Ignorate"
+msgstr "Ignored"
+
+msgid "Solo da fare"
+msgstr "Only to-dos"
+
+msgid "Solo fatte"
+msgstr "Only done"
+
+msgid "Tutte le aziende"
+msgstr "All companies"
+
+msgid "In ritardo"
+msgstr "Overdue"
+
+msgid "Prossimi giorni"
+msgstr "Next days"
+
+msgid "Giorni precedenti"
+msgstr "Earlier"
+
+msgid "Senza data"
+msgstr "No date"
+
+msgid "Niente da mostrare con questi filtri."
+msgstr "Nothing to show with these filters."
+
+msgid "Tutte le Da fare"
+msgstr "All To-dos"
+
+msgid "Accesso"
+msgstr "Login"
+
+msgid "Accedi con l'utente che ti ha dato l'amministratore."
+msgstr "Log in with the user the administrator gave you."
+
+msgid "Troppi tentativi sbagliati: riprova fra qualche minuto."
+msgstr "Too many wrong attempts: try again in a few minutes."
+
+msgid "Nome utente o password errati."
+msgstr "Wrong username or password."
+
+msgid "Nome utente"
+msgstr "Username"
+
+msgid "Password"
+msgstr "Password"
+
+msgid "Accedi"
+msgstr "Log in"
+
+msgid "Codice di accesso"
+msgstr "Login code"
+
+msgid "Verifica in due passaggi"
+msgstr "Two-step verification"
+
+msgid "Scrivi il codice di 6 cifre dell'app di autenticazione."
+msgstr "Enter the 6-digit code of the authenticator app."
+
+#, python-format
+msgid "Scrivi il codice di 6 cifre inviato a %(email)s."
+msgstr "Enter the 6-digit code sent to %(email)s."
+
+msgid "Codice"
+msgstr "Code"
+
+msgid "Invia un nuovo codice"
+msgstr "Send a new code"
+
+msgid "Senza il telefono o la posta: scrivi uno dei codici di recupero."
+msgstr "Without the phone or the mail: enter one of the recovery codes."
+
+msgid "Torna all'accesso"
+msgstr "Back to login"
+
+msgid "nuova"
+msgstr "new"
+
+msgid "Testo"
+msgstr "Text"
+
+msgid "Codice nel gestionale"
+msgstr "Code in the management system"
+
+msgid "Unità"
+msgstr "Unit"
+
+msgid "Costo unitario (€)"
+msgstr "Unit cost (€)"
+
+msgid "Una parola: minuscole, lettere e numeri; gli spazi diventano «-»."
+msgstr "One word: lower case, letters and numbers; spaces become “-”."
+
+msgid "Colore"
+msgstr "Colour"
+
+msgid "nessun colore"
+msgstr "no colour"
+
+msgid "Archiviata"
+msgstr "Archived"
+
+msgid "Centrale: la vedono tutti, la modificano amministratori e responsabili"
+msgstr "Central: everyone sees it, administrators and managers edit it"
+
+msgid "Eliminare? Si elimina anche sui dispositivi."
+msgstr "Delete? It is deleted on the devices too."
+
+msgid "archiviata"
+msgstr "archived"
+
+msgid "personale"
+msgstr "personal"
+
+msgid "centrale"
+msgstr "central"
+
+msgid "Nessun elemento."
+msgstr "Nothing here."
+
+msgid "Cambia password"
+msgstr "Change password"
+
+msgid "Password attuale"
+msgstr "Current password"
+
+msgid "Nuova password"
+msgstr "New password"
+
+msgid "Ripeti la nuova password"
+msgstr "Repeat the new password"
+
+msgid ""
+"Telefono: nell'app apri Impostazioni → Sincronizzazione → Associa a un "
+"server e inquadra il codice."
+msgstr ""
+"Phone: in the app open Settings → Sync → Scan the QR code and point it at "
+"the code."
+
+msgid ""
+"PC: in ActivityTrack Desktop scegli «Associa a un server» e incolla il "
+"collegamento qui sotto."
+msgstr ""
+"PC: in ActivityTrack Desktop choose “Pair with a server” and paste the link "
+"below."
+
+#, python-format
+msgid "In attesa del dispositivo… il codice vale fino alle %(time)s."
+msgstr "Waiting for the device… the code is valid until %(time)s."
+
+msgid "Dispositivo associato:"
+msgstr "Device paired:"
+
+msgid "Codice scaduto."
+msgstr "Code expired."
+
+msgid ""
+"Collegamento (per il PC, o se il telefono non riesce a inquadrare il "
+"codice):"
+msgstr "Link (for the PC, or if the phone cannot scan the code):"
+
+msgid "Torna ai dispositivi"
+msgstr "Back to devices"
+
+msgid "Modello"
+msgstr "Model"
+
+msgid "Versione"
+msgstr "Version"
+
+msgid "Ultima sincronizzazione"
+msgstr "Last sync"
+
+msgid "revocato"
+msgstr "revoked"
+
+msgid "Invia ai gestionali"
+msgstr "Sends to the management systems"
+
+msgid "Revoca"
+msgstr "Revoke"
+
+msgid "Nessun dispositivo associato."
+msgstr "No devices paired."
+
+msgid "Date e orari"
+msgstr "Dates and times"
+
+msgid "Formato delle date"
+msgstr "Date format"
+
+msgid "Formato degli orari"
+msgstr "Time format"
+
+msgid "Aspetto"
+msgstr "Appearance"
+
+msgid ""
+"Il colore del tema va sulle barre dei menu e sui pulsanti; le pagine restano"
+" bianche e grigie, o nere nel tema scuro."
+msgstr ""
+"The theme colour goes on the menu bars and the buttons; the pages stay white"
+" and grey, or black in the dark theme."
+
+msgid "Lingua"
+msgstr "Language"
+
+msgid ""
+"La scelta vale per questo browser; senza una scelta si segue la lingua del "
+"browser."
+msgstr ""
+"The choice is kept in this browser; without one, the browser's language is "
+"followed."
+
+msgid "Le attività chiuse delle aziende assegnate a questo account."
+msgstr "The closed activities of the companies assigned to this account."
+
+msgid "Pause"
+msgstr "Pauses"
+
+msgid "Totale"
+msgstr "Total"
+
+msgid ""
+"Tempi arrotondati come nel report dell'app, con le regole della policy di "
+"ciascuno (altrimenti quelle predefinite); sotto, in piccolo, i tempi "
+"registrati. Un'attività a cavallo di più giorni conta in ciascuno."
+msgstr ""
+"Times rounded as in the app's report, with the rules of each person's policy"
+" (the default ones otherwise); below, in small print, the recorded times. An"
+" activity spanning several days counts in each."
+
+msgid "Dettaglio"
+msgstr "Detail"
+
+msgid "Codici di recupero"
+msgstr "Recovery codes"
+
+msgid ""
+"Conservali in un posto sicuro: ognuno vale una volta, al posto del codice, "
+"se perdi il telefono o la posta. Non si vedranno più."
+msgstr ""
+"Keep them in a safe place: each works once, in place of the code, if you "
+"lose the phone or the mail. They will not be shown again."
+
+msgid "Li ho salvati"
+msgstr "I have saved them"
+
+msgid "Attiva: dopo la password chiede il codice dell'app di autenticazione."
+msgstr "On: after the password it asks for the code of the authenticator app."
+
+#, python-format
+msgid "Attiva: dopo la password chiede il codice inviato a %(email)s."
+msgstr "On: after the password it asks for the code sent to %(email)s."
+
+#, python-format
+msgid "Resta %(n)s codice di recupero."
+msgid_plural "Restano %(n)s codici di recupero."
+msgstr[0] "%(n)s recovery code left."
+msgstr[1] "%(n)s recovery codes left."
+
+msgid ""
+"Dopo la password, l'accesso chiede un codice: dall'app di autenticazione del"
+" telefono (per esempio Aegis, FreeOTP, Google Authenticator) o via email. "
+"Chi ha solo la password non entra."
+msgstr ""
+"After the password, login asks for a code: from the authenticator app on the"
+" phone (for example Aegis, FreeOTP, Google Authenticator) or by email. "
+"Whoever has only the password does not get in."
+
+msgid ""
+"L'organizzazione la chiede per il tuo profilo: attivala per continuare."
+msgstr ""
+"The organisation requires it for your profile: switch it on to continue."
+
+msgid "App di autenticazione"
+msgstr "Authenticator app"
+
+msgid ""
+"Inquadra il codice con l'app, poi scrivi il codice di 6 cifre che mostra."
+msgstr "Scan the code with the app, then enter the 6-digit code it shows."
+
+msgid "Senza fotocamera, inserisci a mano questa chiave:"
+msgstr "Without a camera, enter this key by hand:"
+
+msgid "Codice via email"
+msgstr "Code by email"
+
+msgid "Conferma"
+msgstr "Confirm"
+
+msgid "Nuova app di autenticazione"
+msgstr "New authenticator app"
+
+msgid "Usa un'app di autenticazione"
+msgstr "Use an authenticator app"
+
+msgid "Manca l’indirizzo email nel tuo utente"
+msgstr "Your user has no email address"
+
+msgid "Usa un codice via email"
+msgstr "Use a code by email"
+
+msgid ""
+"I codici via email non sono disponibili: sul server non è configurata la "
+"posta."
+msgstr "Codes by email are not available: the server has no mail configured."
+
+msgid ""
+"Per i codici via email serve un indirizzo nel tuo utente: chiedilo "
+"all'amministratore."
+msgstr "Codes by email need an address in your user: ask the administrator."
+
+msgid "Codici di recupero e disattivazione"
+msgstr "Recovery codes and switching off"
+
+msgid "password attuale"
+msgstr "current password"
+
+msgid "Nuovi codici di recupero"
+msgstr "New recovery codes"
+
+msgid "Disattiva la verifica"
+msgstr "Switch off the verification"
+
+msgid "Nuova voce"
+msgstr "New to-do"
+
+#, python-format
+msgid "Assegnata da %(name)s."
+msgstr "Assigned by %(name)s."
+
+#, python-format
+msgid "Dal gestionale (%(k)s)."
+msgstr "From the management system (%(k)s)."
+
+msgid "Assegnata a"
+msgstr "Assigned to"
+
+msgid "io"
+msgstr "me"
+
+msgid ""
+"Assegnandola a un'altra persona, la voce passa sui suoi dispositivi e "
+"sparisce da quelli di chi l'aveva."
+msgstr ""
+"Assigning it to another person moves the item to their devices and removes "
+"it from those of whoever had it."
+
+msgid "Titolo"
+msgstr "Title"
+
+msgid "Scadenza"
+msgstr "Due date"
+
+msgid "ora"
+msgstr "time"
+
+msgid "Pianificata il"
+msgstr "Planned on"
+
+msgid "alle"
+msgstr "at"
+
+msgid "durata (min)"
+msgstr "duration (min)"
+
+msgid "Priorità"
+msgstr "Priority"
+
+msgid "Fatta"
+msgstr "Done"
+
+msgid "Ignora"
+msgstr "Ignore"
+
+msgid "Le mie"
+msgstr "Mine"
+
+msgid "Tutto il team"
+msgstr "The whole team"
+
+msgid "Aperte"
+msgstr "Open"
+
+msgid "Tutte"
+msgstr "All"
+
+msgid "Nessuna voce."
+msgstr "No items."
+
+msgid "Nuovo utente"
+msgstr "New user"
+
+msgid "Email"
+msgstr "Email"
+
+msgid "Cognome"
+msgstr "Last name"
+
+msgid "Profilo"
+msgstr "Profile"
+
+msgid "Team di (responsabile)"
+msgstr "Team of (manager)"
+
+msgid "Amministratore: tutto, compresi utenti, dispositivi e policy."
+msgstr "Administrator: everything, including users, devices and policies."
+
+msgid ""
+"Responsabile: anagrafiche centrali; legge e corregge le attività del suo "
+"team, legge quelle delle sue aziende; assegna le Da fare al team."
+msgstr ""
+"Manager: central master data; reads and corrects the activities of their "
+"team, reads those of their companies; assigns To-dos to the team."
+
+msgid "Utente: le sue attività e Da fare, dal telefono e dal web."
+msgstr "User: their own activities and To-dos, from the phone and the web."
+
+msgid ""
+"Lettore azienda: solo il report delle attività chiuse delle sue aziende. "
+"Niente telefono."
+msgstr ""
+"Company reader: only the report of the closed activities of their companies."
+" No phone."
+
+msgid ""
+"Il responsabile legge tutte le attività fatte per queste aziende, chiunque "
+"le abbia fatte."
+msgstr ""
+"The manager reads all the activities done for these companies, whoever did "
+"them."
+
+msgid "Il lettore vede le attività chiuse di queste aziende."
+msgstr "The reader sees the closed activities of these companies."
+
+msgid "Nessuna azienda centrale."
+msgstr "No central companies."
+
+msgid "Attivo: può accedere e i suoi dispositivi sincronizzano"
+msgstr "Active: can log in and their devices sync"
+
+msgid "Ripeti la password"
+msgstr "Repeat the password"
+
+msgid "ultima sincronizzazione"
+msgstr "last sync"
+
+msgid "Revocare questo dispositivo? Smette subito di sincronizzare."
+msgstr "Revoke this device? It stops syncing at once."
+
+msgid "Team"
+msgstr "Team"
+
+msgid ""
+"Oltre a quelle dell'organizzazione e del profilo, questo utente può avere "
+"una policy sua."
+msgstr ""
+"Besides those of the organisation and the profile, this user can have a "
+"policy of their own."
+
+msgid "Policy dell'utente"
+msgstr "User's policy"
+
+msgid "Attiva, con un'app di autenticazione."
+msgstr "On, with an authenticator app."
+
+msgid "Attiva, con un codice via email."
+msgstr "On, with a code by email."
+
+msgid ""
+"Azzerare la verifica in due passaggi? Serve se l'utente ha perso il telefono"
+" o la posta."
+msgstr ""
+"Reset the two-step verification? It is needed if the user has lost the phone"
+" or the mail."
+
+msgid "Azzera"
+msgstr "Reset"
+
+msgid "Non attiva."
+msgstr "Not on."
+
+msgid "L'utente esce dal web; i dispositivi restano associati."
+msgstr "The user is logged out of the web; the devices stay paired."
+
+msgid "Cambia la password"
+msgstr "Change the password"
+
+msgid "Cerca"
+msgstr "Search"
+
+msgid "nome, utente, email"
+msgstr "name, username, email"
+
+msgid "attivi"
+msgstr "active"
+
+msgid "disattivati"
+msgstr "deactivated"
+
+msgid "team di"
+msgstr "team of"
+
+msgid "disattivato"
+msgstr "deactivated"
+
+msgid "Nessun utente."
+msgstr "No users."
+
+msgid "Verifica in due passaggi obbligatoria per"
+msgstr "Two-step verification required for"
+
+msgid ""
+"Chi è indicato deve attivarla (app di autenticazione o email) al primo "
+"accesso; gli altri possono attivarla da «Sicurezza dell'account». I "
+"dispositivi già associati non cambiano."
+msgstr ""
+"Whoever is named must switch it on (authenticator app or email) at first "
+"login; the others can switch it on from “Account security”. Devices already "
+"paired do not change."
+
+#, python-format
+#| msgid "L'organizzazione e i dati grezzi restano nell'"
+msgid ""
+"L'organizzazione e i dati grezzi restano nell'<a "
+"href=\"%(admin_url)s\">amministrazione avanzata</a>."
+msgstr ""
+"The organisation and the raw data stay in the <a "
+"href=\"%(admin_url)s\">advanced administration</a>."
+
+msgid "sospesa"
+msgstr "suspended"
+
+msgid "dettagli mancanti"
+msgstr "details missing"
+
+msgid "chiusa"
+msgstr "closed"
+
+msgid "lavoro"
+msgstr "work"
+
+msgid "viaggio"
+msgstr "travel"
+
+msgid "pausa"
+msgstr "pause"
+
+msgid "aperta"
+msgstr "open"
+
+msgid "pianificata"
+msgstr "planned"
+
+msgid "in ritardo"
+msgstr "overdue"
+
+msgid "fatta"
+msgstr "done"
+
+msgid "ignorata"
+msgstr "ignored"
+
+msgid "Le due password sono diverse."
+msgstr "The two passwords differ."
+
+msgid "Regola della verifica in due passaggi salvata."
+msgstr "Two-step verification rule saved."
+
+msgid "Il nome utente è obbligatorio."
+msgstr "The username is required."
+
+msgid "Questo nome utente esiste già."
+msgstr "This username already exists."
+
+msgid "Non puoi toglierti il profilo di amministratore."
+msgstr "You cannot remove your own administrator profile."
+
+msgid "Non puoi disattivare il tuo utente."
+msgstr "You cannot deactivate your own user."
+
+#, python-format
+msgid "Utente «%(name)s» salvato."
+msgstr "User “%(name)s” saved."
+
+#, python-format
+msgid "Password di «%(name)s» cambiata."
+msgstr "Password of “%(name)s” changed."
+
+#, python-format
+msgid "Verifica in due passaggi di «%(name)s» azzerata."
+msgstr "Two-step verification of “%(name)s” reset."
+
+msgid "La password attuale non è corretta."
+msgstr "The current password is not correct."
+
+msgid "Password cambiata."
+msgstr "Password changed."
+
+msgid "Preferenze salvate."
+msgstr "Preferences saved."
+
+#, python-format
+msgid "«%(name)s» invia ora ai gestionali."
+msgstr "“%(name)s” now sends to the management systems."
+
+#, python-format
+msgid "Associazione di «%(name)s» revocata."
+msgstr "Pairing of “%(name)s” revoked."
+
+msgid "data e ora non valide"
+msgstr "invalid date and time"
+
+msgid "la policy non consente di scegliere gli orari"
+msgstr "the policy does not allow choosing the times"
+
+#, python-format
+msgid "solo i tag dell'anagrafica: %(t)s non c'è"
+msgstr "only the master data's tags: %(t)s is not there"
+
+msgid "Attività salvata."
+msgstr "Activity saved."
+
+msgid "Attività eliminata."
+msgstr "Activity deleted."
+
+msgid "azione sconosciuta"
+msgstr "unknown action"
+
+msgid "il titolo è obbligatorio"
+msgstr "the title is required"
+
+msgid "Voce salvata."
+msgstr "To-do saved."
+
+#, python-format
+msgid "Voce assegnata a %(name)s."
+msgstr "To-do assigned to %(name)s."
+
+msgid "Mancano dei dettagli: completa l'attività."
+msgstr "Details are missing: complete the activity."

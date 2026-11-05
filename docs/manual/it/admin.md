@@ -165,6 +165,31 @@ Non ci sono notifiche push: una modifica fatta sul web arriva al telefono
 entro 15 minuti, o subito se l'app è aperta. Senza rete aspetta e parte al
 ritorno della rete.
 
+### Mappe offline per i telefoni
+
+La mappa degli spostamenti dell'app può usare una **mappa offline**: una mappa
+basilare (strade, fiumi, laghi, confini, nomi dei luoghi) tenuta sul telefono, che
+funziona senza rete. La pagina **Mappe** (solo amministratori) la prepara:
+
+1. Spunta **Rendi disponibili le mappe offline ai telefoni**. Spenta, i telefoni non
+   ricevono nulla e tolgono le mappe avute da qui.
+2. In **Aree** aggiungi le zone che servono: un **centro** (latitudine e longitudine), un
+   **raggio** (5–250 km) e un **livello di zoom**. Il modulo dice, mentre scrivi, quanti
+   tile e quanti MB sarà la mappa. In alternativa parti da una delle 23 aree predefinite
+   (una città e 100 km attorno) e la modifichi.
+3. Il livello 10 (circa 1:400.000, 2–3 MB per 100 km) basta per strade e paesi; l'11
+   (circa 1:200.000, 5 MB) aggiunge la ferrovia e più dettaglio. Il massimo si fissa in
+   `settings.ini` (`[maps]`); una mappa sopra i 48 MB è rifiutata.
+4. Salvando, il server prepara la mappa (qualche decina di secondi) leggendo i dati di
+   OpenStreetMap nel formato di Protomaps: serve che raggiunga `build.protomaps.com`.
+   La riga mostra *in preparazione*, poi *pronta* (o *non riuscita*, con il motivo; la
+   versione precedente resta disponibile). **Aggiorna** la prepara di nuovo.
+
+I telefoni scaricano le mappe con la sincronizzazione, su Wi-Fi (entro 15 minuti, subito
+se l'app è aperta) e tolgono quelle che togli tu. Un telefono senza server può avere le
+stesse mappe copiando file `.pmtiles` nella cartella `maps` della sua cartella dati.
+Dettagli e comandi (`build_maps`, aggiornamento periodico): `docs/OFFLINE-MAPS.md`.
+
 ## 6. Anagrafiche
 
 Aziende, clienti, ruoli, tag, scelte rapide e materiali sono **centrali**
@@ -250,6 +275,9 @@ telefono: *Altro → Preferenze*), ognuno sceglie:
   viola, arancione o grigio.
 
 Le preferenze sono dell'utente: valgono su ogni browser con cui accede.
+
+La **lingua** (italiano o inglese) si sceglie nella stessa pagina e vale per il
+browser in uso; finché non la scegli, le pagine seguono la lingua del browser.
 
 ![Preferenze](../img/preferences.png)
 

@@ -227,6 +227,14 @@ database and who sends the attachments (`[files] offload`, §4); optionally
 the mail server for the login codes by email (`[mail]`). The comments
 in the file say what each line does.
 
+**Offline maps** (optional, `docs/OFFLINE-MAPS.md`): the server prepares them from the
+Protomaps basemap, read by HTTP range requests, so it must reach
+`https://build.protomaps.com/` (or the `[maps] source` you set: your own
+PMTiles file or URL). Nothing else is needed: the maps are files of a few MB
+under `files/`, served like the attachments. To keep them fresh, run
+`activitytrack-web-manage build_maps --older-than 30` from a systemd timer or cron,
+say once a month.
+
 PostgreSQL with peer authentication (Debian/Ubuntu; the same users
 elsewhere):
 
