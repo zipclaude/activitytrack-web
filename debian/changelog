@@ -1,3 +1,20 @@
+activitytrack-web (0.9.5-1) unstable; urgency=medium
+
+  * Offline maps for the phones: the new Mappe page (administrators) chooses
+    the areas and the zoom level, the server prepares them from the Protomaps
+    basemap (HTTP range requests, small PMTiles files of a few MB) and the
+    phones receive them with the sync (sync/head carries mapsRev, GET maps,
+    GET maps/<id>). Off until an administrator turns it on; docs/OFFLINE-MAPS.md.
+  * English translation of the whole web interface and a language choice in
+    Preferences (otherwise the browser's language); <html lang> follows the
+    language. django.mo is committed, so the package needs no msgfmt.
+  * Policy catalog of the app 0.9.5 (trackMap, trackExport, trackMapEnabled,
+    workSampleMin, travelSampleSec, offlineMapsEnabled; known from 0.9.5).
+  * The tests on the installed files compare the messages of django.mo, not
+    its header, which the package build normalises.
+
+ -- ActivityTrack <flavio-claude@zipman.it>  Thu, 05 Nov 2026 21:01:19 +0000
+
 activitytrack-web (0.9.4~beta5-1) unstable; urgency=medium
 
   * Security review fixes: the Django admin only for administrators and
