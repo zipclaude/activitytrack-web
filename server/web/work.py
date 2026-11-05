@@ -17,9 +17,13 @@ from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 
 from accounts.models import Profile
-from records.models import Attachment, Client, Company, Entry, EntryStatus, Expense, Role, Segment, Todo, tag_name
+from records.models import Attachment, Client, Company, Entry, EntryStatus, Expense, Role, Segment, Todo, TodoKind, tag_name
 
 from . import data, homelist, ops, reporting
+from .masters import PALETTE, _color
+
+# the longest absence: a year (the app: TodoRepository.MAX_ABSENCE_DAYS)
+MAX_ABSENCE_DAYS = 366
 
 
 def _parse_dt(text):
@@ -376,6 +380,8 @@ def todo_edit(request, uid=None):
     if not user.syncs:
         raise PermissionDenied
     todo = get_object_or_404(data.team_todos(user), uid=uid) if uid else None
+    # a planned absence (issue #158): its own form, no company, client, due date or priority
+    absence = (todo.kind if todo else request.POST.get("kind") or request.GET.get("kind")) == TodoKind.ABSENCE
     people = data.assignable(user)
     # opened from the agenda: back there afterwards
     back = request.POST.get("next") or request.GET.get("next") or ""
@@ -389,16 +395,26 @@ def todo_edit(request, uid=None):
                 ops.todo_state(user, todo, p["state"])
                 return redirect(back)
             title = p.get("title", "").strip()
-            if not title:
+            if not title and not absence:
                 raise ops.OpError(_("il titolo è obbligatorio"))
             owner = todo.owner if todo else user
             to = people.filter(pk=data.parse_pk(p.get("owner"))).first() if p.get("owner") else owner
             if to is None:
                 raise PermissionDenied
-            client = _pick(user, Client, p.get("client"))
-            company = client.company if client and client.company_id else _pick(user, Company, p.get("company"))
+            client = None if absence else _pick(user, Client, p.get("client"))
+            company = None if absence else client.company if client and client.company_id else _pick(user, Company, p.get("company"))
             plan_time = p.get("plan_time") or None
-            due_time = p.get("due_time") or None
+            due_time = None if absence else p.get("due_time") or None
+            plan_end = None
+            if absence:
+                if not p.get("plan_date"):
+                    raise ops.OpError(_("la data è obbligatoria"))
+                # several days only for a whole-day plan (the app's rule)
+                plan_end = p.get("plan_end") or None if not plan_time else None
+                if plan_end and not 0 <= (date.fromisoformat(plan_end) - date.fromisoformat(p["plan_date"])).days < MAX_ABSENCE_DAYS:
+                    raise ops.OpError(_("l'ultimo giorno non è valido"))
+                if plan_end == p["plan_date"]:
+                    plan_end = None
 
             def minutes(t):
                 hh, mm = t.split(":")
@@ -406,10 +422,11 @@ def todo_edit(request, uid=None):
             fields = {
                 "title": title, "notes": p.get("notes", "").strip() or None,
                 "companyUid": str(company.uid) if company else None, "clientUid": str(client.uid) if client else None,
-                "dueDate": p.get("due_date") or None, "dueTimeMin": minutes(due_time) if due_time else None,
+                "dueDate": None if absence else p.get("due_date") or None, "dueTimeMin": minutes(due_time) if due_time else None,
                 "planDate": p.get("plan_date") or None, "planStartMin": minutes(plan_time) if plan_time and p.get("plan_date") else None,
                 "durationMin": int(p["duration"]) if p.get("duration") else None,
-                "priority": int(p["priority"]) if p.get("priority") else None,
+                "priority": None if absence else int(p["priority"]) if p.get("priority") else None,
+                "kind": TodoKind.ABSENCE if absence else TodoKind.TASK, "color": _color(p), "planEndDate": plan_end,
             }
             if todo and to != todo.owner:
                 ops.assign(user, todo, to)
@@ -426,6 +443,8 @@ def todo_edit(request, uid=None):
     return render(request, "web/todo_edit.html", {
         "t": todo, "companies": data.companies(user), "clients": data.clients(user),
         "due_time": hhmm(todo.due_time_min) if todo else "",
+        "absence": absence, "palette": PALETTE,
+        "plan_end": todo.plan_end_date.isoformat() if todo and todo.plan_end_date else "",
         "plan_date": todo.plan_date.isoformat() if todo and todo.plan_date else "" if todo else _iso_date(request.GET.get("plan_date")),
         "plan_time": hhmm(todo.plan_start_min) if todo else _hhmm(request.GET.get("plan_time")),
         "next": back if back != reverse("todos") else "",

@@ -253,6 +253,9 @@ pre.json { background: var(--surface-2); padding: 12px; border-radius: 10px; ove
 .blk .when { display: block; opacity: .9; font-variant-numeric: tabular-nums; }
 .blk.running { background: repeating-linear-gradient(135deg, var(--c) 0 10px, color-mix(in srgb, var(--c) 80%, #fff) 10px 20px); }
 .blk.todo { background: color-mix(in srgb, var(--c) 14%, var(--surface)); border: 2px solid var(--c); color: var(--text); box-shadow: none; }
+/* an absence (issue #158): a stronger fill; done ones stay, dimmer */
+.blk.todo.absence { background: color-mix(in srgb, var(--c) 32%, var(--surface)); }
+.blk.todo.absence.done { opacity: .7; }
 .blk .dots { top: 4px; right: 5px; }
 .tl[style*="--cols: 7"] .blk { font-size: 11px; padding: 2px 5px; }
 .now { position: absolute; left: 0; right: 0; top: calc(var(--top) * var(--ppm) * 1px); border-top: 2px solid var(--danger); pointer-events: none; z-index: 3; }

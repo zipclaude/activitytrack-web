@@ -52,11 +52,12 @@ class SyncTestCase(TestCase):
         self.assertEqual(r.status_code, 200, r.content)
         return r.json()["token"]
 
-    def push(self, token, changes, device_time=None):
+    def push(self, token, changes, device_time=None, schema=None):
         body = {"changes": changes}
         if device_time is not None:
             body["deviceTime"] = device_time
-        r = self.client.post("/api/v1/sync/push", json.dumps(body), content_type="application/json", HTTP_AUTHORIZATION=f"Bearer {token}")
+        headers = {"HTTP_X_ACTIVITYTRACK_SCHEMA": str(schema)} if schema is not None else {}
+        r = self.client.post("/api/v1/sync/push", json.dumps(body), content_type="application/json", HTTP_AUTHORIZATION=f"Bearer {token}", **headers)
         self.assertEqual(r.status_code, 200, r.content)
         return r.json()["results"]
 
@@ -483,6 +484,25 @@ class CompatTests(SyncTestCase):
             self.assertNotIn("description", entry["fields"])
             # schema 0 is outside the window of a schema 2 server (2 and the two before)
             self.assertEqual(self.get(phone, "/api/v1/sync/head", schema=0).status_code, 426)
+
+    def test_a_schema_1_app_gets_todos_without_the_absence_fields(self):
+        phone = self.pair(self.alice)
+        absent, task = uid(), uid()
+        fields = {"title": "", "refs": "", "done": False, "createdUtcMs": T0, "updatedUtcMs": T0, "planDate": "2026-10-27"}
+        # a schema 2 app writes an absence, an older one reads a to-do titled for it, without the new fields
+        self.push(phone, [self.upsert("todo", absent, {**fields, "kind": "ABSENCE", "color": 0xD64545, "planEndDate": "2026-10-29"}, T0)], schema=2)
+        self.push(phone, [self.upsert("todo", task, {**fields, "title": "Rinnovo"}, T0)])
+        from records.models import Todo
+
+        a = Todo.objects.get(uid=absent)
+        self.assertEqual((a.kind, a.color, str(a.plan_end_date)), ("ABSENCE", 0xD64545, "2026-10-29"))
+        self.assertEqual(Todo.objects.get(uid=task).kind, "TASK")
+        records = {r["uid"]: r for r in self.get(phone, "/api/v1/sync/pull?cursor=0", schema=1).json()["records"]}
+        for u in (absent, task):
+            self.assertFalse({"kind", "color", "planEndDate"} & records[u]["fields"].keys())
+        self.assertEqual(records[absent]["fields"]["title"], "Assenza")
+        current = {r["uid"]: r for r in self.get(phone, "/api/v1/sync/pull?cursor=0", schema=2).json()["records"]}
+        self.assertEqual((current[absent]["fields"]["kind"], current[absent]["fields"]["planEndDate"]), ("ABSENCE", "2026-10-29"))
 
     def test_version_order(self):
         from sync.compat import version_key

@@ -1653,3 +1653,21 @@ msgstr "To-do assigned to %(name)s."
 
 msgid "Mancano dei dettagli: completa l'attività."
 msgstr "Details are missing: complete the activity."
+
+msgid "Assenza"
+msgstr "Absence"
+
+msgid "Nuova assenza"
+msgstr "New absence"
+
+msgid "Etichetta (facoltativa)"
+msgstr "Label (optional)"
+
+msgid "fino al (ultimo giorno)"
+msgstr "until (last day)"
+
+msgid "la data è obbligatoria"
+msgstr "the date is required"
+
+msgid "l'ultimo giorno non è valido"
+msgstr "the last day is not valid"

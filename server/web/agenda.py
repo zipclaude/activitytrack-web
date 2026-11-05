@@ -13,15 +13,18 @@ from django.db.models import Q
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.translation import gettext as _
 
 from accounts.models import Profile
-from records.models import WorkSchedule
+from records.models import TodoKind, WorkSchedule
 
 from . import data, formats, reporting
 
 VIEWS = ("day", "week", "month")
 # companies without a colour: the app's neutral grey (Colors.kt NO_COLOR)
 NO_COLOR = 0x6B7280
+# an absence without a colour of its own: the palette's red (Todos.kt ABSENCE_COLOR)
+ABSENCE_COLOR = 0xD64545
 DAY_MIN = 24 * 60
 
 
@@ -126,7 +129,16 @@ def agenda(request):
     todos = []
     if person == user and not tag:
         open_q = data.todos(user).select_related("company").filter(done=False, ignored_utc__isnull=True)
-        todos = list(open_q.filter(Q(plan_date__range=(since, until)) | Q(plan_date__isnull=True, due_date__range=(since, until))))
+        todos = list(open_q.exclude(kind=TodoKind.ABSENCE).filter(
+            Q(plan_date__range=(since, until)) | Q(plan_date__isnull=True, due_date__range=(since, until))))
+        # an absence stays visible once done (issue #158), on each day it covers
+        todos += list(data.todos(user).filter(kind=TodoKind.ABSENCE, ignored_utc__isnull=True, plan_date__lte=until).filter(
+            Q(plan_end_date__gte=since) | Q(plan_end_date__isnull=True, plan_date__gte=since)))
+    # the working hours of each weekday: an all-day absence covers them, else the whole day
+    hours = {}
+    for w in WorkSchedule.objects.filter(org=user.org, deleted=False).filter(Q(owner=person) | Q(owner__isnull=True)):
+        lo, hi = hours.get(w.day_of_week, (DAY_MIN, 0))
+        hours[w.day_of_week] = (min(lo, w.start_min), max(hi, w.end_min))
 
     def link(**kw):
         q = {"view": view, "date": anchor.isoformat(), "person": person.pk if person != user else "", "tag": tag, **kw}
@@ -150,9 +162,21 @@ def agenda(request):
                 "reported": reporting.hm(x.reported), "running": x.running, "tags": e.tags or [],
             })
         for t in todos:
-            color = t.company.color if t.company and t.company.color is not None else NO_COLOR
+            color = t.color if t.color is not None else ABSENCE_COLOR if t.kind == TodoKind.ABSENCE else t.company.color if t.company and t.company.color is not None else NO_COLOR
             url = reverse("todo_edit", args=[t.uid])
-            if t.plan_date == day and t.plan_start_min is not None:
+            if t.kind == TodoKind.ABSENCE:
+                if not t.plan_date <= day <= (t.plan_end_date or t.plan_date):
+                    continue
+                if t.plan_start_min is not None:
+                    top, length = t.plan_start_min, t.duration_min or 0
+                else:
+                    top, bottom = hours.get(day.isoweekday(), (0, DAY_MIN))
+                    length = bottom - top
+                blocks.append({
+                    "kind": "todo", "absence": True, "done": t.done, "top": top, "height": max(length, 30), "url": url, "color": color,
+                    "title": t.title or _("Assenza"), "span": _clock(top) + (f"–{_clock(top + length)}" if length else ""),
+                })
+            elif t.plan_date == day and t.plan_start_min is not None:
                 length = t.duration_min or 0
                 blocks.append({
                     "kind": "todo", "top": t.plan_start_min, "height": max(length, 30), "url": url, "color": color,

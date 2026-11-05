@@ -17,7 +17,7 @@ from dataclasses import dataclass
 from typing import Callable
 
 # the current wire schema; raise it with a Step for the previous one
-SCHEMA = 1
+SCHEMA = 2
 # the earlier schemas the server still speaks
 WINDOW = 2
 
@@ -29,8 +29,25 @@ class Step:
     down: Callable[[dict], dict]
 
 
+def _todo_up(change):
+    """Schema 1 -> 2: a to-do of an older app is a task; nothing to add (the model defaults)."""
+    return change
+
+
+def _todo_down(record):
+    """Schema 2 -> 1: the fields an older app does not know go; an absence keeps a title to be read by."""
+    if record.get("type") != "todo":
+        return record
+    f = dict(record.get("fields") or {})
+    if f.get("kind") == "ABSENCE" and not f.get("title"):
+        f["title"] = "Assenza"
+    for name in ("kind", "color", "planEndDate"):
+        f.pop(name, None)
+    return {**record, "fields": f}
+
+
 # n -> the step between schema n and n + 1; every schema in the window needs one
-STEPS: dict[int, Step] = {}
+STEPS: dict[int, Step] = {1: Step(up=_todo_up, down=_todo_down)}
 
 APP_HEADER = "X-ActivityTrack-App"
 SCHEMA_HEADER = "X-ActivityTrack-Schema"
