@@ -449,6 +449,32 @@ class AgendaTests(WorkTests):
         # the last view comes back
         self.assertIn('class="month"', self.client.get("/agenda/").content.decode())
 
+    def test_a_planned_absence_covers_its_days_in_its_colour(self):
+        from records.models import Todo, TodoKind, WorkSchedule
+
+        WorkSchedule.objects.create(org=self.org, owner=None, day_of_week=3, start_min=9 * 60, end_min=17 * 60)
+        # a form of its own: no company, client or due date; the label is optional
+        self.assertNotContains(self.client.get("/dafare/nuova/?kind=ABSENCE"), 'name="client"')
+        self.client.post("/dafare/nuova/", {"kind": "ABSENCE", "plan_date": "2026-10-27", "plan_end": "2026-10-29", "color": str(0x8E5CD9), "client": "22222222-2222-4222-8222-222222222222", "due_date": "2026-11-01"})
+        a = Todo.objects.get(kind=TodoKind.ABSENCE)
+        self.assertEqual((a.title, a.company_id, a.client_id, a.due_date, a.color, str(a.plan_end_date)), ("", None, None, None, 0x8E5CD9, "2026-10-29"))
+        week = self.client.get("/agenda/?view=week&date=2026-10-27").content.decode()
+        # one block on each of the three days, "Absence" for the empty label; Wednesday (3) over the working hours
+        self.assertEqual(week.count("blk todo absence"), 3)
+        self.assertIn("09:00–17:00", week)
+        self.assertNotIn("☐ Assenza", week)
+        # a last day before the first one, or a time with several days, is refused or ignored
+        r = self.client.post("/dafare/nuova/", {"kind": "ABSENCE", "plan_date": "2026-11-05", "plan_end": "2026-11-03"})
+        self.assertEqual(Todo.objects.filter(kind=TodoKind.ABSENCE).count(), 1)
+        self.assertEqual(r.status_code, 200)
+        # done, it stays on the agenda
+        self.client.post(f"/dafare/{a.uid}/", {"state": "done"})
+        self.assertIn("blk todo absence done", self.client.get("/agenda/?view=day&date=2026-10-28").content.decode())
+        # an absence cannot be made a task from the form
+        self.client.post(f"/dafare/{a.uid}/", {"kind": "TASK", "plan_date": "2026-10-27", "title": "x"})
+        a.refresh_from_db()
+        self.assertEqual(a.kind, TodoKind.ABSENCE)
+
     def test_a_tag_filter_hides_the_todos(self):
         self.client.post("/attivita/nuova/", {"when": "past", "client": "22222222-2222-4222-8222-222222222222", "activity": "Riunione", "start": "2026-10-27T09:00", "end": "2026-10-27T10:00"})
         self.client.post(f"/attivita/{self.entry().uid}/", {"action": "save", "client": "22222222-2222-4222-8222-222222222222", "activity": "Riunione", "tags": "remoto"})

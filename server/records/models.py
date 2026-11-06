@@ -222,6 +222,12 @@ class Place(Synced):
     radius_m = models.IntegerField(default=100)
 
 
+class TodoKind(models.TextChoices):
+    TASK = "TASK"
+    # a planned absence (issue #158): a to-do with a plan and a colour, never worked on
+    ABSENCE = "ABSENCE"
+
+
 class Todo(Synced):
     SYNC_TYPE = "todo"
 
@@ -229,7 +235,8 @@ class Todo(Synced):
     client = _fk(Client)
     # key in the management system; null for to-dos made by hand
     external_key = models.TextField(null=True, blank=True)
-    title = models.TextField()
+    # empty only for an absence (issue #158): the apps and the pages require it for a task
+    title = models.TextField(blank=True)
     notes = models.TextField(null=True, blank=True)
     # external references, one per line
     refs = models.TextField(default="", blank=True)
@@ -245,6 +252,11 @@ class Todo(Synced):
     duration_min = models.IntegerField(null=True, blank=True)
     ignored_utc = models.DateTimeField(null=True, blank=True)
     plugin_fields = models.JSONField(null=True, blank=True)
+    kind = models.CharField(max_length=16, choices=TodoKind.choices, default=TodoKind.TASK)
+    # 0xRRGGBB of the palette; null = the default (red for an absence)
+    color = models.IntegerField(null=True, blank=True)
+    # last day of a whole-day plan lasting several days (an absence)
+    plan_end_date = models.DateField(null=True, blank=True)
 
     def __str__(self):
         return self.title

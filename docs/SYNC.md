@@ -257,8 +257,19 @@ Rules (owner, 2026-10-31), from release 1.0 on:
 
 An integer, independent of the version numbers: it grows only when what
 travels changes (a type, a field, its meaning, a rule of the engine). A
-release that does not touch the sync keeps it. Today: **schema 1** (since
-0.9.0; the 0.9.x releases are compatible, not by rule).
+release that does not touch the sync keeps it. Today: **schema 2** (since
+0.9.6; schema 1 since 0.9.0).
+
+Schema 2 (planned absences, issue #158): a `todo` gains `kind` (`TASK` or
+`ABSENCE`, default `TASK`), `color` (0xRRGGBB of the palette, any to-do) and
+`planEndDate` (last day of a whole-day plan lasting several days; an absence).
+An absence is a planned to-do with no company, client, due date or priority,
+and its `title` may be empty. For a schema 1 app (`compat.py`, step 1 → 2) the
+three fields are dropped and an absence with no title is titled "Assenza", so
+the older app shows it as a plain to-do; a schema 1 change needs no `up`
+translation (the model defaults). The `absence` record type (schema 1: a day
+absence or late entry) is still accepted and stored as it was; apps from 0.9.6
+turn their own into done absence to-dos.
 
 The server speaks its schema and the **two before it** (`sync/compat.py`:
 `SCHEMA`, `WINDOW`), so rule 1 holds and is wider when releases leave the
