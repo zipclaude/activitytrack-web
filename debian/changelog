@@ -1,3 +1,13 @@
+activitytrack-web (0.9.6-1) unstable; urgency=medium
+
+  * Planned absences (app issue #158): a to-do of kind ABSENCE with a colour
+    and, for a whole-day plan, a last day. Wire schema 2 (todo kind, color,
+    planEndDate; the title may be empty), with a compat step for the apps of
+    schema 1. The to-do form has "New absence" and a colour for every to-do;
+    the agenda draws absences per day over the working hours, also once done.
+
+ -- ActivityTrack <flavio-claude@zipman.it>  Fri, 06 Nov 2026 02:30:00 +0000
+
 activitytrack-web (0.9.5-1) unstable; urgency=medium
 
   * Offline maps for the phones: the new Mappe page (administrators) chooses
