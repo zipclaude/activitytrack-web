@@ -37,7 +37,8 @@ not start the service. First write `/etc/activitytrack-web/settings.ini`:
 | `[server] tls_pin` | only with a self-signed certificate: the fingerprint of its key, which the app pins |
 | `[database]` | SQLite (default) or PostgreSQL |
 | `[files] max_mb`, `offload` | largest attachment; who sends the files: Django, nginx or Apache |
-| `[policy] key`, `cert` | key and certificate to sign the policies (optional) |
+| `[policy] key`, `cert` | key and certificate to sign the policies (optional); also what the server signs update manifests with, else it makes its own key on first start |
+| `[updates]` | the manifest address, channels and interval for the new versions (optional, see Updates) |
 | `[mail]` | mail server for the login codes by email (optional) |
 
 Then create the organisation with the first administrator and start the
@@ -190,6 +191,24 @@ The phones fetch the maps with the sync, on Wi-Fi (within 15 minutes, at once if
 is open) and remove those you remove. A phone without a server can have the same maps by
 copying `.pmtiles` files into the `maps` folder of its data folder. Details and commands
 (`build_maps`, periodic refresh): `docs/OFFLINE-MAPS.md`.
+
+### Updates
+
+The **Aggiornamenti** page (admins only) tells the server where to look for new versions of
+ActivityTrack and whom to believe:
+
+- **Where to look**: the address of a signed manifest (by default the project's, on
+  GitLab), the channels followed (`prod`, `beta`, `test`, `dev`), the hours between checks
+  (0 = never on its own). **Controlla ora** checks at once.
+- **Mirror**: on by default, the server keeps the packages and the devices download them
+  from here; it always keeps at least the last two releases. Off, they download from the
+  addresses in the manifest.
+- **Di chi ci si fida**: the server accepts a manifest signed with the app's key or with a
+  key whose fingerprint (SHA-256 of the certificate) you paste here. The server's own key,
+  whose fingerprint is in the pairing QR code, signs what the phones and PCs receive: they
+  see it at their first sync.
+- When the manifest has a newer web server, the page says so; the server is updated by
+  installing the package.
 
 ## 6. Master data
 

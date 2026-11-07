@@ -20,6 +20,9 @@ from django.views.decorators.http import require_GET, require_http_methods, requ
 from accounts.models import Device, PairingCode
 from maps import catalog as maps_catalog
 from records.models import Attachment
+from updates import fetch as updates_fetch
+from updates import relay as updates_relay
+from updates.models import MirrorFile, UpdateSettings
 
 from . import compat, engine, wire
 
@@ -177,6 +180,10 @@ def policy(request):
 @device_api
 @require_GET
 def head(request):
+    org = request.device.user.org
+    updates = UpdateSettings.for_org(org)
+    # a stale manifest is looked for in a thread of its own: the phone does not wait for it
+    updates_fetch.poll_if_due(updates)
     return JsonResponse({
         "rev": engine.head(request.device.user.org),
         "serverTime": engine.now_ms(),
@@ -186,6 +193,8 @@ def head(request):
         "pluginHolder": request.device.plugin_holder,
         # the offline maps on offer (docs/OFFLINE-MAPS.md): "" without; the phone fetches `maps` when it changes
         "mapsRev": maps_catalog.revision(request.device.user.org),
+        # the new versions on offer (docs/SYNC.md §12.4): the manifest, signed by this server, or null
+        "update": updates_relay.text(updates),
         **compat.describe(),
     })
 
@@ -271,6 +280,28 @@ def serve_file(att, path):
         response["X-Sendfile"] = str(path)
         return _guarded(response, att)
     return _guarded(FileResponse(open(path, "rb"), content_type=att.mime), att)
+
+
+@device_api
+@require_GET
+def update_file(request, sha256):
+    """A mirrored package (docs/SYNC.md §12.4): through the same offload as the attachments."""
+    sha256 = sha256.lower()
+    if not MirrorFile.objects.filter(org=request.device.user.org, sha256=sha256).exists():
+        return _error(404, "unknown")
+    path = updates_fetch.mirror_path(sha256)
+    if not path.exists():
+        return _error(404, "no_file")
+    if settings.FILES_OFFLOAD == "nginx":
+        response = HttpResponse(content_type="application/octet-stream")
+        response["X-Accel-Redirect"] = f"{settings.FILES_ACCEL_LOCATION.rstrip('/')}/{path.relative_to(settings.FILES_DIR)}"
+    elif settings.FILES_OFFLOAD == "apache":
+        response = HttpResponse(content_type="application/octet-stream")
+        response["X-Sendfile"] = str(path)
+    else:
+        response = FileResponse(open(path, "rb"), content_type="application/octet-stream")
+    response["Content-Disposition"] = f'attachment; filename="{sha256}"'
+    return response
 
 
 @device_api

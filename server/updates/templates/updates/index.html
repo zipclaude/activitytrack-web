@@ -1,0 +1,53 @@
+{% extends "web/base.html" %}{% load i18n at %}
+{% block title %}{% translate "Aggiornamenti" %} · ActivityTrack{% endblock %}
+{% block content %}
+<h1>{% translate "Aggiornamenti" %}</h1>
+<p>{% blocktranslate %}Il server cerca le nuove versioni di ActivityTrack in un manifesto firmato e le segnala ai telefoni e ai PC associati alla prima sincronizzazione. I dispositivi controllano la firma prima di mostrare qualsiasi cosa.{% endblocktranslate %}</p>
+
+{% if newer %}<p class="note success">{% blocktranslate with v=newer.version cur=version %}È disponibile ActivityTrack Web {{ v }} (questo server è alla {{ cur }}): il server non si aggiorna da solo, installa il pacchetto.{% endblocktranslate %}{% if newer.notes_url %} <a href="{{ newer.notes_url }}" rel="noopener">{% translate "Note di rilascio" %}</a>{% endif %}</p>{% endif %}
+
+<section class="card">
+	<h2>{% translate "Dove cercare" %}</h2>
+	<form method="post" action="{% url 'updates:save' %}" class="fields">{% csrf_token %}
+		<label class="check"><input type="checkbox" name="enabled" {% if cfg.enabled %}checked{% endif %}> {% translate "Controlla automaticamente gli aggiornamenti" %}</label>
+		<label>{% translate "Indirizzo del manifesto (https)" %}<input type="url" name="manifest_url" value="{{ cfg.manifest_url }}" maxlength="500"></label>
+		<fieldset><legend>{% translate "Canali seguiti" %}</legend>
+			{% for name, on in channels %}<label class="check"><input type="checkbox" name="channels" value="{{ name }}" {% if on %}checked{% endif %}> {{ name }}</label> {% endfor %}
+		</fieldset>
+		<label>{% translate "Ogni quante ore (0 = mai da solo)" %}<input type="number" name="poll_hours" min="0" max="720" value="{{ cfg.poll_hours }}"></label>
+		<label class="check"><input type="checkbox" name="mirror" {% if cfg.mirror %}checked{% endif %}> {% translate "Conserva i pacchetti su questo server e fai scaricare i dispositivi da qui" %}</label>
+		<p class="doc">{% translate "Acceso, il server scarica i pacchetti dei canali seguiti, ne controlla lo SHA-256 e tiene sempre almeno le ultime due versioni. Spento, i dispositivi scaricano dagli indirizzi del manifesto." %}{% if mirrored %} {% blocktranslate with n=mirror_size|filesizeformat %}Ora: {{ n }}, versioni{% endblocktranslate %} {{ mirrored|join:", " }}.{% endif %}</p>
+		<div class="actions"><button class="primary">{% translate "Salva" %}</button></div>
+	</form>
+	<form method="post" action="{% url 'updates:check' %}">{% csrf_token %}<button>{% translate "Controlla ora" %}</button></form>
+	<p class="doc">{% if cfg.last_checked %}{% blocktranslate with when=cfg.last_checked|udatetime %}Ultimo controllo: {{ when }}.{% endblocktranslate %}{% else %}{% translate "Non ha ancora controllato." %}{% endif %}
+		{% if cfg.top_version %}{% blocktranslate with v=cfg.top_version %}Versione più recente nel manifesto: {{ v }}.{% endblocktranslate %}{% endif %}
+		{% if cfg.last_error %}<br><span class="err">{% blocktranslate with e=cfg.last_error %}Manifesto rifiutato: {{ e }}{% endblocktranslate %}</span>{% endif %}</p>
+</section>
+
+<section class="card">
+	<h2>{% translate "Di chi ci si fida" %}</h2>
+	<p class="doc">{% translate "Il server accetta solo manifesti firmati con la chiave dell'app o con una chiave che accetti qui incollandone l'impronta (SHA-256 del certificato)." %}</p>
+	<table class="list">
+		<thead><tr><th>{% translate "Chiave" %}</th><th>{% translate "Impronta SHA-256" %}</th><th></th></tr></thead>
+		<tbody>
+		<tr><td>{% translate "Chiave dell'app" %}</td><td><code class="wrap">{{ app_fp }}</code></td><td></td></tr>
+		{% for s, fp in signers %}
+		<tr><td>{{ s.label|default:"—" }}<br><span class="sub">{{ s.added|udatetime }}</span></td><td><code class="wrap">{{ fp }}</code></td>
+			<td class="actions"><form method="post" action="{% url 'updates:signer_remove' s.pk %}" data-confirm="{% translate "Togliere questa chiave? I suoi manifesti non saranno più accettati." %}">{% csrf_token %}<button class="danger">{% translate "Togli" %}</button></form></td></tr>
+		{% endfor %}
+		</tbody>
+	</table>
+	<form method="post" action="{% url 'updates:signer_add' %}" class="fields">{% csrf_token %}
+		<label>{% translate "Impronta da accettare" %}<input name="fingerprint" required autocomplete="off" spellcheck="false"></label>
+		<label>{% translate "Nome (facoltativo)" %}<input name="label" maxlength="80"></label>
+		<div class="actions"><button>{% translate "Accetta questa chiave" %}</button></div>
+	</form>
+</section>
+
+<section class="card">
+	<h2>{% translate "La chiave di questo server" %}</h2>
+	<p class="doc">{% translate "Il server firma con questa chiave il manifesto che dà ai dispositivi, e la sua impronta è nel codice QR dell'associazione: i dispositivi si fidano solo di questa. Si usa la chiave di [policy] key e cert, se impostata, altrimenti una generata al primo avvio." %}</p>
+	<p><code class="wrap">{{ server_fp|default:"—" }}</code></p>
+</section>
+{% endblock %}

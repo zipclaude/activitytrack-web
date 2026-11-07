@@ -12,6 +12,7 @@ from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 
 from accounts.models import Device, PairingCode
+from updates import keys
 
 
 def pair_link(code):
@@ -19,6 +20,8 @@ def pair_link(code):
     query = {"v": "1", "u": settings.BASE_URL, "c": code}
     if settings.TLS_PIN:
         query["f"] = settings.TLS_PIN
+    # the server's signing key (docs/SYNC.md §12.4): who signs its manifests, so the app trusts no one else
+    query["k"] = keys.fingerprint()
     return "activitytrack://pair?" + urlencode(query)
 
 

@@ -257,6 +257,16 @@ under `files/`, served like the attachments. To keep them fresh, run
 `activitytrack-web-manage build_maps --older-than 30` from a systemd timer or cron,
 say once a month.
 
+**Updates** (optional, `docs/SYNC.md` §12.4): the server looks for new versions of
+ActivityTrack in a signed manifest (by default the project's on GitLab, so it must reach
+`https://gitlab.com/`), tells the phones and PCs at their first sync and, if the admin
+leaves the mirror on, keeps the packages (at least the last two releases, under `files/updates/`).
+It needs no schedule: a phone's sync or the *Aggiornamenti* page starts the check; from cron or a
+timer, `activitytrack-web-manage fetch_updates` does it too. The `[updates]` keys are in
+`settings.ini`. The server signs what it gives the devices with `[policy] key`/`cert` or, without
+them, with a key it makes on first start in `signing/` of the data folder: **back it up with the
+data**, or the paired devices must be paired again (their pin is its fingerprint).
+
 PostgreSQL with peer authentication (Debian/Ubuntu; the same users
 elsewhere):
 

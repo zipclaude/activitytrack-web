@@ -10,6 +10,7 @@ urlpatterns = [
     path("sync/head", views.head),
     path("policy", views.policy),
     path("files/<str:uid>", views.files),
+    path("update/files/<str:sha256>", views.update_file),
     path("maps", views.maps),
     path("maps/<slug:slug>", views.map_file),
 ]
