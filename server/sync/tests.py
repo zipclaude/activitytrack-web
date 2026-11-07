@@ -415,6 +415,15 @@ class LargePushTests(SyncTestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual({x["status"] for x in r.json()["results"]}, {"applied"})
 
+    def test_a_body_above_the_limit_is_a_413(self):
+        token = self.pair(self.alice)
+        with self.settings(DATA_UPLOAD_MAX_MEMORY_SIZE=200):
+            big = json.dumps({"changes": [], "pad": "x" * 500})
+            r = self.client.post("/api/v1/sync/push", big, content_type="application/json", HTTP_AUTHORIZATION=f"Bearer {token}")
+            self.assertEqual((r.status_code, r.json()["error"]), (413, "too_large"))
+            r = self.client.post("/api/v1/pair", big, content_type="application/json")
+            self.assertEqual((r.status_code, r.json()["error"]), (413, "too_large"))
+
 
 class CompatTests(SyncTestCase):
     """Versions of app and server (docs/SYNC.md §12): the schema window and the translations."""
