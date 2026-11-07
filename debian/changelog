@@ -1,3 +1,14 @@
+activitytrack-web (0.9.8-1) unstable; urgency=medium
+
+  * Release 0.9.8, in step with ActivityTrack 0.9.8: the first release from
+    GitLab. CI and release move to .gitlab-ci.yml (the FreeBSD install is no
+    longer tried), the addresses and the description of the apps' update check
+    point to gitlab.com/infraconsulting; the policy catalog is the app's, with
+    its text for the update check. The server itself does not change: wire
+    schema 2, with the compat step for schema 1.
+
+ -- ActivityTrack <flavio-claude@zipman.it>  Sat, 07 Nov 2026 16:30:00 +0000
+
 activitytrack-web (0.9.6-1) unstable; urgency=medium
 
   * Planned absences (app issue #158): a to-do of kind ABSENCE with a colour

@@ -10,11 +10,12 @@ PostgreSQL. Three ways to install it:
 | [Clone](#2-tarball-or-clone-of-the-repository) of the repository | the same | `git pull` (or `git checkout v<version>`) |
 
 The packages and the tarball are on the
-[Releases](https://github.com/zipclaude/activitytrack-web/releases) page,
+[Releases](https://gitlab.com/infraconsulting/activitytrack-web/-/releases) page,
 with their `SHA256SUMS` (`sha256sum -c --ignore-missing SHA256SUMS`).
 Every release builds and tries them: the packages in their distribution,
-the tarball on Oracle Linux 9, Arch and FreeBSD 14
-(`.github/workflows/release.yml`).
+the tarball on Oracle Linux 9 and Arch (`.gitlab-ci.yml`). The FreeBSD 14 install
+(`deploy/freebsd`) is not tried by the CI since the move to GitLab, which has no
+FreeBSD runners: it was last tried with 0.9.6.
 
 Whatever the way, the server needs then: its settings
 ([§3](#3-settings-and-first-administrator)), a web server
@@ -25,7 +26,7 @@ Whatever the way, the server needs then: its settings
 On Ubuntu the `universe` component must be enabled (it is by default).
 
 ```sh
-apt install ./activitytrack-web_0.9.6-1-deb13_all.deb        # Debian 13
+apt install ./activitytrack-web_0.9.8-1-deb13_all.deb        # Debian 13
 # Debian 14: -deb14, Ubuntu 24.04: -ubuntu24.04, Ubuntu 26.04: -ubuntu26.04
 apt install python3-psycopg postgresql                        # optional: PostgreSQL instead of SQLite
 ```
@@ -60,20 +61,26 @@ data in `/var/lib/activitytrack-web` (FreeBSD: `/var/db/activitytrack-web`).
 Getting the code, from the tarball:
 
 ```sh
-mkdir -p "$AT" && tar -xzf activitytrack-web-0.9.6.tar.gz -C "$AT" --strip-components=1
+mkdir -p "$AT" && tar -xzf activitytrack-web-0.9.8.tar.gz -C "$AT" --strip-components=1
 ```
 
 or from the repository (later `git pull`, or `git checkout v<version>` for a
 release):
 
 ```sh
-git clone https://github.com/zipclaude/activitytrack-web "$AT"
-cd "$AT" && git checkout v0.9.6
+git clone https://gitlab.com/infraconsulting/activitytrack-web "$AT"
+cd "$AT" && git checkout v0.9.8
 ```
 
 After an update of the code: `activitytrack-web-manage migrate`,
 `activitytrack-web-manage collectstatic --noinput`, then restart the
 service.
+
+Updating to 0.9.8: nothing to do besides what the package does (no migration).
+The project moved from GitHub to GitLab (`gitlab.com/infraconsulting`): the
+releases, with the same files, are on its *Releases* page, and the apps from
+0.9.8 look there for new versions (the older ones ask GitHub, see
+`docs/SYNC.md` §12.4). The FreeBSD install is not tried by the CI any more.
 
 Updating to 0.9.6: nothing to do besides what the package does (the migration
 adds the to-do fields of the planned absences). Update the server before the

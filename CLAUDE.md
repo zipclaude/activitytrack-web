@@ -2,8 +2,9 @@
 
 Technical notes to set up the environment and work on the code. Read
 `docs/ARCHITECTURE.md`, `docs/SYNC.md` and `docs/ROADMAP.md` first. The
-Android app is `zipclaude/activitytrack`; project history and work in
-progress live in the GitHub issues and pull requests.
+Android app is `infraconsulting/activitytrack` on GitLab; project history and work in
+progress live in the GitLab issues and merge requests (until 0.9.7-beta1 they
+were on GitHub, see the first merge request of this repository).
 
 ## 1. Working rules
 
@@ -38,7 +39,7 @@ progress live in the GitHub issues and pull requests.
   No Django REST framework: the API is plain views.
 - nginx and Apache are both supported (`deploy/`); keep the two site files
   and `[files] offload` in step.
-- CI (`.github/workflows/ci.yml`) runs in `debian:trixie` with apt packages
+- CI (`.gitlab-ci.yml`, job `test`) runs in `debian:trixie` with apt packages
   only, on SQLite and PostgreSQL 17; keep it green.
 
 ## 3. Development environment

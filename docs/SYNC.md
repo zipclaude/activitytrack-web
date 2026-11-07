@@ -250,7 +250,7 @@ Rules (owner, 2026-10-31), from release 1.0 on:
    then, in this order: keep compatibility if it is not too penalising;
    else a transition update of the old version that speaks the new one;
    else both are updated together.
-3. The app checks GitHub for newer releases (§12.4); an app installed from
+3. The app checks GitLab for newer releases (§12.4); an app installed from
    a store leaves it to the store.
 
 ### 12.1 The wire schema
@@ -315,8 +315,12 @@ phone and sync once the versions match again.
 
 ### 12.4 Update check of the app
 
-Installed from GitHub (no store as installer), the app checks the public
-releases of `zipclaude/activitytrack` once a day: a newer **stable**
-release, or a newer **pre-release** when the user subscribed to the betas
-(Settings; a policy can fix both), shows in Settings and as a notification
-that opens the release page. Betas are published as GitHub pre-releases.
+Installed from GitLab (no store as installer), the app checks the public
+releases of `infraconsulting/activitytrack` once a day (GitLab API
+`projects/<path>/releases`): a newer **stable** release, or a newer **beta**
+when the user subscribed to the betas (Settings; a policy can fix both),
+shows in Settings and as a notification that opens the release page. GitLab
+has no pre-releases: a release whose tag has a suffix (`v1.1.0-beta1`) is a
+beta. Until 0.9.7-beta1 the releases were on GitHub, which those versions of
+the app still ask: they are updated by hand to the first release on GitLab
+(0.9.8).
