@@ -1,0 +1,245 @@
+# CI of ActivityTrack Web on GitLab (free plan: the shared runners' minutes are
+# limited, so pipelines run for merge requests, the default branch and tags).
+# A tag vX.Y.Z builds the Debian/Ubuntu packages, the tarball and the manual,
+# tries the installs of docs/INSTALL.md and publishes the release. "Run
+# pipeline" by hand does everything but publishing.
+
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_COMMIT_TAG
+    - if: $CI_PIPELINE_SOURCE == "web"
+
+stages: [test, package, install, release]
+
+default:
+  interruptible: true
+
+variables:
+  DEBIAN_FRONTEND: noninteractive
+
+test:
+  stage: test
+  # the server must run on Debian stable packages only (docs/ARCHITECTURE.md R1)
+  image: debian:trixie
+  parallel:
+    matrix:
+      - DB: [sqlite, postgresql]
+  script:
+    - apt-get update
+    - apt-get install -y --no-install-recommends git ca-certificates python3 python3-django python3-segno python3-argon2 python3-psycopg python3-cryptography gettext
+    - |
+      if [ "$DB" = postgresql ]; then
+        apt-get install -y --no-install-recommends postgresql
+        pg_ctlcluster 17 main start
+        su postgres -c "createuser --createdb root"
+        su postgres -c "createdb -O root activitytrack"
+        printf '[database]\nengine = postgresql\nname = activitytrack\nuser = root\n' > server/local_settings.ini
+      fi
+    - cd server
+    - python3 --version
+    - python3 -c "import django; print('Django', django.__version__)"
+    - python3 manage.py check
+    - python3 manage.py makemigrations --check --dry-run
+    - python3 manage.py test -v 2
+
+# the packages and the installs are tried on a tag, by hand, and in merge
+# requests that touch the packaging
+.packaging:
+  rules:
+    - if: $CI_COMMIT_TAG
+    - if: $CI_PIPELINE_SOURCE == "web"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      changes: ["debian/**/*", "packaging/**/*", "deploy/**/*", "server/requirements*.txt", "docs/manual/**/*", "scripts/build-manual.sh", ".gitlab-ci.yml"]
+
+deb:
+  extends: .packaging
+  stage: package
+  image: $IMAGE
+  parallel:
+    matrix:
+      - { IMAGE: "debian:trixie", SUFFIX: deb13 }
+      - { IMAGE: "debian:forky", SUFFIX: deb14 }
+      - { IMAGE: "ubuntu:24.04", SUFFIX: ubuntu24.04 }
+      - { IMAGE: "ubuntu:26.04", SUFFIX: ubuntu26.04 }
+  script:
+    - apt-get update
+    - apt-get install -y --no-install-recommends ca-certificates git curl build-essential debhelper dpkg-dev
+    # version
+    - V=$(sed -n 's/^__version__ = "\(.*\)"/\1/p' server/atweb/__init__.py)
+    - if [ -n "$CI_COMMIT_TAG" ]; then test "v$V" = "$CI_COMMIT_TAG"; fi
+    # Debian: a beta 1.1.0-beta.1 is 1.1.0~beta.1 (sorts before 1.1.0)
+    - DV=$(echo "$V" | tr '-' '~')
+    # the package: that version and a Debian revision, 1.1.0~beta.1-1
+    - PV=$(dpkg-parsechangelog -S Version)
+    - test "$(dpkg-parsechangelog -S Source)" = activitytrack-web && test "${PV%-*}" = "$DV" && test "$PV" != "$DV"
+    # the distribution goes in the revision: 1.1.0~beta.1-1~deb13 still satisfies (>= 1.1.0~beta.1)
+    - sed -i "1s/($PV)/($PV~$SUFFIX)/" debian/changelog
+    - head -1 debian/changelog
+    # package
+    - dpkg-buildpackage -b -us -uc
+    - mkdir dist && mv ../activitytrack-web_*.deb dist/
+    - dpkg-deb --info dist/*.deb
+    # install
+    - apt-get install -y ./dist/*.deb
+    # the files named by docs/INSTALL.md
+    - |
+      ROOT=/usr/share/activitytrack-web
+      grep -o '\$AT/[A-Za-z0-9_./-]*' docs/INSTALL.md | grep -v '/venv' | sort -u | sed "s|^\$AT|$ROOT|" |
+        while read -r f; do test -e "$f" || { echo "INSTALL.md names $f, missing"; exit 1; }; done
+    # try it
+    - |
+      python3 -c "import django; print('Django', django.__version__)"
+      activitytrack-web-manage check
+      activitytrack-web-manage setup --org Test --admin admin --password 'try-it-once'
+      # the web server (www-data) reads the static files, not the private ones
+      runuser -u www-data -- cat /var/lib/activitytrack-web/static/web/app.css >/dev/null
+      for f in activitytrack.sqlite3 secret_key; do
+        test -e /var/lib/activitytrack-web/$f
+        ! runuser -u www-data -- cat /var/lib/activitytrack-web/$f >/dev/null 2>&1
+      done
+      cd /usr/share/activitytrack-web/server
+      ATWEB_CONFIG=/etc/activitytrack-web/settings.ini runuser -u activitytrack-web -- \
+        gunicorn --bind 127.0.0.1:8000 --daemon --pid /tmp/gunicorn.pid atweb.wsgi
+      sleep 3
+      test "$(curl -s -o /dev/null -w '%{http_code}' -H 'Host: at.example.com' http://127.0.0.1:8000/login/)" = 200
+      kill "$(cat /tmp/gunicorn.pid)"
+    # the tests on the installed files
+    - cd /usr/share/activitytrack-web/server && ATWEB_CONFIG=/etc/activitytrack-web/settings.ini python3 manage.py test
+    - cd "$CI_PROJECT_DIR"
+    # purge
+    - apt-get purge -y activitytrack-web
+    - test ! -e /etc/activitytrack-web && test ! -e /var/lib/activitytrack-web
+  artifacts:
+    paths: ["dist/*.deb"]
+    expire_in: 30 days
+
+tarball:
+  extends: .packaging
+  stage: package
+  image: debian:trixie
+  script:
+    - apt-get update && apt-get install -y --no-install-recommends git ca-certificates
+    - V=$(sed -n 's/^__version__ = "\(.*\)"/\1/p' server/atweb/__init__.py)
+    - mkdir dist
+    - git archive --prefix="activitytrack-web-$V/" -o "dist/activitytrack-web-$V.tar.gz" HEAD
+    - tar -tzf dist/*.tar.gz | grep -c .
+    - mkdir /tmp/at && tar -xzf dist/*.tar.gz -C /tmp/at --strip-components=1
+    - |
+      ROOT=/tmp/at
+      grep -o '\$AT/[A-Za-z0-9_./-]*' docs/INSTALL.md | grep -v '/venv' | sort -u | sed "s|^\$AT|$ROOT|" |
+        while read -r f; do test -e "$f" || { echo "INSTALL.md names $f, missing"; exit 1; }; done
+  artifacts:
+    paths: ["dist/*.tar.gz"]
+    expire_in: 30 days
+
+# the administrator's manual, it and en (docs/manual)
+manual:
+  extends: .packaging
+  stage: package
+  image: debian:trixie
+  script:
+    # a release's manual carries its version; elsewhere the manual's own
+    - V=$(sed -n 's/^__version__ = "\(.*\)"/\1/p' server/atweb/__init__.py)
+    - |
+      if [ -n "$CI_COMMIT_TAG" ]; then
+        for f in docs/manual/it/admin.md docs/manual/en/admin.md; do
+          head -1 "$f" | grep -q "^Versione $V \|^Version $V " || { echo "$f does not say version $V"; exit 1; }
+        done
+      fi
+    - apt-get update && apt-get install -y --no-install-recommends pandoc chromium fonts-dejavu-core fonts-liberation
+    - scripts/build-manual.sh
+    - mkdir dist && cp build/manual/*.pdf dist/
+  artifacts:
+    paths: ["dist/*.pdf"]
+    expire_in: 30 days
+
+# the manual installs of docs/INSTALL.md, from the tarball
+oracle-linux:
+  extends: .packaging
+  stage: install
+  needs: [tarball]
+  image: oraclelinux:9
+  script:
+    # RHEL / Oracle Linux 9
+    - dnf install -y python3.12 python3.12-pip tar util-linux
+    - useradd --system --home-dir /var/lib/activitytrack-web --shell /sbin/nologin activitytrack-web
+    - install -d -m 0711 -o activitytrack-web -g activitytrack-web /var/lib/activitytrack-web
+    - mkdir -p /opt/activitytrack-web && tar -xzf dist/activitytrack-web-*.tar.gz -C /opt/activitytrack-web --strip-components=1
+    - python3.12 -m venv /opt/activitytrack-web/venv
+    - /opt/activitytrack-web/venv/bin/pip install -r /opt/activitytrack-web/server/requirements.txt
+    - install -d -m 0750 -o root -g activitytrack-web /etc/activitytrack-web
+    - install -m 0640 -g activitytrack-web /opt/activitytrack-web/deploy/settings.ini.example /etc/activitytrack-web/settings.ini
+    - install -m 0755 /opt/activitytrack-web/packaging/activitytrack-web-manage /usr/local/bin/
+    - printf 'ATWEB_HOME=/opt/activitytrack-web\nATWEB_PYTHON=/opt/activitytrack-web/venv/bin/python\n' > /etc/activitytrack-web/manage.env
+    # try it
+    - activitytrack-web-manage migrate
+    - activitytrack-web-manage collectstatic --noinput
+    - activitytrack-web-manage setup --org Test --admin admin --password 'try-it-once'
+    - cd /opt/activitytrack-web/server && ATWEB_CONFIG=/etc/activitytrack-web/settings.ini /opt/activitytrack-web/venv/bin/python manage.py test
+
+arch:
+  extends: .packaging
+  stage: install
+  needs: [tarball]
+  image: archlinux:latest
+  script:
+    # Arch Linux
+    - pacman -Syu --noconfirm python python-django python-argon2-cffi python-cryptography gunicorn
+    - useradd --system --home-dir /var/lib/activitytrack-web --shell /usr/bin/nologin activitytrack-web
+    - install -d -m 0711 -o activitytrack-web -g activitytrack-web /var/lib/activitytrack-web
+    - mkdir -p /opt/activitytrack-web && tar -xzf dist/activitytrack-web-*.tar.gz -C /opt/activitytrack-web --strip-components=1
+    - python -m venv --system-site-packages /opt/activitytrack-web/venv
+    - /opt/activitytrack-web/venv/bin/pip install 'segno>=1.6'
+    - install -d -m 0750 -o root -g activitytrack-web /etc/activitytrack-web
+    - install -m 0640 -g activitytrack-web /opt/activitytrack-web/deploy/settings.ini.example /etc/activitytrack-web/settings.ini
+    - install -m 0755 /opt/activitytrack-web/packaging/activitytrack-web-manage /usr/local/bin/
+    - printf 'ATWEB_HOME=/opt/activitytrack-web\nATWEB_PYTHON=/opt/activitytrack-web/venv/bin/python\n' > /etc/activitytrack-web/manage.env
+    # try it
+    - activitytrack-web-manage migrate
+    - activitytrack-web-manage collectstatic --noinput
+    - activitytrack-web-manage setup --org Test --admin admin --password 'try-it-once'
+    - cd /opt/activitytrack-web/server && ATWEB_CONFIG=/etc/activitytrack-web/settings.ini /opt/activitytrack-web/venv/bin/python manage.py test
+
+# the files go to the project's Generic Packages and the release links them
+# (permalinks .../-/releases/<tag>/downloads/<file>); a version with a suffix is a beta
+release:
+  stage: release
+  image: alpine:3.22
+  rules:
+    - if: $CI_COMMIT_TAG
+  interruptible: false
+  script:
+    - apk add --no-cache curl jq coreutils
+    - V="${CI_COMMIT_TAG#v}"
+    - PV=$(sed -n '1s/^[^(]*(\(.*\)).*/\1/p' debian/changelog)
+    - R="${PV##*-}"
+    # "~" of the package versions is not allowed in a package file's name: "-" instead
+    - mkdir artifacts && cp dist/*.deb dist/*.tar.gz dist/*.pdf artifacts/
+    - cd artifacts
+    - for f in activitytrack-web_*~*_all.deb; do mv "$f" "$(echo "$f" | tr '~' '-')"; done
+    - sha256sum * > SHA256SUMS && cat SHA256SUMS
+    - cd ..
+    - |
+      {
+        echo "ActivityTrack Web $V, the server for ActivityTrack $V."
+        echo
+        echo "- Debian 13 / 14, Ubuntu 24.04 / 26.04: \`apt install ./activitytrack-web_${V}-${R}-<distro>_all.deb\` (deb13, deb14, ubuntu24.04, ubuntu26.04)"
+        echo "- Other systems (RHEL / Oracle Linux, Arch, FreeBSD) and installs by hand: \`activitytrack-web-$V.tar.gz\` or a clone of the repository"
+        echo
+        echo "Administrator's manual: \`ActivityTrack-Web-Amministratore-$V.pdf\` (it), \`ActivityTrack-Web-Administrator-$V.pdf\` (en)."
+        echo
+        echo "Instructions: [docs/INSTALL.md]($CI_PROJECT_URL/-/blob/v$V/docs/INSTALL.md)."
+      } > notes.md
+    - |
+      links='[]'
+      for f in artifacts/*; do
+        n=$(basename "$f")
+        u="$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/generic/activitytrack-web/$V/$n"
+        curl --fail -sS --header "JOB-TOKEN: $CI_JOB_TOKEN" --upload-file "$f" "$u"
+        links=$(echo "$links" | jq -c --arg n "$n" --arg u "$u" '. + [{name:$n, url:$u, direct_asset_path:("/"+$n), link_type:"package"}]')
+      done
+      jq -n --arg tag "$CI_COMMIT_TAG" --arg name "ActivityTrack Web $V" --rawfile desc notes.md --argjson links "$links" \
+        '{tag_name:$tag, name:$name, description:$desc, assets:{links:$links}}' |
+        curl --fail-with-body -sS -X POST --header "JOB-TOKEN: $CI_JOB_TOKEN" --header "Content-Type: application/json" --data @- "$CI_API_V4_URL/projects/$CI_PROJECT_ID/releases"

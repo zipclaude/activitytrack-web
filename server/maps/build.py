@@ -17,7 +17,7 @@ from django.utils import timezone
 from . import pmtiles
 from .models import MapArea
 
-USER_AGENT = "ActivityTrack-Web (+https://github.com/zipclaude/activitytrack-web)"
+USER_AGENT = "ActivityTrack-Web (+https://gitlab.com/infraconsulting/activitytrack-web)"
 DAILY = "https://build.protomaps.com/%s.pmtiles"
 
 

@@ -10,11 +10,12 @@ PostgreSQL. Three ways to install it:
 | [Clone](#2-tarball-or-clone-of-the-repository) of the repository | the same | `git pull` (or `git checkout v<version>`) |
 
 The packages and the tarball are on the
-[Releases](https://github.com/zipclaude/activitytrack-web/releases) page,
+[Releases](https://gitlab.com/infraconsulting/activitytrack-web/-/releases) page,
 with their `SHA256SUMS` (`sha256sum -c --ignore-missing SHA256SUMS`).
 Every release builds and tries them: the packages in their distribution,
-the tarball on Oracle Linux 9, Arch and FreeBSD 14
-(`.github/workflows/release.yml`).
+the tarball on Oracle Linux 9 and Arch (`.gitlab-ci.yml`). The FreeBSD 14 install
+(`deploy/freebsd`) is not tried by the CI since the move to GitLab, which has no
+FreeBSD runners: it was last tried with 0.9.6.
 
 Whatever the way, the server needs then: its settings
 ([§3](#3-settings-and-first-administrator)), a web server
@@ -67,7 +68,7 @@ or from the repository (later `git pull`, or `git checkout v<version>` for a
 release):
 
 ```sh
-git clone https://github.com/zipclaude/activitytrack-web "$AT"
+git clone https://gitlab.com/infraconsulting/activitytrack-web "$AT"
 cd "$AT" && git checkout v0.9.6
 ```
 
