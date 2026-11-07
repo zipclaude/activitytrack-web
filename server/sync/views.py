@@ -10,6 +10,7 @@ from functools import wraps
 from pathlib import Path
 
 from django.conf import settings
+from django.core.exceptions import RequestDataTooBig
 from django.db import transaction
 from django.http import FileResponse, HttpResponse, JsonResponse
 from django.utils import timezone
@@ -25,6 +26,19 @@ from . import compat, engine, wire
 
 def _error(status, code, detail=""):
     return JsonResponse({"error": code, "detail": detail}, status=status)
+
+
+def _bounded(view):
+    """A body above DATA_UPLOAD_MAX_MEMORY_SIZE is a 413 the app can tell, not Django's generic 400."""
+
+    @wraps(view)
+    def wrapped(request, *args, **kwargs):
+        try:
+            return view(request, *args, **kwargs)
+        except RequestDataTooBig:
+            return _error(413, "too_large")
+
+    return wrapped
 
 
 def device_api(view):
@@ -56,7 +70,7 @@ def device_api(view):
             Device.objects.filter(pk=device.pk).update(**seen)
         request.device = device
         request.schema = schema
-        return view(request, *args, **kwargs)
+        return _bounded(view)(request, *args, **kwargs)
 
     return wrapped
 
@@ -76,6 +90,7 @@ def _json(request):
 
 @csrf_exempt
 @require_POST
+@_bounded
 def pair(request):
     body = _json(request)
     if body is None or not isinstance(body.get("code"), str):

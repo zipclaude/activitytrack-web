@@ -79,6 +79,10 @@ a pull by `rev > cursor` never skips a record committed late.
 
 All under `/api/v1/`, JSON, `Authorization: Bearer <device token>`.
 
+A JSON body is limited to 16 MB (`DATA_UPLOAD_MAX_MEMORY_SIZE`; a push of 500 changes with long
+notes fits); above it the answer is `413 {"error": "too_large"}`. Files have their own limit
+(`[files] max_mb`, same answer, see Files).
+
 ### `POST sync/push`
 
 ```json
