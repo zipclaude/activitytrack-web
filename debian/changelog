@@ -1,3 +1,13 @@
+activitytrack-web (0.9.9-1) unstable; urgency=medium
+
+  * Release 0.9.9, in step with ActivityTrack 0.9.9, after an external security
+    review: a request body above DATA_UPLOAD_MAX_MEMORY_SIZE (16 MB) is answered
+    with 413 "too_large" instead of Django's 400. The admin login needed no
+    change (it already goes through the site's brake and second step). The
+    wire schema does not change: 2, with the compat step for schema 1.
+
+ -- ActivityTrack <flavio-claude@zipman.it>  Sat, 07 Nov 2026 20:00:00 +0000
+
 activitytrack-web (0.9.8-1) unstable; urgency=medium
 
   * Release 0.9.8, in step with ActivityTrack 0.9.8: the first release from
