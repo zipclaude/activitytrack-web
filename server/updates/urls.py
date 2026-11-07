@@ -8,6 +8,7 @@ urlpatterns = [
     path("", views.index, name="index"),
     path("salva/", views.save, name="save"),
     path("controlla/", views.check, name="check"),
+    path("azzera/", views.reset, name="reset"),
     path("chiavi/aggiungi/", views.signer_add, name="signer_add"),
     path("chiavi/<int:pk>/togli/", views.signer_remove, name="signer_remove"),
 ]

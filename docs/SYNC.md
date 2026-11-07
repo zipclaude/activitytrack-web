@@ -358,8 +358,10 @@ The project publishes it, signed with the app's release key, at
   its own distribution (`/etc/os-release`). Package addresses are https; the
   `sha256` is checked before anything is installed.
 - Only a version higher than the installed one is offered; a manifest
-  `issued` before the last accepted one (a replay) or whose highest version
-  is lower than the accepted one (a downgrade) is refused.
+  `issued` before the last accepted one (a replay) or going back in a
+  channel the organisation follows (a downgrade: the highest version is kept
+  **per channel**, a channel nobody follows never blocks) is refused. Times
+  without an offset are UTC. `notes_url` is kept only if it is https.
 
 **Who may sign what a device believes**
 
@@ -379,7 +381,8 @@ from cron. The server accepts a manifest only if it is signed with **the
 app's release key** (`[updates] app_fingerprint`, the SHA-256 of its
 certificate) or with a key whose **SHA-256 fingerprint an admin pasted**
 (colons, spaces and case do not matter; adding and removing one is logged
-with who did it); it also refuses a package address that is not https, a
+with who did it); the page has a button to forget the
+versions seen (for an upstream that withdrew a release on purpose); it also refuses a package address that is not https, a
 package without `sha256`, a downgrade and a replay.
 
 **To the devices.** `sync/head` answers `"update": "<JWS>"` (null when there

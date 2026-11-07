@@ -23,6 +23,9 @@ class UpdateSettings(models.Model):
     payload = models.JSONField(null=True, blank=True)
     issued = models.CharField(max_length=40, blank=True)
     top_version = models.CharField(max_length=60, blank=True)
+    # the highest version seen per channel: a followed channel may not go back (a channel nobody follows, or
+    # one a withdrawn release left, never blocks a manifest)
+    tops = models.JSONField(default=dict, blank=True)
     # the server's own signed manifest for the phones, kept until something it depends on changes
     relayed = models.TextField(blank=True)
     relay_key = models.CharField(max_length=64, blank=True)

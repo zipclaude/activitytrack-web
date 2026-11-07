@@ -20,6 +20,8 @@
 		<div class="actions"><button class="primary">{% translate "Salva" %}</button></div>
 	</form>
 	<form method="post" action="{% url 'updates:check' %}">{% csrf_token %}<button>{% translate "Controlla ora" %}</button></form>
+	{% if cfg.tops %}<form method="post" action="{% url 'updates:reset' %}" data-confirm="{% translate "Dimenticare le versioni già viste? Il prossimo manifesto sarà accettato anche se è più vecchio o ha versioni più basse." %}">{% csrf_token %}<button class="danger">{% translate "Azzera le versioni viste" %}</button></form>
+	<p class="doc">{% translate "Serve se chi pubblica il manifesto ha ritirato una versione o è tornato indietro di proposito: il server rifiuta un manifesto più basso di quello già accettato." %}</p>{% endif %}
 	<p class="doc">{% if cfg.last_checked %}{% blocktranslate with when=cfg.last_checked|udatetime %}Ultimo controllo: {{ when }}.{% endblocktranslate %}{% else %}{% translate "Non ha ancora controllato." %}{% endif %}
 		{% if cfg.top_version %}{% blocktranslate with v=cfg.top_version %}Versione più recente nel manifesto: {{ v }}.{% endblocktranslate %}{% endif %}
 		{% if cfg.last_error %}<br><span class="err">{% blocktranslate with e=cfg.last_error %}Manifesto rifiutato: {{ e }}{% endblocktranslate %}</span>{% endif %}</p>

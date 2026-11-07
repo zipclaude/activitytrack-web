@@ -9,6 +9,7 @@ same from cron or a timer.
 """
 
 import hashlib
+import http.client
 import logging
 import os
 import ssl
@@ -16,7 +17,7 @@ import tempfile
 import threading
 import urllib.parse
 import urllib.request
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone as dt_timezone
 from functools import cmp_to_key
 from pathlib import Path
 
@@ -55,7 +56,10 @@ def _open(req, timeout):
 
 
 def _https(url):
-    return urllib.parse.urlsplit(str(url)).scheme == "https"
+    """An https address with nothing a browser or a client would read otherwise (no spaces or control characters)."""
+    url = str(url)
+    return url.startswith("https://") and urllib.parse.urlsplit(url).scheme == "https" \
+        and not any(c.isspace() or ord(c) < 32 for c in url)
 
 
 def read(url, limit=jws.MAX_BYTES, timeout=30):
@@ -71,16 +75,27 @@ def read(url, limit=jws.MAX_BYTES, timeout=30):
 
 
 def _when(text):
-    from datetime import datetime
+    """An ISO time as an aware UTC datetime (a time without an offset is UTC), or None."""
     try:
-        return datetime.fromisoformat(str(text).replace("Z", "+00:00"))
+        when = datetime.fromisoformat(str(text).replace("Z", "+00:00"))
     except ValueError:
         return None
+    return when.replace(tzinfo=dt_timezone.utc) if when.tzinfo is None else when.astimezone(dt_timezone.utc)
 
 
 def _top(payload):
     versions = [str(r["version"]) for r in payload["releases"]]
     return max(versions, key=cmp_to_key(compare)) if versions else ""
+
+
+def tops(payload):
+    """The highest version of each channel of [payload]."""
+    out = {}
+    for r in payload["releases"]:
+        channel, version = str(r.get("channel") or "prod"), str(r["version"])
+        if channel not in out or compare(version, out[channel]) > 0:
+            out[channel] = version
+    return out
 
 
 def validate(payload, cfg):
@@ -104,8 +119,10 @@ def validate(payload, cfg):
     before = _when(cfg.issued) if cfg.issued else None
     if before is not None and issued < before:
         raise jws.ManifestError("older than the manifest accepted before")
-    if cfg.top_version and releases and compare(_top(payload), cfg.top_version) < 0:
-        raise jws.ManifestError("lower version than the one accepted before")
+    now = tops(payload)
+    for channel in cfg.channel_list():
+        if channel in now and channel in (cfg.tops or {}) and compare(now[channel], cfg.tops[channel]) < 0:
+            raise jws.ManifestError(f"lower version in the channel {channel} than the one accepted before")
 
 
 def accept(cfg, text):
@@ -115,7 +132,11 @@ def accept(cfg, text):
     for r in payload["releases"]:
         for p in r["packages"]:
             p["sha256"] = jws.normalize(p["sha256"])
+        # the notes are a link on the admin page: https or nothing
+        if not _https(r.get("notes_url") or ""):
+            r["notes_url"] = ""
     cfg.payload, cfg.issued, cfg.top_version = payload, payload["issued"], _top(payload) or cfg.top_version
+    cfg.tops = {**(cfg.tops or {}), **tops(payload)}
     return payload
 
 
@@ -161,7 +182,7 @@ def mirror(cfg):
                 continue
             try:
                 size = _download(p["url"], p["sha256"])
-            except (OSError, jws.ManifestError) as e:
+            except (OSError, http.client.HTTPException, jws.ManifestError) as e:
                 complete = False
                 log.warning("updates: %s %s not mirrored: %s", r["version"], p["component"], e)
                 continue
@@ -193,16 +214,32 @@ def run(cfg):
         accept(cfg, read(cfg.manifest_url))
         cfg.last_ok = now
         log.info("updates: manifest of %s accepted (issued %s, top %s)", cfg.org, cfg.issued, cfg.top_version)
-    except (OSError, ValueError, jws.ManifestError) as e:
+    except (OSError, http.client.HTTPException, ValueError, jws.ManifestError) as e:
         error = str(e)[:300] or e.__class__.__name__
         log.warning("updates: manifest of %s refused: %s", cfg.org, error)
+    except Exception as e:
+        # whatever else: the check must not fail without a word, or the page and the retry would never know
+        error = f"{e.__class__.__name__}: {e}"[:300]
+        log.exception("updates: the check of %s failed", cfg.org)
     cfg.last_error = error
     cfg.save()
-    if not error and cfg.mirror:
-        mirror(cfg)
-    if cfg.payload:
-        relay.rebuild(cfg)
+    try:
+        if not error and cfg.mirror:
+            mirror(cfg)
+        if cfg.payload:
+            relay.rebuild(cfg)
+    except Exception as e:
+        cfg.last_error = error = f"{e.__class__.__name__}: {e}"[:300]
+        cfg.save(update_fields=["last_error"])
+        log.exception("updates: the packages of %s could not be kept", cfg.org)
     return error
+
+
+def reset(cfg):
+    """Forget what was accepted before (the highest versions, the issue time): the next manifest is taken as the
+    first one. For an upstream that withdrew a release or went back on purpose."""
+    cfg.issued, cfg.top_version, cfg.tops = "", "", {}
+    cfg.save(update_fields=["issued", "top_version", "tops"])
 
 
 def due(cfg, now=None):

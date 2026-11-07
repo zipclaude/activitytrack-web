@@ -19,5 +19,9 @@ class Command(BaseCommand):
             cfg = UpdateSettings.for_org(org)
             if not options["force"] and not fetch.due(cfg):
                 continue
-            error = fetch.run(cfg)
+            try:
+                error = fetch.run(cfg)
+            except Exception as e:
+                # one organisation's trouble does not stop the others
+                error = f"{e.__class__.__name__}: {e}"
             self.stdout.write(f"{org}: {'refused: ' + error if error else 'ok, top version ' + (cfg.top_version or '-')}")

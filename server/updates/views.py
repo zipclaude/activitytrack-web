@@ -41,7 +41,8 @@ def newer_server(cfg):
             continue
         if best is None or compare(r["version"], best["version"]) > 0:
             best = r
-    return best
+    # a link on the page: https or none, whatever the stored manifest holds
+    return dict(best, notes_url=best.get("notes_url") if fetch._https(best.get("notes_url") or "") else "") if best else None
 
 
 @login_required
@@ -89,6 +90,16 @@ def save(request):
     log.info("updates: %s saved the settings of %s: url=%s channels=%s every=%sh enabled=%s mirror=%s",
              user, user.org, cfg.manifest_url, cfg.channels, cfg.poll_hours, cfg.enabled, cfg.mirror)
     messages.success(request, _("Impostazioni salvate."))
+    return redirect("updates:index")
+
+
+@login_required
+@require_POST
+def reset(request):
+    user = _admin(request)
+    fetch.reset(UpdateSettings.for_org(user.org))
+    log.info("updates: %s reset the versions accepted before for %s", user, user.org)
+    messages.success(request, _("Fatto: il prossimo manifesto sarà accettato anche se ha versioni più basse o è più vecchio."))
     return redirect("updates:index")
 
 

@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 import datetime
 import hashlib
+import http.client
+import importlib
 import io
 import json
 import shutil
@@ -528,3 +530,168 @@ class PageTests(UpdatesCase):
         self.client.force_login(self.admin)
         self.client.post("/aggiornamenti/controlla/")
         self.assertEqual("0.9.9", self.refresh().top_version)
+
+
+class FailureTests(UpdatesCase):
+    """What went wrong is told on the page and retried; one organisation never stops the others."""
+
+    def test_a_truncated_reply_is_an_error_not_a_crash(self):
+        for error in (http.client.IncompleteRead(b"par"), http.client.BadStatusLine("")):
+            with mock.patch.object(fetch, "_open", side_effect=error):
+                self.assertTrue(fetch.run(self.refresh()), error)
+            self.refresh()
+            self.assertTrue(self.cfg.last_error)
+        self.cfg.last_checked = timezone.now() - datetime.timedelta(hours=2)
+        self.assertTrue(fetch.due(self.cfg), "tried again within the hour")
+
+    def test_a_truncated_package_is_left_out(self):
+        net = Net({MANIFEST_URL: self.signed(payload([release("0.9.9")])).encode()})
+
+        def opener(req, timeout):
+            if req.full_url == MANIFEST_URL:
+                return net(req, timeout)
+            raise http.client.IncompleteRead(b"half")
+
+        with mock.patch.object(fetch, "_open", opener):
+            self.assertEqual("", fetch.run(self.cfg))
+        self.assertFalse(MirrorFile.objects.exists())
+        self.assertEqual([], jws.verify(self.refresh().relayed, [keys.fingerprint()])["releases"])
+
+    def test_anything_else_is_recorded_too(self):
+        self.serve(self.signed())
+        with mock.patch.object(fetch, "accept", side_effect=TypeError("can't compare")), self.assertLogs("updates", "ERROR"):
+            self.assertIn("TypeError", fetch.run(self.cfg))
+        self.assertIn("TypeError", self.refresh().last_error)
+
+    def test_a_failure_while_keeping_the_packages_is_recorded(self):
+        self.serve(self.signed())
+        with mock.patch.object(fetch, "mirror", side_effect=RuntimeError("disk full")), self.assertLogs("updates", "ERROR"):
+            self.assertIn("disk full", fetch.run(self.cfg))
+        self.assertIn("disk full", self.refresh().last_error)
+
+    def test_command_goes_on_with_the_other_organisations(self):
+        other = Organization.objects.create(name="Other")
+        cfg2 = UpdateSettings.for_org(other)
+        cfg2.manifest_url = MANIFEST_URL
+        cfg2.save()
+        self.serve(self.signed())
+        real = fetch.run
+
+        def run(cfg):
+            if cfg.org == self.org:
+                raise RuntimeError("boom")
+            return real(cfg)
+
+        out = io.StringIO()
+        with mock.patch.object(fetch, "run", run):
+            call_command("fetch_updates", stdout=out)
+        self.assertIn("Infra: refused: RuntimeError: boom", out.getvalue())
+        self.assertIn("Other: ok, top version 0.9.9", out.getvalue())
+
+
+class TimeTests(UpdatesCase):
+    def test_a_time_without_an_offset_is_utc(self):
+        self.assertEqual(fetch._when("2026-11-07T10:00:00"), fetch._when("2026-11-07T10:00:00Z"))
+        self.assertEqual(fetch._when("2026-11-07T11:00:00+01:00"), fetch._when("2026-11-07T10:00:00Z"))
+        self.assertIsNone(fetch._when("yesterday"))
+
+    def test_naive_and_aware_issue_times_compare(self):
+        fetch.accept(self.cfg, self.signed(payload(issued="2026-11-07T10:00:00")))
+        fetch.accept(self.cfg, self.signed(payload(issued="2026-11-07T11:00:00Z")))
+        with self.assertRaises(jws.ManifestError):
+            fetch.accept(self.cfg, self.signed(payload(issued="2026-11-07T10:30:00")))
+        fetch.accept(self.cfg, self.signed(payload(issued="2026-11-07T12:00:00+00:00")))
+        self.assertEqual("2026-11-07T12:00:00+00:00", self.cfg.issued)
+
+
+class ChannelTopTests(UpdatesCase):
+    def accept(self, releases, issued):
+        return fetch.accept(self.cfg, self.signed(payload(releases, issued)))
+
+    def test_a_withdrawn_beta_nobody_follows_blocks_nothing(self):
+        self.accept([release("0.9.9"), release("1.0.0-beta1", "beta")], "2026-11-07T10:00:00Z")
+        self.assertEqual({"prod": "0.9.9", "beta": "1.0.0-beta1"}, self.cfg.tops)
+        self.accept([release("0.9.9")], "2026-11-07T11:00:00Z")
+        self.accept([release("0.9.9"), release("0.9.5", "beta")], "2026-11-07T12:00:00Z")
+
+    def test_a_followed_channel_does_not_go_back(self):
+        self.cfg.channels = "prod,beta"
+        self.accept([release("0.9.9"), release("1.0.0-beta2", "beta")], "2026-11-07T10:00:00Z")
+        with self.assertRaises(jws.ManifestError) as e:
+            self.accept([release("0.9.9"), release("1.0.0-beta1", "beta")], "2026-11-07T11:00:00Z")
+        self.assertIn("beta", str(e.exception))
+        with self.assertRaises(jws.ManifestError):
+            self.accept([release("0.9.8")], "2026-11-07T11:00:00Z")
+        self.accept([release("0.9.9"), release("1.0.0-beta2", "beta"), release("1.0.0-beta3", "beta")], "2026-11-07T11:00:00Z")
+
+    def test_a_channel_that_disappears_is_not_a_downgrade(self):
+        self.cfg.channels = "prod,beta"
+        self.accept([release("0.9.9"), release("1.0.0-beta2", "beta")], "2026-11-07T10:00:00Z")
+        self.accept([release("0.9.9")], "2026-11-07T11:00:00Z")
+
+    def test_admin_can_reset(self):
+        self.cfg.channels = "prod"
+        self.cfg.save()
+        self.serve(self.signed(payload([release("0.9.9")], "2026-11-07T10:00:00Z")))
+        fetch.run(self.refresh())
+        self.serve(self.signed(payload([release("0.9.8")], "2026-11-07T11:00:00Z")))
+        self.assertIn("lower version", fetch.run(self.refresh()))
+        self.client.force_login(self.alice)
+        self.assertEqual(403, self.client.post("/aggiornamenti/azzera/").status_code)
+        self.client.force_login(self.admin)
+        self.assertContains(self.client.get("/aggiornamenti/"), "/aggiornamenti/azzera/")
+        with self.assertLogs("updates", "INFO") as log:
+            self.assertEqual(302, self.client.post("/aggiornamenti/azzera/").status_code)
+        self.assertIn("root", log.output[0])
+        self.assertEqual(({}, "", ""), (self.refresh().tops, self.cfg.top_version, self.cfg.issued))
+        self.assertEqual("", fetch.run(self.cfg))
+        self.assertEqual("0.9.8", self.refresh().top_version)
+
+    def test_migration_fills_the_tops_of_what_was_accepted(self):
+        self.cfg.payload = payload([release("0.9.9"), release("0.9.8"), release("1.0.0-beta2", "beta"), release("1.0.0-beta1", "beta")])
+        self.cfg.tops = {}
+        self.cfg.save()
+        from django.apps import apps
+        importlib.import_module("updates.migrations.0002_tops").fill_tops(apps, None)
+        self.assertEqual({"prod": "0.9.9", "beta": "1.0.0-beta2"}, self.refresh().tops)
+
+
+class NotesLinkTests(UpdatesCase):
+    def page(self):
+        self.client.force_login(self.admin)
+        with mock.patch.object(distro, "os_release", return_value={"ID": "debian", "VERSION_ID": "13"}):
+            return self.client.get("/aggiornamenti/").content.decode()
+
+    def test_a_notes_address_that_is_not_https_is_dropped(self):
+        for bad in ("javascript:alert(1)", "http://example.org/n", "data:text/html,x", " https://example.org/n", "https://exa mple.org/"):
+            r = release("9.9.9")
+            r["notes_url"] = bad
+            fetch.accept(self.cfg, self.signed(payload([r], "2026-11-07T1%d:00:00Z" % (len(bad) % 10))))
+            self.assertEqual("", self.cfg.payload["releases"][0]["notes_url"], bad)
+            self.cfg.issued, self.cfg.tops = "", {}
+
+    def test_an_https_address_is_kept_and_linked(self):
+        fetch.accept(self.cfg, self.signed(payload([release("9.9.9")])))
+        self.cfg.save()
+        self.assertIn('href="https://example.org/9.9.9"', self.page())
+
+    def test_the_page_does_not_trust_what_is_stored(self):
+        r = release("9.9.9")
+        r["notes_url"] = "javascript:alert(1)"
+        self.cfg.payload = payload([r])
+        self.cfg.save()
+        page = self.page()
+        self.assertIn("ActivityTrack Web 9.9.9 (", page)
+        self.assertNotIn("javascript:", page)
+
+
+class PairingWithoutAKeyTests(UpdatesCase):
+    def test_pairing_goes_on_without_k_when_the_key_cannot_be_read(self):
+        self.client.force_login(self.alice)
+        with mock.patch.object(keys, "fingerprint", side_effect=OSError("permission denied")), self.assertLogs("updates", "ERROR"):
+            r = self.client.post("/dispositivi/associa/")
+        self.assertEqual(200, r.status_code)
+        page = r.content.decode()
+        self.assertIn("activitytrack://pair?", page)
+        self.assertNotIn("&amp;k=", page)
+        self.assertEqual(1, PairingCode.objects.count())
