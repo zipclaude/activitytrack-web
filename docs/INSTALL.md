@@ -26,7 +26,7 @@ Whatever the way, the server needs then: its settings
 On Ubuntu the `universe` component must be enabled (it is by default).
 
 ```sh
-apt install ./activitytrack-web_0.9.6-1-deb13_all.deb        # Debian 13
+apt install ./activitytrack-web_0.9.8-1-deb13_all.deb        # Debian 13
 # Debian 14: -deb14, Ubuntu 24.04: -ubuntu24.04, Ubuntu 26.04: -ubuntu26.04
 apt install python3-psycopg postgresql                        # optional: PostgreSQL instead of SQLite
 ```
@@ -61,7 +61,7 @@ data in `/var/lib/activitytrack-web` (FreeBSD: `/var/db/activitytrack-web`).
 Getting the code, from the tarball:
 
 ```sh
-mkdir -p "$AT" && tar -xzf activitytrack-web-0.9.6.tar.gz -C "$AT" --strip-components=1
+mkdir -p "$AT" && tar -xzf activitytrack-web-0.9.8.tar.gz -C "$AT" --strip-components=1
 ```
 
 or from the repository (later `git pull`, or `git checkout v<version>` for a
@@ -69,12 +69,18 @@ release):
 
 ```sh
 git clone https://gitlab.com/infraconsulting/activitytrack-web "$AT"
-cd "$AT" && git checkout v0.9.6
+cd "$AT" && git checkout v0.9.8
 ```
 
 After an update of the code: `activitytrack-web-manage migrate`,
 `activitytrack-web-manage collectstatic --noinput`, then restart the
 service.
+
+Updating to 0.9.8: nothing to do besides what the package does (no migration).
+The project moved from GitHub to GitLab (`gitlab.com/infraconsulting`): the
+releases, with the same files, are on its *Releases* page, and the apps from
+0.9.8 look there for new versions (the older ones ask GitHub, see
+`docs/SYNC.md` §12.4). The FreeBSD install is not tried by the CI any more.
 
 Updating to 0.9.6: nothing to do besides what the package does (the migration
 adds the to-do fields of the planned absences). Update the server before the
