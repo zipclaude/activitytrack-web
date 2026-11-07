@@ -263,9 +263,12 @@ ActivityTrack in a signed manifest (by default the project's on GitLab, so it mu
 leaves the mirror on, keeps the packages (at least the last two releases, under `files/updates/`).
 It needs no schedule: a phone's sync or the *Aggiornamenti* page starts the check; from cron or a
 timer, `activitytrack-web-manage fetch_updates` does it too. The `[updates]` keys are in
-`settings.ini`. The server signs what it gives the devices with `[policy] key`/`cert` or, without
-them, with a key it makes on first start in `signing/` of the data folder: **back it up with the
-data**, or the paired devices must be paired again (their pin is its fingerprint).
+`settings.ini`. The server signs what it gives the devices (update manifests and the phones' policies) with
+`[policy] key`/`cert` or, without them, with a key it makes on first start in `signing/` of the data
+folder (CN `ActivityTrack Web <host of base_url>`): **back it up with the data**. The phones pin its
+fingerprint when they pair and its CN with the first signed policy they apply: a lost key means pairing
+the devices again, and a key with another CN means the phones refuse the policy. Apps older than 0.9.9
+keep getting the policy unsigned (docs/SYNC.md §8).
 
 PostgreSQL with peer authentication (Debian/Ubuntu; the same users
 elsewhere):

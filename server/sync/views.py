@@ -73,6 +73,8 @@ def device_api(view):
             Device.objects.filter(pk=device.pk).update(**seen)
         request.device = device
         request.schema = schema
+        # as of this request (the device row above is the one before it)
+        request.app_version = version or device.app_version
         return _bounded(view)(request, *args, **kwargs)
 
     return wrapped
@@ -170,10 +172,11 @@ def pull(request):
 @require_GET
 def policy(request):
     """The phone's policy (docs/SYNC.md §8): text and optional signature, or nulls."""
-    from policies.effective import effective, fingerprint, sign
+    from policies.effective import effective, fingerprint, sign_for
 
     text = effective(request.device.user)
-    signature = sign(text) if text else None
+    # signed with the server's key; an app older than 0.9.9 does not know a generated certificate: unsigned for it
+    signature = sign_for(text, request.app_version) if text else None
     return JsonResponse({"policy": text, "signature": signature, "fingerprint": fingerprint(text, signature) if text else None})
 
 

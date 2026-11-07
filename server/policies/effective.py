@@ -4,10 +4,16 @@
 import base64
 import hashlib
 import json
+import logging
 
 from django.conf import settings
 
 from .models import Policy
+
+log = logging.getLogger("updates")
+# the app that trusts the server's own certificate (the `k` of its pairing) as a policy signer: older apps want
+# a chain to a CA, which the generated, self-signed certificate does not have
+GENERATED_KEY_FROM = (0, 9, 9)
 
 # sections whose keys merge one by one; the others are replaced whole
 MAPS = ("features", "settings", "behaviours", "integrations")
@@ -62,30 +68,56 @@ def effective(user):
     return json.dumps(policy, ensure_ascii=False, indent=2) + "\n"
 
 
+def configured():
+    """True when `[policy] key` and `cert` are set: those sign the policies, for every app."""
+    return bool(settings.POLICY_KEY and settings.POLICY_CERT)
+
+
+def understands_generated_key(app_version):
+    """Whether an app of [app_version] accepts a policy signed with the server's generated certificate.
+    An app that names no version is older than the rule that makes it name one (0.9.x before 0.9.9)."""
+    from sync.compat import version_key
+
+    return version_key(app_version)[:3] >= GENERATED_KEY_FROM
+
+
 def sign(text):
-    """The detached signature the app checks (PolicySignature), when a certificate is configured."""
-    if not settings.POLICY_KEY or not settings.POLICY_CERT:
-        return None
+    """The detached signature the app checks (PolicySignature): `[policy] key`/`cert`, else the key the server made
+    for itself (updates/keys.py; its CN is pinned by the phones with the first signed policy). None if the generated
+    key cannot be had: the policy then goes unsigned, as it did before there was one."""
     from cryptography import x509
     from cryptography.hazmat.primitives import hashes, serialization
     from cryptography.hazmat.primitives.asymmetric import ec, padding
 
-    key = serialization.load_pem_private_key(open(settings.POLICY_KEY, "rb").read(), password=None)
+    from updates import keys
+
+    try:
+        key, certs = keys.load()
+    except Exception:
+        if configured():
+            raise
+        log.exception("policies: the server's signing key cannot be had: the policy goes unsigned")
+        return None
     data = text.encode("utf-8")
     if isinstance(key, ec.EllipticCurvePrivateKey):
         signature, algorithm = key.sign(data, ec.ECDSA(hashes.SHA256())), "SHA256withECDSA"
     else:
         signature, algorithm = key.sign(data, padding.PKCS1v15(), hashes.SHA256()), "SHA256withRSA"
-    chain = []
-    for path in [settings.POLICY_CERT] + ([settings.POLICY_CHAIN] if settings.POLICY_CHAIN else []):
-        for cert in x509.load_pem_x509_certificates(open(path, "rb").read()):
-            chain.append(cert.public_bytes(serialization.Encoding.PEM).decode())
+    chain = [x509.load_der_x509_certificate(der).public_bytes(serialization.Encoding.PEM).decode() for der in certs]
     return json.dumps({
         "format": "activitytrack-policy-signature",
         "algorithm": algorithm,
         "chain": chain,
         "signature": base64.b64encode(signature).decode(),
     }, indent=2) + "\n"
+
+
+def sign_for(text, app_version):
+    """The signature for a device of [app_version]: the configured key signs for every app; the generated one only
+    for apps that know it, the others keep getting the policy unsigned (what they got before)."""
+    if configured() or understands_generated_key(app_version):
+        return sign(text)
+    return None
 
 
 def fingerprint(text, signature):

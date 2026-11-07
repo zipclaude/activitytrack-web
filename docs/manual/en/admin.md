@@ -37,7 +37,7 @@ not start the service. First write `/etc/activitytrack-web/settings.ini`:
 | `[server] tls_pin` | only with a self-signed certificate: the fingerprint of its key, which the app pins |
 | `[database]` | SQLite (default) or PostgreSQL |
 | `[files] max_mb`, `offload` | largest attachment; who sends the files: Django, nginx or Apache |
-| `[policy] key`, `cert` | key and certificate to sign the policies (optional); also what the server signs update manifests with, else it makes its own key on first start |
+| `[policy] key`, `cert` | key and certificate to sign the policies and the update manifests (optional); without them the server makes its own key on first start, in `signing/` of the data folder: back it up |
 | `[updates]` | the manifest address, channels and interval for the new versions (optional, see Updates) |
 | `[mail]` | mail server for the login codes by email (optional) |
 
@@ -239,9 +239,13 @@ For each setting:
 - **bloccato** (locked): grey with a padlock for the user;
 - **nascosto** (hidden): not shown.
 
-The policies reach the phones with the sync. With a key and certificate
-configured (`[policy]` in `settings.ini`) they are signed, and the app
-checks the signature.
+The policies reach the phones with the sync, signed by the server: with the
+key and certificate of `[policy]` in `settings.ini` if you set them, otherwise with a key the
+server made for itself on first start (`signing/` in the data folder). The app checks the
+signature, and **the first signed policy it applies fixes the signer's name (CN)**: from then
+on it refuses policies signed by another name and unsigned ones. So back up `signing/` with the
+data and do not replace the key with one of another name. Apps before 0.9.9 do not know the
+generated key: they keep receiving the policy unsigned.
 
 Some settings count on the web too:
 - **Rounding** and **night carry-over** (`rounding…`, `carryOverMin`): the

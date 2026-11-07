@@ -37,7 +37,7 @@ avvia il servizio. Prima si scrive `/etc/activitytrack-web/settings.ini`:
 | `[server] tls_pin` | solo con un certificato autofirmato: l'impronta della sua chiave, che l'app fissa |
 | `[database]` | SQLite (predefinito) o PostgreSQL |
 | `[files] max_mb`, `offload` | dimensione massima degli allegati; chi li invia: Django, nginx o Apache |
-| `[policy] key`, `cert` | chiave e certificato per firmare le policy (facoltativi); con questa il server firma anche i manifesti degli aggiornamenti, altrimenti genera una chiave propria al primo avvio |
+| `[policy] key`, `cert` | chiave e certificato per firmare le policy e i manifesti degli aggiornamenti (facoltativi); senza, il server genera una chiave propria al primo avvio, in `signing/` della cartella dei dati: salvala |
 | `[updates]` | indirizzo del manifesto, canali e intervallo per le nuove versioni (facoltativi, vedi Aggiornamenti) |
 | `[mail]` | server di posta per i codici di accesso via email (facoltativo) |
 
@@ -238,9 +238,13 @@ Per ogni impostazione:
 - **bloccato**: l'utente lo vede grigio con il lucchetto;
 - **nascosto**: non compare.
 
-Le policy arrivano ai telefoni con la sincronizzazione. Con chiave e
-certificato configurati (`[policy]` in `settings.ini`) sono firmate, e
-l'app controlla la firma.
+Le policy arrivano ai telefoni con la sincronizzazione, firmate dal server: con
+chiave e certificato di `[policy]` in `settings.ini` se li imposti, altrimenti con una chiave che
+il server genera per sé al primo avvio (`signing/` nella cartella dei dati). L'app controlla la
+firma, e **la prima policy firmata che applica fissa il nome (CN) del firmatario**: da allora
+rifiuta quelle firmate con un altro nome e quelle non firmate. Quindi salva `signing/` insieme ai
+dati e non sostituire la chiave con una di un altro nome. Le app precedenti alla 0.9.9 non
+conoscono la chiave generata: continuano a ricevere la policy non firmata.
 
 Alcune impostazioni valgono anche sul web:
 - **Arrotondamenti** e **scavalco notturno** (`rounding…`,

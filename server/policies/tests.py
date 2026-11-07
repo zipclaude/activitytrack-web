@@ -1,20 +1,34 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 import base64
 import datetime
+import hashlib
 import json
 import os
 import tempfile
+from unittest import mock
 
+import shutil
+from pathlib import Path
+
+from cryptography import x509
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import ec
 from django.test import TestCase, override_settings
 
 from accounts.models import Organization, PairingCode, Profile, User
+from updates import keys
 
-from .effective import effective, sign
+from .effective import effective, fingerprint, sign, sign_for
 from .models import Policy
 
 
-class PolicyTests(TestCase):
+class PolicyBase(TestCase):
     def setUp(self):
+        self.data = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.data)
+        for o in (override_settings(DATA_DIR=Path(self.data), POLICY_KEY="", POLICY_CERT="", POLICY_CHAIN=""),):
+            o.enable()
+            self.addCleanup(o.disable)
         self.org = Organization.objects.create(name="Infra")
         self.admin = User.objects.create_user("root", password="x", org=self.org, profile=Profile.ADMIN)
         self.alice = User.objects.create_user("alice", password="x", org=self.org)
@@ -24,6 +38,8 @@ class PolicyTests(TestCase):
         _, code = PairingCode.issue(user)
         return self.client.post("/api/v1/pair", json.dumps({"code": code}), content_type="application/json").json()["token"]
 
+
+class PolicyTests(PolicyBase):
     def test_scopes_merge_key_by_key(self):
         Policy.objects.create(org=self.org, data={"features": {"travel": False, "calls": False}, "settings": {"editableTimes": {"value": False, "locked": True}}}, revision=2)
         Policy.objects.create(org=self.org, profile=Profile.USER, data={"features": {"calls": True}, "fields": {"role": {"required": True}}}, revision=1)
@@ -157,3 +173,79 @@ class PolicyTests(TestCase):
         self.assertEqual(sig["algorithm"], "SHA256withECDSA")
         signer = x509.load_pem_x509_certificate(sig["chain"][0].encode())
         signer.public_key().verify(base64.b64decode(sig["signature"]), text.encode(), ec.ECDSA(hashes.SHA256()))
+
+
+class GeneratedKeyTests(PolicyBase):
+    """The server signs the phones' policies with the key it made for itself, for the apps that know it."""
+
+    def fetch(self, token, app=None):
+        headers = {"HTTP_X_ACTIVITYTRACK_APP": app} if app else {}
+        return self.client.get("/api/v1/policy", HTTP_AUTHORIZATION=f"Bearer {token}", **headers).json()
+
+    def setUp(self):
+        super().setUp()
+        Policy.objects.create(org=self.org, data={"features": {"travel": False}}, revision=1)
+
+    def test_signed_with_the_generated_key_for_an_app_that_knows_it(self):
+        r = self.fetch(self.token(self.alice), app="0.9.9")
+        sig = json.loads(r["signature"])
+        self.assertEqual(("activitytrack-policy-signature", "SHA256withECDSA"), (sig["format"], sig["algorithm"]))
+        leaf = x509.load_pem_x509_certificate(sig["chain"][0].encode())
+        leaf.public_key().verify(base64.b64decode(sig["signature"]), r["policy"].encode(), ec.ECDSA(hashes.SHA256()))
+        # the leaf is the one of the pairing link's `k`
+        self.assertEqual(keys.fingerprint(), hashlib.sha256(leaf.public_bytes(serialization.Encoding.DER)).hexdigest())
+        self.assertTrue(leaf.subject.rfc4514_string().startswith("CN=ActivityTrack Web "))
+
+    def test_the_fingerprint_follows_what_was_sent(self):
+        signed = self.fetch(self.token(self.alice), app="0.9.9")
+        self.assertEqual(fingerprint(signed["policy"], signed["signature"]), signed["fingerprint"])
+        old = self.fetch(self.token(self.bob), app="0.9.8")
+        self.assertEqual(fingerprint(old["policy"], None), old["fingerprint"])
+        self.assertNotEqual(signed["fingerprint"], old["fingerprint"])
+        self.assertEqual({"policy", "signature", "fingerprint"}, set(signed))
+
+    def test_an_app_older_than_0_9_9_gets_the_policy_unsigned(self):
+        for app in ("0.9.8", "0.9.9-beta1".replace("9-beta1", "8-beta1"), "0.9.4-beta5", None, "garbage"):
+            self.assertIsNone(self.fetch(self.token(self.alice), app=app)["signature"], app)
+        for app in ("0.9.9", "0.9.10", "1.0.0", "0.9.9-beta1"):
+            self.assertTrue(self.fetch(self.token(self.alice), app=app)["signature"], app)
+
+    def test_the_version_is_the_one_of_the_last_request(self):
+        token = self.token(self.alice)
+        self.assertIsNone(self.fetch(token, app="0.9.8")["signature"])
+        self.assertTrue(self.fetch(token, app="0.9.9")["signature"])
+
+    def test_a_configured_key_signs_for_every_app(self):
+        from updates.tests import make_signer
+
+        key, _der, fp, cert = make_signer("ec")
+        k, c = Path(self.data) / "k.pem", Path(self.data) / "c.pem"
+        k.write_bytes(key.private_bytes(serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8, serialization.NoEncryption()))
+        c.write_bytes(cert.public_bytes(serialization.Encoding.PEM))
+        with override_settings(POLICY_KEY=str(k), POLICY_CERT=str(c)):
+            for app in ("0.9.8", None, "0.9.9"):
+                sig = json.loads(self.fetch(self.token(self.alice), app=app)["signature"])
+                self.assertEqual("CN=Test signer", x509.load_pem_x509_certificate(sig["chain"][0].encode()).subject.rfc4514_string())
+            self.assertEqual(fp, keys.fingerprint())
+        self.assertFalse((Path(self.data) / "signing").exists(), "no key made when one is configured")
+
+    def test_sign_for_without_a_readable_generated_key_leaves_the_policy_unsigned(self):
+        with mock.patch.object(keys, "load", side_effect=OSError("read-only")), self.assertLogs("updates", "ERROR"):
+            self.assertIsNone(sign_for("{}", "0.9.9"))
+        with override_settings(POLICY_KEY="/nope/k.pem", POLICY_CERT="/nope/c.pem"), self.assertRaises(OSError):
+            sign("{}")
+
+    def test_the_cn_is_the_same_after_a_restart_and_after_a_new_key(self):
+        def cn():
+            return x509.load_der_x509_certificate(keys.load()[1][0]).subject.rfc4514_string()
+
+        first, fp = cn(), keys.fingerprint()
+        keys._cache.clear()
+        self.assertEqual((first, fp), (cn(), keys.fingerprint()), "read again from the files: nothing is regenerated")
+        # a key made again (the folder lost) keeps the CN, which is what the phones pinned; its fingerprint is new
+        shutil.rmtree(Path(self.data) / "signing")
+        keys._cache.clear()
+        self.assertEqual(first, cn())
+        self.assertNotEqual(fp, keys.fingerprint())
+        with override_settings(BASE_URL="https://at.example.com/activitytrack"):
+            self.assertEqual("ActivityTrack Web at.example.com", keys.common_name())

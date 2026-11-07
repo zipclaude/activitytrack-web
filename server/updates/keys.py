@@ -11,6 +11,7 @@ import fcntl
 import os
 import socket
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
@@ -21,6 +22,14 @@ from django.conf import settings
 from . import jws
 
 YEARS = 10
+
+
+def common_name():
+    """The CN of the generated certificate: the server's address as the phones know it. The phones pin it with
+    the first signed policy (docs/POLICY.md §2), so it must not change: it comes from `base_url`, not from
+    whatever the machine is called this year."""
+    host = urlsplit(settings.BASE_URL).hostname or socket.gethostname()
+    return f"ActivityTrack Web {host}"[:64]
 
 
 def signing_dir():
@@ -45,7 +54,7 @@ def generate(directory):
         if key_path.exists() and cert_path.exists():
             return key_path, cert_path
         key = ec.generate_private_key(ec.SECP256R1())
-        name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, f"ActivityTrack Web {socket.gethostname()}"[:64])])
+        name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, common_name())])
         now = datetime.datetime.now(datetime.timezone.utc)
         cert = (x509.CertificateBuilder().subject_name(name).issuer_name(name).public_key(key.public_key())
                 .serial_number(x509.random_serial_number()).not_valid_before(now - datetime.timedelta(days=1))

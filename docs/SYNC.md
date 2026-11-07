@@ -191,6 +191,36 @@ The `policy` record (one per user, read-only for the phone) carries the
 signed policy text and its signature; the app applies it as a
 `policy.json` read from the data folder (same checks, same pinned CN).
 When a sync policy is in force the file in the data folder is ignored.
+**Signature.** `GET api/v1/policy` answers `{policy, signature, fingerprint}`
+(unchanged); `signature` is the detached signature of the text
+(`activitytrack-policy-signature`: `SHA256withECDSA`/`SHA256withRSA`, the
+certificate chain, leaf first), `fingerprint` the SHA-256 of the text and the
+signature as sent. The server signs with `[policy] key`/`cert` when set —
+for every app, as before — and otherwise with the key it made for itself
+(§12.4: P-256, self-signed, under `signing/` of the data folder). The app
+trusts that key through the `k` of its pairing (§9): a signature whose leaf
+has that fingerprint is valid, no CA is involved.
+
+- **The first signed policy a phone applies pins the signer's CN**
+  (POLICY.md §2 of the app): from then on only policies of that CN count,
+  unsigned ones are refused, and the plugins must carry the same CN. With the
+  generated key the CN is `ActivityTrack Web <host of base_url>`: **back up
+  `signing/` with the data and never replace it with a key of another CN**,
+  or the phones refuse the policy until the pin is cleared. A key made
+  again with the same `base_url` has the same CN (the phones' CN pin holds)
+  but another fingerprint, so the `k` the apps kept at pairing no longer
+  matches: pair them again.
+- **Apps older than 0.9.9** ask for a chain to a CA, which a self-signed
+  certificate has not, and would refuse (and pin) it. The server knows each
+  request's app version (the `X-ActivityTrack-App` header; the one recorded at
+  pairing when a request has none) and **keeps sending those apps the policy
+  unsigned**, exactly as before, when it signs with the generated key. An app
+  that names no version counts as old. With `[policy] key`/`cert` set every
+  app gets the signed policy, as it always did.
+- A policy signed by hand (`policy.json.sig` beside `policy.json`, no
+  management server) is unchanged. It pins its own CN: a phone with such a
+  pin refuses the server's policy if the CN differs.
+
 A phone keeps its policy until another replaces it, so deleting the
 organisation's last policy in the editor leaves an empty one (next
 revision): the phones then drop the locks they had.
@@ -406,10 +436,9 @@ devices download from the addresses in the upstream manifest.
 key and a self-signed certificate (CN `ActivityTrack Web <host>`, ten
 years) made on first use under `signing/` in the data folder (0600). Its
 leaf's fingerprint is shown on the *Aggiornamenti* page and goes in the
-pairing link as `k` (§9). Policies are still signed only with an explicit
-`[policy] key`/`cert`: a signed policy pins the signer's CN and makes the
-plugins' signatures compulsory, and apps before 0.9.9 want a CA chain, so
-the generated key is not used for them.
+pairing link as `k` (§9). The same key signs the phones' policies (§8).
+The CN comes from `base_url` (`ActivityTrack Web <host>`), not from the
+machine's name, so a key made again keeps it.
 
 The server's own update (the web package) is not automatic: the page shows
 when a newer release is in the manifest, with a package for the server's own
