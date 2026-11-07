@@ -84,6 +84,40 @@ class PolicyTests(TestCase):
         self.assertContains(bad, "one of 1, 5, 15, 30, 60")
         self.assertEqual(Policy.objects.get(pk=p.pk).revision, 1)
 
+    def test_update_keys_of_the_apps_0_9_9(self):
+        """The app's catalog (docs/policy-catalog.json of its update-manifest branch) has them: the editor offers and checks them."""
+        from .catalog import setting, since
+
+        self.assertEqual(("STRING", ["upstream", "server", "custom"]), (setting("updateSource")["kind"], setting("updateSource")["allowed"]))
+        for key in ("updateSource", "updateUrl", "updateChannels"):
+            self.assertEqual("0.9.9", since("settings", key))
+            self.assertEqual("STRING", setting(key)["kind"])
+        self.client.force_login(self.admin)
+        page = self.client.get("/policy/org/").content.decode()
+        for key in ("updateSource", "updateUrl", "updateChannels"):
+            self.assertIn(f'name="setting:{key}:mode"', page)
+        ok = self.client.post("/policy/org/", {
+            "setting:updateSource:mode": "locked", "setting:updateSource": "custom",
+            "setting:updateUrl:mode": "locked", "setting:updateUrl": "https://updates.example.com/manifest.json",
+            "setting:updateChannels:mode": "value", "setting:updateChannels": "prod,test"})
+        self.assertEqual(302, ok.status_code, ok.content.decode()[:300])
+        p = Policy.objects.get(org=self.org, profile="", user__isnull=True)
+        self.assertEqual({
+            "updateSource": {"value": "custom", "locked": True},
+            "updateUrl": {"value": "https://updates.example.com/manifest.json", "locked": True},
+            "updateChannels": "prod,test"}, p.data["settings"])
+        bad = self.client.post("/policy/org/", {"setting:updateSource:mode": "value", "setting:updateSource": "mirror"})
+        self.assertContains(bad, "one of upstream, server, custom")
+
+    def test_phones_older_than_0_9_9_are_warned_about_the_update_keys(self):
+        from .catalog import unknown_to_phones
+
+        class Phone:
+            app_version = "0.9.8"
+
+        found = unknown_to_phones({"settings": {"updateSource": "server", "updateBetas": True}}, [Phone()])
+        self.assertEqual([("settings.updateSource", "0.9.9")], [(k, s) for k, s, _d in found])
+
     def test_deleting_the_last_policy_leaves_an_empty_one(self):
         Policy.objects.create(org=self.org, data={"settings": {"editableTimes": {"value": False, "locked": True}}}, revision=3)
         Policy.objects.create(org=self.org, user=self.alice, data={"ui": {"language": "it"}}, revision=1)

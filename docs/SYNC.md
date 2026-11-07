@@ -350,9 +350,12 @@ The project publishes it, signed with the app's release key, at
                  "packages": [{"component": "android", "url": "https://…", "sha256": "<64 hex>", "size": 123}]}]}
   ```
 
-  `channel`: `prod`, `beta`, `test`, `dev`, …; `component`: `android`,
-  `web-deb`, `desktop-deb`, `cli-deb`, `tui-deb`, `library-deb`,
-  `desktop-windows`, `desktop-tar`. Package addresses are https; the
+  `channel`: `prod`, `beta`, `test`, `dev`, …; `component`: `android`, and
+  for the server, the library and the PC interfaces (`web`, `library`,
+  `desktop`, `cli`, `tui`) one per distribution: `<name>-deb13`,
+  `<name>-deb14`, `<name>-ubuntu24.04`, `<name>-ubuntu26.04` (the `.deb`),
+  `<name>-tar`, and `desktop-windows`. A device asks for the component of
+  its own distribution (`/etc/os-release`). Package addresses are https; the
   `sha256` is checked before anything is installed.
 - Only a version higher than the installed one is offered; a manifest
   `issued` before the last accepted one (a replay) or whose highest version
@@ -406,7 +409,9 @@ plugins' signatures compulsory, and apps before 0.9.9 want a CA chain, so
 the generated key is not used for them.
 
 The server's own update (the web package) is not automatic: the page shows
-when a newer `web-deb` release is in the manifest.
+when a newer release is in the manifest, with a package for the server's own
+distribution (`web-deb13`, … from `/etc/os-release`); on another distribution
+it shows the version only.
 
 Until 0.9.7-beta1 the releases were on GitHub; 0.9.8 moved them to GitLab,
 where its apps read the releases API. The manifest replaces that check.

@@ -14,7 +14,7 @@ from django.views.decorators.http import require_POST
 
 from atweb import __version__
 
-from . import fetch, jws, keys, relay
+from . import distro, fetch, jws, keys, relay
 from .models import AcceptedSigner, MirrorFile, UpdateSettings
 from .versions import compare
 
@@ -29,11 +29,17 @@ def _admin(request):
 
 
 def newer_server(cfg):
-    """The newest web-deb release of the followed channels that is newer than this server, or None."""
+    """The newest release of the followed channels, newer than this server, with a package for its own
+    distribution (`web-deb13`, …; /etc/os-release). On a distribution we have no package for, any `web-` package
+    counts: the page then shows the version only."""
+    own = distro.component()
     best = None
     for r in (cfg.payload or {}).get("releases", []):
-        if (r.get("channel") or "prod") in cfg.channel_list() and any(p["component"] == "web-deb" for p in r["packages"]) \
-                and compare(r["version"], __version__) > 0 and (best is None or compare(r["version"], best["version"]) > 0):
+        if (r.get("channel") or "prod") not in cfg.channel_list() or compare(r["version"], __version__) <= 0:
+            continue
+        if not any(p["component"] == own if own else p["component"].startswith("web-") for p in r["packages"]):
+            continue
+        if best is None or compare(r["version"], best["version"]) > 0:
             best = r
     return best
 

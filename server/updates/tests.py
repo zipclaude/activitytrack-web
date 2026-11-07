@@ -19,7 +19,7 @@ from django.utils import timezone
 
 from accounts.models import Device, Organization, PairingCode, Profile, User
 
-from . import fetch, jws, keys, relay
+from . import distro, fetch, jws, keys, relay
 from .models import AcceptedSigner, MirrorFile, UpdateSettings
 from .versions import compare
 
@@ -48,11 +48,11 @@ def sha(data):
     return hashlib.sha256(data).hexdigest()
 
 
-def release(version, channel="prod", url=None, data=None):
+def release(version, channel="prod", url=None, data=None, component="web-deb13"):
     url = url or f"https://example.org/web-{version}.deb"
     data = data if data is not None else PACKAGES.get(url, b"x")
     return {"version": version, "channel": channel, "published": "2026-11-05", "notes_url": f"https://example.org/{version}",
-            "packages": [{"component": "web-deb", "url": url, "sha256": sha(data), "size": len(data)}]}
+            "packages": [{"component": component, "url": url, "sha256": sha(data), "size": len(data)}]}
 
 
 def payload(releases=None, issued="2026-11-07T10:00:00Z"):
@@ -430,6 +430,28 @@ class DeviceTests(UpdatesCase):
         self.assertEqual(1, Device.objects.count())
 
 
+class DistroTests(TestCase):
+    def test_components_of_the_supported_distributions(self):
+        for info, want in (({"ID": "debian", "VERSION_ID": "13"}, "web-deb13"),
+                           ({"ID": "debian", "VERSION_ID": "14"}, "web-deb14"),
+                           ({"ID": "debian", "VERSION_CODENAME": "forky"}, "web-deb14"),
+                           ({"ID": "ubuntu", "VERSION_ID": "24.04"}, "web-ubuntu24.04"),
+                           ({"ID": "ubuntu", "VERSION_ID": "26.04"}, "web-ubuntu26.04"),
+                           ({"ID": "ubuntu", "VERSION_ID": "22.04"}, None),
+                           ({"ID": "debian", "VERSION_ID": "12"}, None),
+                           ({"ID": "arch"}, None), ({}, None)):
+            with mock.patch.object(distro, "os_release", return_value=info):
+                self.assertEqual(want, distro.component(), info)
+
+    def test_os_release_file(self):
+        with tempfile.TemporaryDirectory() as d:
+            f = Path(d) / "os-release"
+            f.write_text('# a comment\nPRETTY_NAME="Debian GNU/Linux 13 (trixie)"\nID=debian\nVERSION_ID="13"\n')
+            self.assertEqual("web-deb13", distro.component(path=f))
+            self.assertEqual("library-deb13", distro.component("library", f))
+            self.assertIsNone(distro.component(path=Path(d) / "missing"))
+
+
 class PageTests(UpdatesCase):
     def test_only_an_admin(self):
         self.client.force_login(self.alice)
@@ -438,14 +460,33 @@ class PageTests(UpdatesCase):
         for path in ("/aggiornamenti/salva/", "/aggiornamenti/controlla/", "/aggiornamenti/chiavi/aggiungi/"):
             self.assertEqual(403, self.client.post(path).status_code, path)
 
-    def test_page_shows_both_fingerprints_and_the_newer_server(self):
-        self.serve(self.signed(payload([release("9.9.9"), release("0.9.8")])))
+    def page_with(self, releases, os_info):
+        self.serve(self.signed(payload(releases)))
         fetch.run(self.cfg)
         self.client.force_login(self.admin)
-        page = self.client.get("/aggiornamenti/").content.decode()
+        with mock.patch.object(distro, "os_release", return_value=os_info):
+            return self.client.get("/aggiornamenti/").content.decode()
+
+    def test_page_shows_both_fingerprints(self):
+        page = self.page_with([release("0.9.8")], {"ID": "debian", "VERSION_ID": "13"})
         self.assertIn(jws.display(keys.fingerprint()), page)
         self.assertIn(jws.display(self.app_fp), page)
-        self.assertIn("9.9.9", page)
+
+    def test_newer_server_notice_follows_the_servers_own_distribution(self):
+        releases = [release("9.9.9", component="web-ubuntu24.04"), release("8.8.8", component="web-deb13"), release("0.9.8")]
+        page = self.page_with(releases, {"ID": "debian", "VERSION_ID": "13"})
+        self.assertIn("ActivityTrack Web 8.8.8 (", page)
+        self.assertNotIn("ActivityTrack Web 9.9.9 (", page)
+        page = self.page_with(releases, {"ID": "ubuntu", "VERSION_ID": "24.04"})
+        self.assertIn("ActivityTrack Web 9.9.9 (", page)
+
+    def test_newer_server_on_a_distribution_without_our_package_shows_the_version_only(self):
+        releases = [release("9.9.9", component="web-ubuntu24.04"), release("0.9.8", component="desktop-windows")]
+        page = self.page_with(releases, {"ID": "arch"})
+        self.assertIn("ActivityTrack Web 9.9.9 (", page)
+        self.assertNotIn(".deb", page)
+        # a release that has no web package at all is not about this server
+        self.assertNotIn("ActivityTrack Web 7.7.7 (", self.page_with([release("7.7.7", component="desktop-deb13")], {"ID": "arch"}))
 
     def test_save_settings(self):
         self.client.force_login(self.admin)
