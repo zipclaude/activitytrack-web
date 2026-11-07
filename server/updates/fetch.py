@@ -58,8 +58,12 @@ def _open(req, timeout):
 def _https(url):
     """An https address with nothing a browser or a client would read otherwise (no spaces or control characters)."""
     url = str(url)
-    return url.startswith("https://") and urllib.parse.urlsplit(url).scheme == "https" \
-        and not any(c.isspace() or ord(c) < 32 for c in url)
+    if not url.startswith("https://") or any(c.isspace() or ord(c) < 32 for c in url):
+        return False
+    try:
+        return urllib.parse.urlsplit(url).scheme == "https"
+    except ValueError:  # "https://[bad": a malformed address is not an https one
+        return False
 
 
 def read(url, limit=jws.MAX_BYTES, timeout=30):

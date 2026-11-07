@@ -670,6 +670,14 @@ class NotesLinkTests(UpdatesCase):
             self.assertEqual("", self.cfg.payload["releases"][0]["notes_url"], bad)
             self.cfg.issued, self.cfg.tops = "", {}
 
+    def test_a_malformed_notes_address_drops_the_link_not_the_manifest(self):
+        r = release("9.9.9")
+        r["notes_url"] = "https://[bad"
+        fetch.accept(self.cfg, self.signed(payload([r])))
+        self.assertEqual("9.9.9", self.cfg.payload["releases"][0]["version"])
+        self.assertEqual("", self.cfg.payload["releases"][0]["notes_url"])
+        self.assertFalse(fetch._https("https://[bad"))
+
     def test_an_https_address_is_kept_and_linked(self):
         fetch.accept(self.cfg, self.signed(payload([release("9.9.9")])))
         self.cfg.save()
