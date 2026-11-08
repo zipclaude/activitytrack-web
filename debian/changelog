@@ -5,6 +5,14 @@ activitytrack-web (0.9.9-1) unstable; urgency=medium
     with 413 "too_large" instead of Django's 400. The admin login needed no
     change (it already goes through the site's brake and second step). The
     wire schema does not change: 2, with the compat step for schema 1.
+  * The server relays a signed update manifest to the paired devices in the
+    sync head (activitytrack#1): it polls the upstream manifest (GitLab by
+    default), accepts it only if signed with the app's key or a key accepted
+    by its fingerprint, signs its own copy with its generated key and, with the
+    mirror on (default), keeps the packages, at least the last two releases of
+    each followed channel. The key is made on the first use under the data
+    folder (signing/): keep it in the backups, the paired devices have pinned
+    it. The policies are signed with it too, for the apps from 0.9.9.
 
  -- ActivityTrack <flavio-claude@zipman.it>  Sat, 07 Nov 2026 20:00:00 +0000
 
