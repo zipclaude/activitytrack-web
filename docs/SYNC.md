@@ -367,7 +367,7 @@ An app or PC interface not installed by a store or a distribution looks for
 new versions in a **manifest**: one JSON file with its signature inline, a
 JWS in JSON serialization ([RFC 7515](https://www.rfc-editor.org/rfc/rfc7515)).
 The project publishes it, signed with the app's release key, at
-`https://gitlab.com/infraconsulting/activitytrack/-/raw/main/update-manifest.json`.
+`https://gitlab.com/activitytrack/activitytrack/-/raw/main/update-manifest.json`.
 
 ```json
 {"payload": "<base64url of the manifest>",

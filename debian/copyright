@@ -1,6 +1,6 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: activitytrack-web
-Source: https://gitlab.com/infraconsulting/activitytrack-web
+Source: https://gitlab.com/activitytrack/activitytrack-web
 
 Files: *
 Copyright: 2026 ActivityTrack Web contributors

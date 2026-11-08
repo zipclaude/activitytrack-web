@@ -1,6 +1,6 @@
 # ActivityTrack Web — architecture
 
-The web companion of the [ActivityTrack](https://gitlab.com/infraconsulting/activitytrack)
+The web companion of the [ActivityTrack](https://gitlab.com/activitytrack/activitytrack)
 Android app: the same work as the app from a browser, a cloud copy of each
 phone's data kept in sync both ways, central master data, user management
 with profiles, and a graphical editor for the phones' policies.

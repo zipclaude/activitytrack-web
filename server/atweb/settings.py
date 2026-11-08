@@ -64,7 +64,7 @@ POLICY_CHAIN = INI.get("policy", "chain", fallback="").strip()
 # new organisation; an admin changes it on the Aggiornamenti page), the certificate of the app's
 # release key (SHA-256: the manifest of the project is signed with it; a release process or a fork
 # overrides it), the largest package the mirror takes
-UPDATES_MANIFEST_URL = INI.get("updates", "manifest_url", fallback="https://gitlab.com/infraconsulting/activitytrack/-/raw/main/update-manifest.json").strip()
+UPDATES_MANIFEST_URL = INI.get("updates", "manifest_url", fallback="https://gitlab.com/activitytrack/activitytrack/-/raw/main/update-manifest.json").strip()
 UPDATES_CHANNELS = INI.get("updates", "channels", fallback="prod").strip() or "prod"
 UPDATES_POLL_HOURS = INI.getint("updates", "poll_hours", fallback=12)
 UPDATES_APP_FINGERPRINT = INI.get("updates", "app_fingerprint", fallback="159b2fc773e02c6b9fc58107c1994ce898bf75040d5cf9f228d72cb1269bcfc2").strip()
