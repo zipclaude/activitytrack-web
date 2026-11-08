@@ -1,5 +1,8 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-"""Version order, as the app's and the PC library's: "1.2.3", "1.2", "1.2.3-beta.1" (before its release)."""
+"""Version order, as the app's and the PC library's: "1.2.3", "1.2", "1.2.3.1" (a security patch), "1.2.3-beta-1" or
+"1.2.3-beta.1" (before its release; beta-9 before beta-10)."""
+
+import re
 
 
 def _key(text):
@@ -8,16 +11,20 @@ def _key(text):
     try:
         numbers = [int(x) for x in main.split(".")]
     except ValueError:
-        return [-1, -1, -1], None
-    return (numbers + [0, 0, 0])[:3], pre or None
+        return [-1, -1, -1, -1], None
+    return (numbers + [0, 0, 0, 0])[:4], pre or None
 
 
 def _compare_pre(a, b):
-    for p, q in zip(a.split("."), b.split(".")):
-        c = (int(p) > int(q)) - (int(p) < int(q)) if p.isdigit() and q.isdigit() else (p > q) - (p < q)
+    x, y = re.split(r"[.-]", a), re.split(r"[.-]", b)
+    for p, q in zip(x, y):
+        if p.isdigit() and q.isdigit():
+            c = (int(p) > int(q)) - (int(p) < int(q))
+        else:
+            c = (p > q) - (p < q)
         if c:
             return c
-    return (len(a.split(".")) > len(b.split("."))) - (len(a.split(".")) < len(b.split(".")))
+    return (len(x) > len(y)) - (len(x) < len(y))
 
 
 def compare(a, b):
