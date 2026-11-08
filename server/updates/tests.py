@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 import datetime
+import functools
 import hashlib
 import http.client
 import importlib
@@ -222,6 +223,9 @@ class AcceptTests(UpdatesCase):
     def test_version_order(self):
         self.assertEqual(-1, compare("1.0.0-beta1", "1.0.0"))
         self.assertEqual(1, compare("0.9.10", "0.9.9"))
+        # security patch (fourth number) and numeric -beta-N
+        ordered = ["0.9.9", "0.9.9.1", "0.9.10-beta-1", "0.9.10-beta-2", "0.9.10-beta-10", "0.9.10", "0.9.10.1"]
+        self.assertEqual(ordered, sorted(reversed(ordered), key=functools.cmp_to_key(compare)))
 
 
 class RunTests(UpdatesCase):
