@@ -174,12 +174,24 @@ def _download(url, sha256):
     return size
 
 
-def mirror(cfg):
-    """Keep the packages of the followed channels; True when every one of them is in."""
-    complete = True
-    channels = cfg.channel_list()
+def wanted(cfg):
+    """{channel: the versions to keep}: the newest KEEP releases of each followed channel of the accepted manifest."""
+    found = {}
     for r in (cfg.payload or {}).get("releases", []):
-        if (r.get("channel") or "prod") not in channels:
+        channel = r.get("channel") or "prod"
+        if channel in cfg.channel_list():
+            found.setdefault(channel, set()).add(str(r["version"]))
+    return {c: set(sorted(v, key=cmp_to_key(compare), reverse=True)[:KEEP]) for c, v in found.items()}
+
+
+def mirror(cfg):
+    """Keep the packages of the releases `prune` will keep (the newest KEEP of each followed channel), nothing
+    more: what it would delete is not downloaded, poll after poll. True when every one of them is in."""
+    complete = True
+    keep = wanted(cfg)
+    for r in (cfg.payload or {}).get("releases", []):
+        channel = r.get("channel") or "prod"
+        if str(r["version"]) not in keep.get(channel, ()):
             continue
         for p in r["packages"]:
             if MirrorFile.objects.filter(org=cfg.org, version=r["version"], component=p["component"], sha256=p["sha256"]).exists():
@@ -191,21 +203,24 @@ def mirror(cfg):
                 log.warning("updates: %s %s not mirrored: %s", r["version"], p["component"], e)
                 continue
             MirrorFile.objects.update_or_create(org=cfg.org, version=r["version"], component=p["component"],
-                                                defaults={"sha256": p["sha256"], "size": size})
-    prune(cfg.org)
+                                                defaults={"sha256": p["sha256"], "size": size, "channel": channel})
+    prune(cfg.org, cfg.channel_list())
     return complete
 
 
-def prune(org):
-    """Only the files of the newest KEEP versions stay; fewer versions than that, nothing goes."""
-    versions = sorted(set(MirrorFile.objects.filter(org=org).values_list("version", flat=True)),
-                      key=cmp_to_key(compare), reverse=True)
-    old = versions[KEEP:]
-    if not old:
-        return
-    gone = list(MirrorFile.objects.filter(org=org, version__in=old).values_list("sha256", flat=True))
-    MirrorFile.objects.filter(org=org, version__in=old).delete()
-    for sha in set(gone):
+def prune(org, channels):
+    """In each followed channel only the files of the newest KEEP mirrored versions stay: a newest release that could
+    not be downloaded does not cost an older one, and fewer versions than that lose nothing. The files of a channel
+    no longer followed go."""
+    gone = list(MirrorFile.objects.filter(org=org).exclude(channel__in=channels).values_list("pk", "sha256"))
+    for channel in channels:
+        versions = sorted(set(MirrorFile.objects.filter(org=org, channel=channel).values_list("version", flat=True)),
+                          key=cmp_to_key(compare), reverse=True)
+        if versions[KEEP:]:
+            gone += list(MirrorFile.objects.filter(org=org, channel=channel, version__in=versions[KEEP:])
+                         .values_list("pk", "sha256"))
+    MirrorFile.objects.filter(pk__in=[pk for pk, _sha in gone]).delete()
+    for sha in {sha for _pk, sha in gone}:
         if not MirrorFile.objects.filter(sha256=sha).exists():
             mirror_path(sha).unlink(missing_ok=True)
 

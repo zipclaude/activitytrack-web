@@ -210,6 +210,14 @@ has that fingerprint is valid, no CA is involved.
   again with the same `base_url` has the same CN (the phones' CN pin holds)
   but another fingerprint, so the `k` the apps kept at pairing no longer
   matches: pair them again.
+- **The signature of a text is kept** (table `policies_policysignature`, keyed
+  by the SHA-256 of the text and of the signer's certificates). An ECDSA
+  signature is different every time it is made, and the app recognises a policy
+  it already handled by the hash of its text **and signature** (it ignores the
+  `fingerprint` field), so a fresh signature at every request would make every
+  0.9.9 app apply, back up and announce the same policy at every poll. Stored in
+  the database, the signature is the same for every request and every
+  process; another text or another key is signed anew.
 - **Apps older than 0.9.9** ask for a chain to a CA, which a self-signed
   certificate has not, and would refuse (and pin) it. The server knows each
   request's app version (the `X-ActivityTrack-App` header; the one recorded at
@@ -428,8 +436,11 @@ the devices the package address becomes `/api/v1/update/files/<sha256>`, to
 be appended to the server's address (the pairing's `u`, which already holds
 any path prefix); the GET needs the device's token and is sent like an
 attachment (`[files] offload`). A package that could not be downloaded is
-left out of the manifest until it can. The newest **two** releases are always
-kept; older files go only when a newer one has been mirrored. Off, the
+left out of the manifest until it can. In each followed channel the newest
+**two** releases are mirrored and kept, and only those are downloaded (what
+would be deleted is not fetched at every check); a newest release that could not
+be downloaded does not cost an older one, a channel no longer followed loses its
+files, and the manifest the devices get lists what is kept. Off, the
 devices download from the addresses in the upstream manifest.
 
 **The server's key.** `[policy] key` and `cert` when set, otherwise a P-256

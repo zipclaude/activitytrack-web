@@ -66,6 +66,8 @@ class MirrorFile(models.Model):
 
     org = models.ForeignKey("accounts.Organization", on_delete=models.CASCADE, related_name="mirror_files")
     version = models.CharField(max_length=60)
+    # the channel of the release: the newest two releases of each followed channel are kept
+    channel = models.CharField(max_length=20, default="prod")
     component = models.CharField(max_length=40)
     sha256 = models.CharField(max_length=64)
     size = models.PositiveBigIntegerField(default=0)

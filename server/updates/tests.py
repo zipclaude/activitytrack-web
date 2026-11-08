@@ -377,6 +377,88 @@ class MirrorTests(UpdatesCase):
         self.assertTrue(fetch.mirror_path(sha(b"same")).exists())
 
 
+class KeepTests(UpdatesCase):
+    """The newest two releases of each followed channel are mirrored and kept, and nothing else is downloaded."""
+
+    def poll(self, releases, issued, channels=None):
+        if channels:
+            self.cfg.channels = channels
+            self.cfg.save()
+        self.net = self.serve(self.signed(payload(releases, issued)), {
+            **PACKAGES, "https://example.org/web-1.0.0-beta1.deb": b"beta1", "https://example.org/web-1.0.0-beta2.deb": b"beta2",
+            "https://example.org/web-1.0.0-beta3.deb": b"beta3"})
+        fetch.run(self.refresh())
+        return self.refresh()
+
+    def kept(self):
+        return sorted(m.version for m in MirrorFile.objects.all())
+
+    def downloads(self):
+        return [u for u in self.net.asked if u != MANIFEST_URL]
+
+    def relayed(self):
+        return [r["version"] for r in jws.verify(self.refresh().relayed, [keys.fingerprint()])["releases"]]
+
+    def beta(self, n):
+        return release(f"1.0.0-beta{n}", "beta", data=f"beta{n}".encode())
+
+    def test_three_prod_releases_download_two_and_nothing_again(self):
+        three = [release("0.9.9"), release("0.9.8"), release("0.9.7")]
+        self.poll(three, "2026-11-07T10:00:00Z")
+        self.assertEqual(["0.9.8", "0.9.9"], self.kept())
+        self.assertEqual(2, len(self.downloads()))
+        self.assertNotIn("https://example.org/web-0.9.7.deb", self.downloads())
+        self.assertEqual(["0.9.9", "0.9.8"], self.relayed())
+        # the second poll, and the third: the manifest only
+        for n in (11, 12):
+            self.poll(three, f"2026-11-07T{n}:00:00Z")
+            self.assertEqual([], self.downloads(), n)
+        self.assertEqual(["0.9.8", "0.9.9"], self.kept())
+
+    def test_betas_newer_than_prod_do_not_push_prod_out(self):
+        releases = [release("0.9.9"), self.beta(3), self.beta(2), self.beta(1)]
+        self.poll(releases, "2026-11-07T10:00:00Z", channels="prod,beta")
+        self.assertEqual(["0.9.9", "1.0.0-beta2", "1.0.0-beta3"], self.kept())
+        self.assertEqual({"0.9.9", "1.0.0-beta3", "1.0.0-beta2"}, set(self.relayed()))
+        self.assertEqual(3, len(self.downloads()))
+        self.poll(releases, "2026-11-07T11:00:00Z")
+        self.assertEqual([], self.downloads(), "no download again")
+        self.assertEqual({"0.9.9", "1.0.0-beta3", "1.0.0-beta2"}, set(self.relayed()))
+
+    def test_two_prod_and_two_beta_releases_are_all_kept(self):
+        self.poll([release("0.9.9"), release("0.9.8"), self.beta(2), self.beta(1)], "2026-11-07T10:00:00Z", channels="prod,beta")
+        self.assertEqual(["0.9.8", "0.9.9", "1.0.0-beta1", "1.0.0-beta2"], self.kept())
+        self.assertEqual(4, len(self.relayed()))
+
+    def test_a_new_release_pushes_the_oldest_of_its_channel_out_only(self):
+        self.poll([release("0.9.8"), release("0.9.7"), self.beta(1)], "2026-11-07T10:00:00Z", channels="prod,beta")
+        self.poll([release("0.9.9"), release("0.9.8"), release("0.9.7"), self.beta(1)], "2026-11-07T11:00:00Z")
+        self.assertEqual(["0.9.8", "0.9.9", "1.0.0-beta1"], self.kept())
+        self.assertEqual(["https://example.org/web-0.9.9.deb"], self.downloads())
+        self.assertFalse(fetch.mirror_path(sha(b"web 0.9.7")).exists())
+        self.assertTrue(fetch.mirror_path(sha(b"web 0.9.8")).exists())
+
+    def test_a_channel_no_longer_followed_loses_its_files(self):
+        self.poll([release("0.9.9"), self.beta(1)], "2026-11-07T10:00:00Z", channels="prod,beta")
+        self.assertEqual(["0.9.9", "1.0.0-beta1"], self.kept())
+        self.poll([release("0.9.9"), self.beta(1)], "2026-11-07T11:00:00Z", channels="prod")
+        self.assertEqual(["0.9.9"], self.kept())
+        self.assertFalse(fetch.mirror_path(sha(b"beta1")).exists())
+
+    def test_wanted(self):
+        self.cfg.payload = payload([release("0.9.9"), release("0.9.8"), release("0.9.7"), self.beta(1)])
+        self.assertEqual({"prod": {"0.9.9", "0.9.8"}}, fetch.wanted(self.cfg))
+        self.cfg.channels = "prod,beta,dev"
+        self.assertEqual({"prod": {"0.9.9", "0.9.8"}, "beta": {"1.0.0-beta1"}}, fetch.wanted(self.cfg))
+
+    def test_migration_gives_the_files_their_channel(self):
+        self.poll([release("0.9.9"), self.beta(1)], "2026-11-07T10:00:00Z", channels="prod,beta")
+        MirrorFile.objects.update(channel="prod")
+        from django.apps import apps
+        importlib.import_module("updates.migrations.0003_mirror_channel").fill_channels(apps, None)
+        self.assertEqual({"0.9.9": "prod", "1.0.0-beta1": "beta"}, {m.version: m.channel for m in MirrorFile.objects.all()})
+
+
 class DeviceTests(UpdatesCase):
     def test_head_without_a_manifest_says_null(self):
         self.assertIsNone(self.head(self.token())["update"])
