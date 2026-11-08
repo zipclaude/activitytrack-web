@@ -133,7 +133,10 @@ class KeyTests(UpdatesCase):
         self.assertEqual(0o600, stat.S_IMODE(key_file.stat().st_mode))
         cert = x509.load_pem_x509_certificate((Path(self.dir) / "signing" / "server-cert.pem").read_bytes())
         self.assertTrue(cert.subject.rfc4514_string().startswith("CN=ActivityTrack Web "))
-        self.assertGreater(cert.not_valid_after_utc - cert.not_valid_before_utc, datetime.timedelta(days=3650))
+        # the _utc readers came with cryptography 42 (Ubuntu 24.04 has 41): the other two are the same moments
+        after = getattr(cert, "not_valid_after_utc", None) or cert.not_valid_after
+        before = getattr(cert, "not_valid_before_utc", None) or cert.not_valid_before
+        self.assertGreater(after - before, datetime.timedelta(days=3650))
         self.assertEqual("ES256", keys.usable())
         keys._cache.clear()
         self.assertEqual(fp, keys.fingerprint(), "read from the files again")
