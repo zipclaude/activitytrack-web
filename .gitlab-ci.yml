@@ -2,7 +2,7 @@
 # request into next starts one, see workflow below): start one by hand ("Run pipeline" on a branch or tag) or with the pipelines API.
 # The Linux jobs run on the owner's local runner (tag local, set in default below), free of
 # charge.
-# Started on a branch a pipeline tests and builds the Debian/Ubuntu packages, the tarball, the manual and the installs of docs/INSTALL.md, and
+# Started on a branch a pipeline tests and builds the Debian/Ubuntu packages, the tarball and the installs of docs/INSTALL.md, and
 # publishes nothing; started on a tag vX.Y.Z it also tries everything
 # and publishes the release.
 
@@ -135,27 +135,6 @@ tarball:
     paths: ["dist/*.tar.gz"]
     expire_in: 30 days
 
-# the administrator's manual, it and en (docs/manual)
-manual:
-  extends: .packaging
-  stage: package
-  image: debian:trixie
-  script:
-    # a release's manual carries its version; elsewhere the manual's own
-    - V=$(sed -n 's/^__version__ = "\(.*\)"/\1/p' server/atweb/__init__.py)
-    - |
-      if [ -n "$CI_COMMIT_TAG" ]; then
-        for f in docs/manual/it/admin.md docs/manual/en/admin.md; do
-          head -1 "$f" | grep -q "^Versione $V \|^Version $V " || { echo "$f does not say version $V"; exit 1; }
-        done
-      fi
-    - apt-get update && apt-get install -y --no-install-recommends pandoc chromium fonts-dejavu-core fonts-liberation
-    - scripts/build-manual.sh
-    - mkdir dist && cp build/manual/*.pdf dist/
-  artifacts:
-    paths: ["dist/*.pdf"]
-    expire_in: 30 days
-
 # the manual installs of docs/INSTALL.md, from the tarball
 oracle-linux:
   extends: .packaging
@@ -217,7 +196,7 @@ release:
     - PV=$(sed -n '1s/^[^(]*(\(.*\)).*/\1/p' debian/changelog)
     - R="${PV##*-}"
     # "~" of the package versions is not allowed in a package file's name: "-" instead
-    - mkdir artifacts && cp dist/*.deb dist/*.tar.gz dist/*.pdf artifacts/
+    - mkdir artifacts && cp dist/*.deb dist/*.tar.gz artifacts/
     - cd artifacts
     - for f in activitytrack-web_*~*_all.deb; do mv "$f" "$(echo "$f" | tr '~' '-')"; done
     - sha256sum * > SHA256SUMS && cat SHA256SUMS
@@ -229,7 +208,7 @@ release:
         echo "- Debian 13 / 14, Ubuntu 24.04 / 26.04: \`apt install ./activitytrack-web_${V}-${R}-<distro>_all.deb\` (deb13, deb14, ubuntu24.04, ubuntu26.04)"
         echo "- Other systems (RHEL / Oracle Linux, Arch, FreeBSD) and installs by hand: \`activitytrack-web-$V.tar.gz\` or a clone of the repository"
         echo
-        echo "Administrator's manual: \`ActivityTrack-Web-Amministratore-$V.pdf\` (it), \`ActivityTrack-Web-Administrator-$V.pdf\` (en)."
+        echo "Administrator's manual (it, en): in the documentation release, https://gitlab.com/activitytrack/activitytrack-doc/-/releases/v$V, and in the package \`activitytrack-doc\`."
         echo
         echo "Instructions: [docs/INSTALL.md]($CI_PROJECT_URL/-/blob/v$V/docs/INSTALL.md)."
       } > notes.md

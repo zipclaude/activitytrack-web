@@ -19,7 +19,7 @@ Depends: ${misc:Depends},
  python3-django (>= 3:4.2),
  python3-django (<< 3:6),
  python3-segno
-Recommends: python3-psycopg, nginx | apache2
+Recommends: python3-psycopg, nginx | apache2, activitytrack-doc
 Suggests: postgresql, certbot
 Description: sync server and web interface for the ActivityTrack app
  ActivityTrack Web keeps the data of the ActivityTrack Android app of an
