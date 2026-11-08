@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ActivityTrack Web\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-05 21:25+0100\n"
+"POT-Creation-Date: 2026-11-07 23:59+0100\n"
 "PO-Revision-Date: 2026-11-05 22:00+0100\n"
 "Last-Translator: ActivityTrack\n"
 "Language-Team: English\n"
@@ -280,8 +280,8 @@ msgstr ""
 
 msgid ""
 "Una mappa basilare (strade, fiumi, laghi, confini, nomi dei luoghi) delle "
-"aree che scegli. I telefoni la scaricano da qui con la sincronizzazione e la"
-" usano per la mappa degli spostamenti quando non c'è rete o le mappe online "
+"aree che scegli. I telefoni la scaricano da qui con la sincronizzazione e la "
+"usano per la mappa degli spostamenti quando non c'è rete o le mappe online "
 "sono spente."
 msgstr ""
 "A basic map (roads, rivers, lakes, borders, place names) of the areas you "
@@ -471,8 +471,8 @@ msgid ""
 "Valore iniziale: l'utente lo può cambiare. Bloccato: grigio con il "
 "lucchetto. Nascosto: non compare."
 msgstr ""
-"Starting value: the user can change it. Locked: greyed out with the padlock."
-" Hidden: not shown."
+"Starting value: the user can change it. Locked: greyed out with the padlock. "
+"Hidden: not shown."
 
 msgid "valore iniziale"
 msgstr "starting value"
@@ -564,8 +564,186 @@ msgstr "Policy of “%(s)s” deleted."
 msgid "Policy di «%(s)s» salvata (revisione %(r)d)."
 msgstr "Policy of “%(s)s” saved (revision %(r)d)."
 
+msgid "controlla gli aggiornamenti"
+msgstr "check for updates"
+
+msgid "indirizzo del manifesto"
+msgstr "manifest address"
+
+msgid "Aggiornamenti"
+msgstr "Updates"
+
+msgid ""
+"Il server cerca le nuove versioni di ActivityTrack in un manifesto firmato e "
+"le segnala ai telefoni e ai PC associati alla prima sincronizzazione. I "
+"dispositivi controllano la firma prima di mostrare qualsiasi cosa."
+msgstr ""
+"The server looks for new versions of ActivityTrack in a signed manifest and "
+"tells the paired phones and PCs at their first sync. The devices check the "
+"signature before showing anything."
+
+#, python-format
+msgid ""
+"È disponibile ActivityTrack Web %(v)s (questo server è alla %(cur)s): il "
+"server non si aggiorna da solo, installa il pacchetto."
+msgstr ""
+"ActivityTrack Web %(v)s is available (this server is at %(cur)s): the server "
+"does not update itself, install the package."
+
+msgid "Note di rilascio"
+msgstr "Release notes"
+
+msgid "Dove cercare"
+msgstr "Where to look"
+
+msgid "Controlla automaticamente gli aggiornamenti"
+msgstr "Check for updates automatically"
+
+msgid "Indirizzo del manifesto (https)"
+msgstr "Manifest address (https)"
+
+msgid "Canali seguiti"
+msgstr "Channels followed"
+
+msgid "Ogni quante ore (0 = mai da solo)"
+msgstr "Every how many hours (0 = never on its own)"
+
+msgid ""
+"Conserva i pacchetti su questo server e fai scaricare i dispositivi da qui"
+msgstr ""
+"Keep the packages on this server and let the devices download from here"
+
+msgid ""
+"Acceso, il server scarica i pacchetti dei canali seguiti, ne controlla lo "
+"SHA-256 e tiene sempre almeno le ultime due versioni. Spento, i dispositivi "
+"scaricano dagli indirizzi del manifesto."
+msgstr ""
+"On, the server downloads the packages of the channels followed, checks their "
+"SHA-256 and always keeps at least the last two versions. Off, the devices "
+"download from the addresses in the manifest."
+
+#, python-format
+msgid "Ora: %(n)s, versioni"
+msgstr "Now: %(n)s, versions"
+
+msgid "Controlla ora"
+msgstr "Check now"
+
+msgid ""
+"Dimenticare le versioni già viste? Il prossimo manifesto sarà accettato "
+"anche se è più vecchio o ha versioni più basse."
+msgstr "Forget the versions already seen? The next manifest will be accepted even if it is older or has lower versions."
+
+msgid "Azzera le versioni viste"
+msgstr "Reset the versions seen"
+
+msgid ""
+"Serve se chi pubblica il manifesto ha ritirato una versione o è tornato "
+"indietro di proposito: il server rifiuta un manifesto più basso di quello "
+"già accettato."
+msgstr "Needed if whoever publishes the manifest withdrew a version or went back on purpose: the server refuses a manifest lower than the one already accepted."
+
+#, python-format
+msgid "Ultimo controllo: %(when)s."
+msgstr "Last check: %(when)s."
+
+msgid "Non ha ancora controllato."
+msgstr "It has not checked yet."
+
+#, python-format
+msgid "Versione più recente nel manifesto: %(v)s."
+msgstr "Newest version in the manifest: %(v)s."
+
+#, python-format
+msgid "Manifesto rifiutato: %(e)s"
+msgstr "Manifest refused: %(e)s"
+
+msgid "Di chi ci si fida"
+msgstr "Whom to trust"
+
+msgid ""
+"Il server accetta solo manifesti firmati con la chiave dell'app o con una "
+"chiave che accetti qui incollandone l'impronta (SHA-256 del certificato)."
+msgstr ""
+"The server only accepts manifests signed with the app's key or with a key "
+"you accept here by pasting its fingerprint (SHA-256 of the certificate)."
+
+msgid "Chiave"
+msgstr "Key"
+
+msgid "Impronta SHA-256"
+msgstr "SHA-256 fingerprint"
+
+msgid "Chiave dell'app"
+msgstr "The app's key"
+
+msgid "Togliere questa chiave? I suoi manifesti non saranno più accettati."
+msgstr "Remove this key? Its manifests will no longer be accepted."
+
+msgid "Togli"
+msgstr "Remove"
+
+msgid "Impronta da accettare"
+msgstr "Fingerprint to accept"
+
+msgid "Nome (facoltativo)"
+msgstr "Name (optional)"
+
+msgid "Accetta questa chiave"
+msgstr "Accept this key"
+
+msgid "La chiave di questo server"
+msgstr "This server's key"
+
+msgid ""
+"Il server firma con questa chiave il manifesto che dà ai dispositivi, e la "
+"sua impronta è nel codice QR dell'associazione: i dispositivi si fidano solo "
+"di questa. Si usa la chiave di [policy] key e cert, se impostata, altrimenti "
+"una generata al primo avvio."
+msgstr ""
+"The server signs with this key the manifest it gives to the devices, and its "
+"fingerprint is in the pairing QR code: the devices trust only this one. The "
+"key of [policy] key and cert is used when set, otherwise one made on first "
+"start."
+
+msgid "L'indirizzo del manifesto deve iniziare con https://"
+msgstr "The manifest address must start with https://"
+
+msgid "L'intervallo va da 0 (mai) a 720 ore."
+msgstr "The interval goes from 0 (never) to 720 hours."
+
+msgid "Impostazioni salvate."
+msgstr "Settings saved."
+
+msgid ""
+"Fatto: il prossimo manifesto sarà accettato anche se ha versioni più basse o "
+"è più vecchio."
+msgstr "Done: the next manifest will be accepted even if it has lower versions or is older."
+
+msgid "Controllo avviato: ricarica la pagina fra qualche istante."
+msgstr "Check started: reload the page in a few moments."
+
+msgid ""
+"L'impronta è un SHA-256: 64 cifre esadecimali (i due punti e gli spazi non "
+"contano)."
+msgstr ""
+"The fingerprint is a SHA-256: 64 hexadecimal digits (colons and spaces do "
+"not count)."
+
+msgid "Questa chiave è già accettata."
+msgstr "This key is already accepted."
+
+msgid "Chiave accettata."
+msgstr "Key accepted."
+
+msgid "Chiave tolta."
+msgstr "Key removed."
+
 msgid "Amministrazione dei dati"
 msgstr "Data administration"
+
+msgid "Assenza"
+msgstr "Absence"
 
 msgid "▲ Prima"
 msgstr "▲ Before"
@@ -727,8 +905,7 @@ msgid "Verifica in due passaggi disattivata."
 msgstr "Two-step verification is off."
 
 msgid ""
-"L'organizzazione chiede la verifica in due passaggi: attivala per "
-"continuare."
+"L'organizzazione chiede la verifica in due passaggi: attivala per continuare."
 msgstr ""
 "The organisation requires two-step verification: switch it on to continue."
 
@@ -1168,8 +1345,7 @@ msgid "Codice scaduto."
 msgstr "Code expired."
 
 msgid ""
-"Collegamento (per il PC, o se il telefono non riesce a inquadrare il "
-"codice):"
+"Collegamento (per il PC, o se il telefono non riesce a inquadrare il codice):"
 msgstr "Link (for the PC, or if the phone cannot scan the code):"
 
 msgid "Torna ai dispositivi"
@@ -1209,11 +1385,11 @@ msgid "Aspetto"
 msgstr "Appearance"
 
 msgid ""
-"Il colore del tema va sulle barre dei menu e sui pulsanti; le pagine restano"
-" bianche e grigie, o nere nel tema scuro."
+"Il colore del tema va sulle barre dei menu e sui pulsanti; le pagine restano "
+"bianche e grigie, o nere nel tema scuro."
 msgstr ""
-"The theme colour goes on the menu bars and the buttons; the pages stay white"
-" and grey, or black in the dark theme."
+"The theme colour goes on the menu bars and the buttons; the pages stay white "
+"and grey, or black in the dark theme."
 
 msgid "Lingua"
 msgstr "Language"
@@ -1239,9 +1415,9 @@ msgid ""
 "ciascuno (altrimenti quelle predefinite); sotto, in piccolo, i tempi "
 "registrati. Un'attività a cavallo di più giorni conta in ciascuno."
 msgstr ""
-"Times rounded as in the app's report, with the rules of each person's policy"
-" (the default ones otherwise); below, in small print, the recorded times. An"
-" activity spanning several days counts in each."
+"Times rounded as in the app's report, with the rules of each person's policy "
+"(the default ones otherwise); below, in small print, the recorded times. An "
+"activity spanning several days counts in each."
 
 msgid "Dettaglio"
 msgstr "Detail"
@@ -1273,16 +1449,15 @@ msgstr[0] "%(n)s recovery code left."
 msgstr[1] "%(n)s recovery codes left."
 
 msgid ""
-"Dopo la password, l'accesso chiede un codice: dall'app di autenticazione del"
-" telefono (per esempio Aegis, FreeOTP, Google Authenticator) o via email. "
-"Chi ha solo la password non entra."
+"Dopo la password, l'accesso chiede un codice: dall'app di autenticazione del "
+"telefono (per esempio Aegis, FreeOTP, Google Authenticator) o via email. Chi "
+"ha solo la password non entra."
 msgstr ""
-"After the password, login asks for a code: from the authenticator app on the"
-" phone (for example Aegis, FreeOTP, Google Authenticator) or by email. "
+"After the password, login asks for a code: from the authenticator app on the "
+"phone (for example Aegis, FreeOTP, Google Authenticator) or by email. "
 "Whoever has only the password does not get in."
 
-msgid ""
-"L'organizzazione la chiede per il tuo profilo: attivala per continuare."
+msgid "L'organizzazione la chiede per il tuo profilo: attivala per continuare."
 msgstr ""
 "The organisation requires it for your profile: switch it on to continue."
 
@@ -1336,6 +1511,9 @@ msgstr "New recovery codes"
 msgid "Disattiva la verifica"
 msgstr "Switch off the verification"
 
+msgid "Nuova assenza"
+msgstr "New absence"
+
 msgid "Nuova voce"
 msgstr "New to-do"
 
@@ -1360,6 +1538,9 @@ msgstr ""
 "Assigning it to another person moves the item to their devices and removes "
 "it from those of whoever had it."
 
+msgid "Etichetta (facoltativa)"
+msgstr "Label (optional)"
+
 msgid "Titolo"
 msgstr "Title"
 
@@ -1377,6 +1558,9 @@ msgstr "at"
 
 msgid "durata (min)"
 msgstr "duration (min)"
+
+msgid "fino al (ultimo giorno)"
+msgstr "until (last day)"
 
 msgid "Priorità"
 msgstr "Priority"
@@ -1434,8 +1618,8 @@ msgid ""
 "Lettore azienda: solo il report delle attività chiuse delle sue aziende. "
 "Niente telefono."
 msgstr ""
-"Company reader: only the report of the closed activities of their companies."
-" No phone."
+"Company reader: only the report of the closed activities of their companies. "
+"No phone."
 
 msgid ""
 "Il responsabile legge tutte le attività fatte per queste aziende, chiunque "
@@ -1482,11 +1666,11 @@ msgid "Attiva, con un codice via email."
 msgstr "On, with a code by email."
 
 msgid ""
-"Azzerare la verifica in due passaggi? Serve se l'utente ha perso il telefono"
-" o la posta."
+"Azzerare la verifica in due passaggi? Serve se l'utente ha perso il telefono "
+"o la posta."
 msgstr ""
-"Reset the two-step verification? It is needed if the user has lost the phone"
-" or the mail."
+"Reset the two-step verification? It is needed if the user has lost the phone "
+"or the mail."
 
 msgid "Azzera"
 msgstr "Reset"
@@ -1534,7 +1718,6 @@ msgstr ""
 "paired do not change."
 
 #, python-format
-#| msgid "L'organizzazione e i dati grezzi restano nell'"
 msgid ""
 "L'organizzazione e i dati grezzi restano nell'<a "
 "href=\"%(admin_url)s\">amministrazione avanzata</a>."
@@ -1644,6 +1827,12 @@ msgstr "unknown action"
 msgid "il titolo è obbligatorio"
 msgstr "the title is required"
 
+msgid "la data è obbligatoria"
+msgstr "the date is required"
+
+msgid "l'ultimo giorno non è valido"
+msgstr "the last day is not valid"
+
 msgid "Voce salvata."
 msgstr "To-do saved."
 
@@ -1653,21 +1842,3 @@ msgstr "To-do assigned to %(name)s."
 
 msgid "Mancano dei dettagli: completa l'attività."
 msgstr "Details are missing: complete the activity."
-
-msgid "Assenza"
-msgstr "Absence"
-
-msgid "Nuova assenza"
-msgstr "New absence"
-
-msgid "Etichetta (facoltativa)"
-msgstr "Label (optional)"
-
-msgid "fino al (ultimo giorno)"
-msgstr "until (last day)"
-
-msgid "la data è obbligatoria"
-msgstr "the date is required"
-
-msgid "l'ultimo giorno non è valido"
-msgstr "the last day is not valid"

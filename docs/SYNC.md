@@ -191,6 +191,44 @@ The `policy` record (one per user, read-only for the phone) carries the
 signed policy text and its signature; the app applies it as a
 `policy.json` read from the data folder (same checks, same pinned CN).
 When a sync policy is in force the file in the data folder is ignored.
+**Signature.** `GET api/v1/policy` answers `{policy, signature, fingerprint}`
+(unchanged); `signature` is the detached signature of the text
+(`activitytrack-policy-signature`: `SHA256withECDSA`/`SHA256withRSA`, the
+certificate chain, leaf first), `fingerprint` the SHA-256 of the text and the
+signature as sent. The server signs with `[policy] key`/`cert` when set —
+for every app, as before — and otherwise with the key it made for itself
+(§12.4: P-256, self-signed, under `signing/` of the data folder). The app
+trusts that key through the `k` of its pairing (§9): a signature whose leaf
+has that fingerprint is valid, no CA is involved.
+
+- **The first signed policy a phone applies pins the signer's CN**
+  (POLICY.md §2 of the app): from then on only policies of that CN count,
+  unsigned ones are refused, and the plugins must carry the same CN. With the
+  generated key the CN is `ActivityTrack Web <host of base_url>`: **back up
+  `signing/` with the data and never replace it with a key of another CN**,
+  or the phones refuse the policy until the pin is cleared. A key made
+  again with the same `base_url` has the same CN (the phones' CN pin holds)
+  but another fingerprint, so the `k` the apps kept at pairing no longer
+  matches: pair them again.
+- **The signature of a text is kept** (table `policies_policysignature`, keyed
+  by the SHA-256 of the text and of the signer's certificates). An ECDSA
+  signature is different every time it is made, and the app recognises a policy
+  it already handled by the hash of its text **and signature** (it ignores the
+  `fingerprint` field), so a fresh signature at every request would make every
+  0.9.9 app apply, back up and announce the same policy at every poll. Stored in
+  the database, the signature is the same for every request and every
+  process; another text or another key is signed anew.
+- **Apps older than 0.9.9** ask for a chain to a CA, which a self-signed
+  certificate has not, and would refuse (and pin) it. The server knows each
+  request's app version (the `X-ActivityTrack-App` header; the one recorded at
+  pairing when a request has none) and **keeps sending those apps the policy
+  unsigned**, exactly as before, when it signs with the generated key. An app
+  that names no version counts as old. With `[policy] key`/`cert` set every
+  app gets the signed policy, as it always did.
+- A policy signed by hand (`policy.json.sig` beside `policy.json`, no
+  management server) is unchanged. It pins its own CN: a phone with such a
+  pin refuses the server's policy if the CN differs.
+
 A phone keeps its policy until another replaces it, so deleting the
 organisation's last policy in the editor leaves an empty one (next
 revision): the phones then drop the locks they had.
@@ -200,10 +238,15 @@ revision): the phones then drop the locks they had.
 1. On the web (Dispositivi → "Associa un dispositivo") the server makes a
    one-time code: 160 random bits, valid 10 minutes, shown as a QR code:
 
-   `activitytrack://pair?v=1&u=https%3A%2F%2Fat.example.com&c=<code>&f=<sha256 of the server's public key>`
+   `activitytrack://pair?v=1&u=https%3A%2F%2Fat.example.com&c=<code>&f=<sha256 of the server's public key>&k=<sha256 of the server's signing certificate>`
 
    `f` is present only when the server's certificate is not trusted by
-   the system (self-signed): the app then pins that key.
+   the system (self-signed): the app then pins that key. `k` is always
+   there (lowercase hex, 64): the SHA-256 of the **leaf certificate the
+   server signs with** (§12.4). The app or PC interface keeps it as the
+   trust anchor of what this server signs, update manifests first: a
+   signature counts if its leaf has that fingerprint, no CA is involved.
+   Older clients ignore it.
 2. The app (Settings → Sync → "Associa a un server") reads the QR code with
    the camera (ZXing; no Google services needed) or accepts the link
    pasted by hand. ActivityTrack Desktop takes the link pasted.
@@ -294,7 +337,8 @@ X-ActivityTrack-Schema: 1
 An app without them (0.9.x) speaks schema 1. The server records the app's
 version and schema of each phone at every request (the Dispositivi and Users
 pages show them). `pair` and `sync/head` answer, besides their fields,
-`server` (its version), `schema` and `minSchema`.
+`server` (its version), `schema` and `minSchema`; `sync/head` also `update`
+(§12.4).
 
 Outside the window the server answers **426** with
 `{"error": "app_too_old" | "server_too_old", "server", "schema", "minSchema"}`;
@@ -317,14 +361,100 @@ phone and sync once the versions match again.
   version that knows them); the policy editor warns of the paired phones
   whose app is older.
 
-### 12.4 Update check of the app
+### 12.4 Update check: the signed manifest
 
-Installed from GitLab (no store as installer), the app checks the public
-releases of `infraconsulting/activitytrack` once a day (GitLab API
-`projects/<path>/releases`): a newer **stable** release, or a newer **beta**
-when the user subscribed to the betas (Settings; a policy can fix both),
-shows in Settings and as a notification that opens the release page. GitLab
-has no pre-releases: a release whose tag has a suffix (`v1.1.0-beta1`) is a
-beta. Until 0.9.7-beta1 the releases were on GitHub, which those versions of
-the app still ask: they are updated by hand to the first release on GitLab
-(0.9.8).
+An app or PC interface not installed by a store or a distribution looks for
+new versions in a **manifest**: one JSON file with its signature inline, a
+JWS in JSON serialization ([RFC 7515](https://www.rfc-editor.org/rfc/rfc7515)).
+The project publishes it, signed with the app's release key, at
+`https://gitlab.com/infraconsulting/activitytrack/-/raw/main/update-manifest.json`.
+
+```json
+{"payload": "<base64url of the manifest>",
+ "signatures": [{"protected": "<base64url of {alg, x5c, x5t#S256}>", "signature": "<base64url>"}]}
+```
+
+- `alg` is `ES256` (signature = raw R‖S, 64 bytes) or `RS256`; anything else
+  (`none`, `HS*`, …) is refused. The signing input is
+  `protected "." payload`. `x5c` carries the signer's certificates (standard
+  base64 DER, leaf first); no CA is needed: a signature counts when the
+  SHA-256 fingerprint of its **leaf** is one the verifier trusts.
+- The payload:
+
+  ```json
+  {"format": "activitytrack-update-manifest", "v": 1, "issued": "2026-11-07T10:00:00Z",
+   "releases": [{"version": "0.9.9", "channel": "prod", "published": "2026-11-05",
+                 "notes_url": "https://…",
+                 "packages": [{"component": "android", "url": "https://…", "sha256": "<64 hex>", "size": 123}]}]}
+  ```
+
+  `channel`: `prod`, `beta`, `test`, `dev`, …; `component`: `android`, and
+  for the server, the library and the PC interfaces (`web`, `library`,
+  `desktop`, `cli`, `tui`) one per distribution: `<name>-deb13`,
+  `<name>-deb14`, `<name>-ubuntu24.04`, `<name>-ubuntu26.04` (the `.deb`),
+  `<name>-tar`, and `desktop-windows`. A device asks for the component of
+  its own distribution (`/etc/os-release`). Package addresses are https; the
+  `sha256` is checked before anything is installed.
+- Only a version higher than the installed one is offered; a manifest
+  `issued` before the last accepted one (a replay) or going back in a
+  channel the organisation follows (a downgrade: the highest version is kept
+  **per channel**, a channel nobody follows never blocks) is refused. Times
+  without an offset are UTC. `notes_url` is kept only if it is https.
+
+**Who may sign what a device believes**
+
+| Device | Accepts the signature of |
+|---|---|
+| App, no policy | the app's own release key; the paired server's key, if paired |
+| App, signed policy in force | the policy's signer only |
+| Desktop, cli, tui | the paired server's key only (pairing is mandatory for them); no other source |
+
+**The server.** Per organisation, on the *Aggiornamenti* page (admins):
+the address the server polls (default the project's, `[updates]
+manifest_url`), the channels followed, the interval (default 12 h), the
+mirror. There is no scheduler: whoever finds the manifest stale, a phone's
+`sync/head` or the page, starts the check in a thread of its own and does not
+wait for it; `activitytrack-web-manage fetch_updates [--force]` does the same
+from cron. The server accepts a manifest only if it is signed with **the
+app's release key** (`[updates] app_fingerprint`, the SHA-256 of its
+certificate) or with a key whose **SHA-256 fingerprint an admin pasted**
+(colons, spaces and case do not matter; adding and removing one is logged
+with who did it); the page has a button to forget the
+versions seen (for an upstream that withdrew a release on purpose); it also refuses a package address that is not https, a
+package without `sha256`, a downgrade and a replay.
+
+**To the devices.** `sync/head` answers `"update": "<JWS>"` (null when there
+is none): the accepted manifest, signed by **the server's key** (the
+server's signature replaces the upstream's). The
+phone or PC sees it at its first sync after the server accepted it. Older
+apps ignore the field.
+
+**The mirror** (an admin option, on by default). The server downloads the
+packages of the channels followed (https, at most `[updates] max_mb` each,
+`sha256` checked, kept under `files/updates/`) and in the manifest it gives
+the devices the package address becomes `/api/v1/update/files/<sha256>`, to
+be appended to the server's address (the pairing's `u`, which already holds
+any path prefix); the GET needs the device's token and is sent like an
+attachment (`[files] offload`). A package that could not be downloaded is
+left out of the manifest until it can. In each followed channel the newest
+**two** releases are mirrored and kept, and only those are downloaded (what
+would be deleted is not fetched at every check); a newest release that could not
+be downloaded does not cost an older one, a channel no longer followed loses its
+files, and the manifest the devices get lists what is kept. Off, the
+devices download from the addresses in the upstream manifest.
+
+**The server's key.** `[policy] key` and `cert` when set, otherwise a P-256
+key and a self-signed certificate (CN `ActivityTrack Web <host>`, ten
+years) made on first use under `signing/` in the data folder (0600). Its
+leaf's fingerprint is shown on the *Aggiornamenti* page and goes in the
+pairing link as `k` (§9). The same key signs the phones' policies (§8).
+The CN comes from `base_url` (`ActivityTrack Web <host>`), not from the
+machine's name, so a key made again keeps it.
+
+The server's own update (the web package) is not automatic: the page shows
+when a newer release is in the manifest, with a package for the server's own
+distribution (`web-deb13`, … from `/etc/os-release`); on another distribution
+it shows the version only.
+
+Until 0.9.7-beta1 the releases were on GitHub; 0.9.8 moved them to GitLab,
+where its apps read the releases API. The manifest replaces that check.

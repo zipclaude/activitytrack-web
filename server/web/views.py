@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
+import logging
 from urllib.parse import urlencode
 
 import segno
@@ -12,6 +13,7 @@ from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 
 from accounts.models import Device, PairingCode
+from updates import keys
 
 
 def pair_link(code):
@@ -19,6 +21,12 @@ def pair_link(code):
     query = {"v": "1", "u": settings.BASE_URL, "c": code}
     if settings.TLS_PIN:
         query["f"] = settings.TLS_PIN
+    # the server's signing key (docs/SYNC.md §12.4): who signs its manifests, so the app trusts no one else;
+    # a key that cannot be read must not stop the pairing: the link goes without it
+    try:
+        query["k"] = keys.fingerprint()
+    except Exception:
+        logging.getLogger("updates").exception("the signing key cannot be read: the pairing link has no k")
     return "activitytrack://pair?" + urlencode(query)
 
 

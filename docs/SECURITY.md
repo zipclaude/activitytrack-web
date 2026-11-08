@@ -15,7 +15,7 @@ do, and the review of 2026-10-30 (ROADMAP phase 9).
 | Data | every query is filtered by organisation and by what the profile may read (ARCHITECTURE §5); the sync engine checks ownership on every change |
 | Attachments | sent by the server only to whom may read the entry; shown in the browser only for images, PDF, audio and video, anything else downloaded, with a `sandbox` Content-Security-Policy |
 | Pages | a Content-Security-Policy (scripts and styles from the site only, no frames, no plugins, forms to the site), `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: same-origin`, templates escaped; no inline script (`web/static/web/app.js` reads data attributes) |
-| Policies | signed with the organisation's key when configured; the app checks the signature |
+| Policies | signed with the organisation's key (`[policy]`) or the key the server made for itself (apps from 0.9.9; older ones get them unsigned); the app checks the signature and pins the signer's CN with the first one |
 | Secret key | generated on first start in the data folder, mode 0600 |
 
 ## 2. What the administrator does

@@ -37,7 +37,8 @@ avvia il servizio. Prima si scrive `/etc/activitytrack-web/settings.ini`:
 | `[server] tls_pin` | solo con un certificato autofirmato: l'impronta della sua chiave, che l'app fissa |
 | `[database]` | SQLite (predefinito) o PostgreSQL |
 | `[files] max_mb`, `offload` | dimensione massima degli allegati; chi li invia: Django, nginx o Apache |
-| `[policy] key`, `cert` | chiave e certificato per firmare le policy (facoltativi) |
+| `[policy] key`, `cert` | chiave e certificato per firmare le policy e i manifesti degli aggiornamenti (facoltativi); senza, il server genera una chiave propria al primo avvio, in `signing/` della cartella dei dati: salvala |
+| `[updates]` | indirizzo del manifesto, canali e intervallo per le nuove versioni (facoltativi, vedi Aggiornamenti) |
 | `[mail]` | server di posta per i codici di accesso via email (facoltativo) |
 
 Poi si crea l'organizzazione con il primo amministratore e si avvia il
@@ -190,6 +191,24 @@ se l'app è aperta) e tolgono quelle che togli tu. Un telefono senza server può
 stesse mappe copiando file `.pmtiles` nella cartella `maps` della sua cartella dati.
 Dettagli e comandi (`build_maps`, aggiornamento periodico): `docs/OFFLINE-MAPS.md`.
 
+### Aggiornamenti
+
+La pagina **Aggiornamenti** (solo admin) dice al server dove cercare le nuove versioni di
+ActivityTrack e di chi fidarsi:
+
+- **Dove cercare**: l'indirizzo di un manifesto firmato (di default quello del progetto, su
+  GitLab), i canali seguiti (`prod`, `beta`, `test`, `dev`), le ore fra un controllo e
+  l'altro (0 = mai da solo). **Controlla ora** controlla subito.
+- **Copia dei pacchetti**: acceso di default, il server conserva i pacchetti e i dispositivi li
+  scaricano da qui; tiene sempre almeno le ultime due versioni. Spento, scaricano dagli
+  indirizzi del manifesto.
+- **Di chi ci si fida**: il server accetta un manifesto firmato con la chiave dell'app o con una
+  chiave di cui incolli qui l'impronta (SHA-256 del certificato). La chiave del server, la cui
+  impronta è nel QR dell'associazione, firma ciò che ricevono telefoni e PC, che lo vedono alla
+  prima sincronizzazione.
+- Se il manifesto ha una versione più recente del server web, la pagina lo dice; il server si
+  aggiorna installando il pacchetto.
+
 ## 6. Anagrafiche
 
 Aziende, clienti, ruoli, tag, scelte rapide e materiali sono **centrali**
@@ -219,9 +238,13 @@ Per ogni impostazione:
 - **bloccato**: l'utente lo vede grigio con il lucchetto;
 - **nascosto**: non compare.
 
-Le policy arrivano ai telefoni con la sincronizzazione. Con chiave e
-certificato configurati (`[policy]` in `settings.ini`) sono firmate, e
-l'app controlla la firma.
+Le policy arrivano ai telefoni con la sincronizzazione, firmate dal server: con
+chiave e certificato di `[policy]` in `settings.ini` se li imposti, altrimenti con una chiave che
+il server genera per sé al primo avvio (`signing/` nella cartella dei dati). L'app controlla la
+firma, e **la prima policy firmata che applica fissa il nome (CN) del firmatario**: da allora
+rifiuta quelle firmate con un altro nome e quelle non firmate. Quindi salva `signing/` insieme ai
+dati e non sostituire la chiave con una di un altro nome. Le app precedenti alla 0.9.9 non
+conoscono la chiave generata: continuano a ricevere la policy non firmata.
 
 Alcune impostazioni valgono anche sul web:
 - **Arrotondamenti** e **scavalco notturno** (`rounding…`,

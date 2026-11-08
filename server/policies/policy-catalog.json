@@ -242,7 +242,30 @@
       "key": "updateBetas",
       "kind": "BOOLEAN",
       "since": "0.9.3",
-      "doc": "true/false — the check shows betas (pre-releases) too (0.9.3)"
+      "doc": "true/false — the check follows the beta channel too; the same as `beta` in `updateChannels` (0.9.3)"
+    },
+    {
+      "key": "updateSource",
+      "kind": "STRING",
+      "allowed": [
+        "upstream",
+        "server",
+        "custom"
+      ],
+      "since": "0.9.9",
+      "doc": "`upstream`, `server`, `custom` — where the signed update manifest comes from: the project's (GitLab), the paired server's, or `updateUrl` (0.9.9, issue #1)"
+    },
+    {
+      "key": "updateUrl",
+      "kind": "STRING",
+      "since": "0.9.9",
+      "doc": "https URL — the manifest of `custom` (0.9.9)"
+    },
+    {
+      "key": "updateChannels",
+      "kind": "STRING",
+      "since": "0.9.9",
+      "doc": "comma-separated — the channels followed, among `prod` (always), `beta`, `test`, `dev`; e.g. `\"prod,test\"` (0.9.9)"
     },
     {
       "key": "confirmIntervalMin",

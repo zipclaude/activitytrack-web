@@ -60,6 +60,18 @@ POLICY_KEY = INI.get("policy", "key", fallback="").strip()
 POLICY_CERT = INI.get("policy", "cert", fallback="").strip()
 POLICY_CHAIN = INI.get("policy", "chain", fallback="").strip()
 
+# update manifests (docs/SYNC.md §12.4): where the server looks for new versions (the default of a
+# new organisation; an admin changes it on the Aggiornamenti page), the certificate of the app's
+# release key (SHA-256: the manifest of the project is signed with it; a release process or a fork
+# overrides it), the largest package the mirror takes
+UPDATES_MANIFEST_URL = INI.get("updates", "manifest_url", fallback="https://gitlab.com/infraconsulting/activitytrack/-/raw/main/update-manifest.json").strip()
+UPDATES_CHANNELS = INI.get("updates", "channels", fallback="prod").strip() or "prod"
+UPDATES_POLL_HOURS = INI.getint("updates", "poll_hours", fallback=12)
+UPDATES_APP_FINGERPRINT = INI.get("updates", "app_fingerprint", fallback="159b2fc773e02c6b9fc58107c1994ce898bf75040d5cf9f228d72cb1269bcfc2").strip()
+UPDATES_MAX_MB = INI.getint("updates", "max_mb", fallback=200)
+# the check that finds the manifest stale runs in a thread of its own (the tests switch it off)
+UPDATES_BACKGROUND = True
+
 INSTALLED_APPS = [
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -71,6 +83,7 @@ INSTALLED_APPS = [
     "sync",
     "policies",
     "maps",
+    "updates",
     "web",
     # after web: its admin/ templates come first (web/adminsite.py)
     "web.adminsite.AdminConfig",

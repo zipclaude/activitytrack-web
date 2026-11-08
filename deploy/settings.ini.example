@@ -40,6 +40,18 @@ offload = none
 ;max_radius_km = 250
 ;max_mb = 48
 
+[updates]
+; new versions of ActivityTrack (docs/SYNC.md §12.4): the signed manifest the server polls by
+; default (an admin changes it on the Aggiornamenti page), the channels followed (prod, beta, test,
+; dev), the hours between checks, and the largest package the mirror takes
+;manifest_url = https://gitlab.com/infraconsulting/activitytrack/-/raw/main/update-manifest.json
+;channels = prod
+;poll_hours = 12
+;max_mb = 200
+; SHA-256 of the certificate of the app's release key: the project's manifest is signed with it
+; (change it only for a fork or a rebuilt key)
+;app_fingerprint = 159b2fc773e02c6b9fc58107c1994ce898bf75040d5cf9f228d72cb1269bcfc2
+
 [mail]
 ; for the login codes by email (two-step verification); without a host the
 ; codes come only from an authenticator app
