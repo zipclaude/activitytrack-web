@@ -6,6 +6,27 @@ Android app is `activitytrack/activitytrack` on GitLab; project history and work
 progress live in the GitLab issues and merge requests (until 0.9.7-beta1 they
 were on GitHub, see the first merge request of this repository).
 
+## 0. Branches and releases (read first)
+
+The whole workflow is in
+[activitytrack-doc/agents/workflow.md](https://gitlab.com/activitytrack/activitytrack-doc/-/blob/main/agents/workflow.md)
+(usually cloned next to this repository as `../activitytrack-doc`). In short:
+
+- `main` is the **last released version**, `next` is the development branch. Work happens
+  in `feature/<name>` or `issue/<n>-<name>`, cut from `next` and merged back into it with a
+  merge request. Nobody pushes to `main` or `next`.
+- Stable release: merge request `next` → `main`, merged fast-forward only; tag `vX.Y.Z` on
+  `main`; then merge `main` into `next`.
+- Beta: tag `vX.Y.Z-beta-N` on `next` (X.Y.Z is the *next* version); Debian version
+  `X.Y.Z~betaN-1`. Needs the unit tests and the local Wine jobs, not the paid Windows pipeline.
+- Security patch: `security/<name>` cut from `main`, version `X.Y.Z.1`, released at once with
+  the security report, then merged into `next`.
+- Test locally first. Pipelines on GitLab's shared runners start only when the owner says so;
+  jobs with `tags: [local]` run on the owner's runner (see `agents/local-ci.md` in the
+  documentation repository).
+- The Android application id, the AppStream ids and the package names keep the
+  `it.infraconsulting` names; they do not follow the GitLab group.
+
 ## 1. Working rules
 
 - English for code, comments, commits and docs; Italian with the maintainer.
