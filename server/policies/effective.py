@@ -91,6 +91,8 @@ def sign(text):
 
     from updates import keys
 
+    from .models import PolicySignature
+
     try:
         key, certs = keys.load()
     except Exception:
@@ -99,17 +101,28 @@ def sign(text):
         log.exception("policies: the server's signing key cannot be had: the policy goes unsigned")
         return None
     data = text.encode("utf-8")
+    digest = hashlib.sha256(data + b"\0" + b"".join(hashlib.sha256(der).digest() for der in certs)).hexdigest()
+    kept = PolicySignature.objects.filter(digest=digest).first()
+    if kept:
+        return kept.signature
     if isinstance(key, ec.EllipticCurvePrivateKey):
         signature, algorithm = key.sign(data, ec.ECDSA(hashes.SHA256())), "SHA256withECDSA"
     else:
         signature, algorithm = key.sign(data, padding.PKCS1v15(), hashes.SHA256()), "SHA256withRSA"
     chain = [x509.load_der_x509_certificate(der).public_bytes(serialization.Encoding.PEM).decode() for der in certs]
-    return json.dumps({
+    made = json.dumps({
         "format": "activitytrack-policy-signature",
         "algorithm": algorithm,
         "chain": chain,
         "signature": base64.b64encode(signature).decode(),
     }, indent=2) + "\n"
+    # two requests may sign at once: the first one stored is the signature, the other one uses it too
+    row, new = PolicySignature.objects.get_or_create(digest=digest, defaults={"signature": made})
+    if new:
+        oldest = PolicySignature.objects.order_by("-pk").values_list("pk", flat=True)[PolicySignature.KEEP:PolicySignature.KEEP + 1]
+        if oldest:
+            PolicySignature.objects.filter(pk__lte=oldest[0]).delete()
+    return row.signature
 
 
 def sign_for(text, app_version):

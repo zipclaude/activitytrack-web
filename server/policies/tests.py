@@ -19,7 +19,7 @@ from accounts.models import Organization, PairingCode, Profile, User
 from updates import keys
 
 from .effective import effective, fingerprint, sign, sign_for
-from .models import Policy
+from .models import Policy, PolicySignature
 
 
 class PolicyBase(TestCase):
@@ -249,3 +249,77 @@ class GeneratedKeyTests(PolicyBase):
         self.assertNotEqual(fp, keys.fingerprint())
         with override_settings(BASE_URL="https://at.example.com/activitytrack"):
             self.assertEqual("ActivityTrack Web at.example.com", keys.common_name())
+
+
+class StableSignatureTests(PolicyBase):
+    """The app tells a policy it has handled by the hash of its text and signature, whatever the server's own
+    `fingerprint` says (PolicyGate.fingerprint): an ECDSA signature differs at every signing, so the one given to a
+    text is kept, and every process gives the same."""
+
+    def setUp(self):
+        super().setUp()
+        Policy.objects.create(org=self.org, data={"features": {"travel": False}}, revision=1)
+
+    def fetch(self, token):
+        return self.client.get("/api/v1/policy", HTTP_AUTHORIZATION=f"Bearer {token}", HTTP_X_ACTIVITYTRACK_APP="0.9.9").json()
+
+    def test_the_same_text_has_the_same_signature_at_every_request(self):
+        token = self.token(self.alice)
+        first = self.fetch(token)
+        self.assertTrue(first["signature"])
+        for _ in range(3):
+            again = self.fetch(token)
+            self.assertEqual(first, again)
+        self.assertEqual(1, PolicySignature.objects.count())
+        # what the app hashes: the text and the signature as sent
+        self.assertEqual(fingerprint(first["policy"], first["signature"]), again["fingerprint"])
+
+    def test_without_the_kept_signature_ecdsa_would_differ(self):
+        """The reason for the table: signing the same text twice gives two signatures."""
+        text = effective(self.alice)
+        a = json.loads(sign(text))["signature"]
+        PolicySignature.objects.all().delete()
+        self.assertNotEqual(a, json.loads(sign(text))["signature"])
+
+    def test_another_process_gives_the_same_signature(self):
+        """A worker that starts later reads the same key and the same table: nothing of the first one is in its memory."""
+        text = effective(self.alice)
+        first = sign(text)
+        keys._cache.clear()
+        self.assertEqual(first, sign(text))
+        self.assertEqual(first, sign_for(text, "0.9.9"))
+
+    def test_a_new_text_or_a_new_key_is_a_new_signature(self):
+        from updates.tests import make_signer
+
+        text = effective(self.alice)
+        first = sign(text)
+        Policy.objects.filter(org=self.org).update(data={"features": {"travel": True}}, revision=2)
+        changed = effective(self.alice)
+        self.assertNotEqual(text, changed)
+        self.assertNotEqual(first, sign(changed))
+        key, _der, _fp, cert = make_signer("ec")
+        k, c = Path(self.data) / "k.pem", Path(self.data) / "c.pem"
+        k.write_bytes(key.private_bytes(serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8, serialization.NoEncryption()))
+        c.write_bytes(cert.public_bytes(serialization.Encoding.PEM))
+        with override_settings(POLICY_KEY=str(k), POLICY_CERT=str(c)):
+            other = sign(text)
+            self.assertNotEqual(first, other)
+            self.assertEqual(other, sign(text))
+        self.assertEqual(first, sign(text), "back to the generated key: its signature is still the one kept")
+
+    def test_two_requests_signing_at_once_end_with_one_signature(self):
+        text = effective(self.alice)
+        stored = sign(text)
+        with mock.patch.object(PolicySignature.objects, "filter", return_value=mock.Mock(first=lambda: None)):
+            with mock.patch.object(PolicySignature.objects, "get_or_create",
+                                   return_value=(PolicySignature.objects.get(), False)):
+                self.assertEqual(stored, sign(text))
+
+    def test_old_signatures_are_dropped(self):
+        with mock.patch.object(PolicySignature, "KEEP", 3):
+            for n in range(6):
+                Policy.objects.filter(org=self.org).update(data={"features": {"travel": bool(n % 2)}, "ui": {"language": f"x{n}"}}, revision=n)
+                sign(effective(self.alice))
+        self.assertLessEqual(PolicySignature.objects.count(), 4)
+        self.assertTrue(sign(effective(self.alice)), "a dropped one is only signed again")

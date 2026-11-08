@@ -30,3 +30,17 @@ class Policy(models.Model):
         if self.user_id:
             return "user"
         return "profile" if self.profile else "org"
+
+
+class PolicySignature(models.Model):
+    """The signature given to a policy text, kept: an ECDSA signature is different every time it is made, and the
+    app tells a policy it has handled by the hash of its text and signature, so an unchanged policy must come with
+    the same signature at every request, from every process (a cache in memory would not do)."""
+
+    # sha256 of the text and of the signer's certificates: another text or another key is another signature
+    digest = models.CharField(max_length=64, unique=True)
+    signature = models.TextField()
+    created = models.DateTimeField(auto_now_add=True)
+
+    # more than the texts of a server's policies at any time; the oldest go (the worst case is one more signature)
+    KEEP = 2000
