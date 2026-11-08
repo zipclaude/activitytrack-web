@@ -4,7 +4,7 @@ Priority: optional
 Maintainer: ActivityTrack Web <flavio-claude@zipman.it>
 Build-Depends: debhelper-compat (= 13)
 Standards-Version: 4.7.0
-Homepage: https://gitlab.com/infraconsulting/activitytrack-web
+Homepage: https://gitlab.com/activitytrack/activitytrack-web
 Rules-Requires-Root: no
 
 Package: activitytrack-web

@@ -2,7 +2,7 @@
 
 Technical notes to set up the environment and work on the code. Read
 `docs/ARCHITECTURE.md`, `docs/SYNC.md` and `docs/ROADMAP.md` first. The
-Android app is `infraconsulting/activitytrack` on GitLab; project history and work in
+Android app is `activitytrack/activitytrack` on GitLab; project history and work in
 progress live in the GitLab issues and merge requests (until 0.9.7-beta1 they
 were on GitHub, see the first merge request of this repository).
 

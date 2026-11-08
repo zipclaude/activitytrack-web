@@ -1,7 +1,7 @@
 # ActivityTrack Web
 
 The web companion and sync server of
-[ActivityTrack](https://gitlab.com/infraconsulting/activitytrack), the Android
+[ActivityTrack](https://gitlab.com/activitytrack/activitytrack), the Android
 app for freelancers and technicians who work for several companies, on
 their clients, in different roles.
 

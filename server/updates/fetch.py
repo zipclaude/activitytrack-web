@@ -33,7 +33,7 @@ log = logging.getLogger("updates")
 # after a failed check the next one comes sooner than the interval
 RETRY = timedelta(hours=1)
 KEEP = 2
-USER_AGENT = "ActivityTrack-Web (+https://gitlab.com/infraconsulting/activitytrack-web)"
+USER_AGENT = "ActivityTrack-Web (+https://gitlab.com/activitytrack/activitytrack-web)"
 
 
 def mirror_dir():

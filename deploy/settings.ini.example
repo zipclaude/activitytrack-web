@@ -44,7 +44,7 @@ offload = none
 ; new versions of ActivityTrack (docs/SYNC.md §12.4): the signed manifest the server polls by
 ; default (an admin changes it on the Aggiornamenti page), the channels followed (prod, beta, test,
 ; dev), the hours between checks, and the largest package the mirror takes
-;manifest_url = https://gitlab.com/infraconsulting/activitytrack/-/raw/main/update-manifest.json
+;manifest_url = https://gitlab.com/activitytrack/activitytrack/-/raw/main/update-manifest.json
 ;channels = prod
 ;poll_hours = 12
 ;max_mb = 200
