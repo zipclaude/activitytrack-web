@@ -25,6 +25,11 @@ variables:
 
 test:
   stage: test
+  # a pipeline started with TESTVM=1 runs the testvm jobs only (docs: activitytrack-doc agents/testvm-ci.md)
+  rules:
+    - if: $TESTVM
+      when: never
+    - when: on_success
   # the server must run on Debian stable packages only (docs/ARCHITECTURE.md R1)
   image: debian:trixie
   parallel:
@@ -51,6 +56,8 @@ test:
 # the packages and the installs are tried on a tag and in pipelines started by hand or by the API
 .packaging:
   rules:
+    - if: $TESTVM
+      when: never
     - if: $CI_COMMIT_TAG =~ /^v[0-9]/
     - if: $CI_PIPELINE_SOURCE == "web" || $CI_PIPELINE_SOURCE == "api"
 
@@ -188,6 +195,8 @@ release:
   stage: release
   image: alpine:3.22
   rules:
+    - if: $TESTVM
+      when: never
     - if: $CI_COMMIT_TAG =~ /^v[0-9]/
   interruptible: false
   script:
@@ -223,3 +232,19 @@ release:
       jq -n --arg tag "$CI_COMMIT_TAG" --arg name "ActivityTrack Web $V" --rawfile desc notes.md --argjson links "$links" \
         '{tag_name:$tag, name:$name, description:$desc, assets:{links:$links}}' |
         curl --fail-with-body -sS -X POST --header "JOB-TOKEN: $CI_JOB_TOKEN" --header "Content-Type: application/json" --data @- "$CI_API_V4_URL/projects/$CI_PROJECT_ID/releases"
+
+# ---- test VM runner (tag testvm, the owner's test VM): a pipeline started with the variable TESTVM=1 runs
+# ---- only the jobs below; every other job has "if: $TESTVM / when: never" first in its rules.
+# ---- Images are built by hand on the VM (activitytrack-doc agents/testvm-ci.md).
+testvm:
+  stage: test
+  tags: [testvm]
+  image: activitytrack/pytest:trixie
+  rules:
+    - if: $TESTVM
+  script:
+    - python3 -c "import django; print('Django', django.__version__)"
+    - cd server
+    - python3 manage.py check
+    - python3 manage.py makemigrations --check --dry-run
+    - python3 manage.py test -v 2
