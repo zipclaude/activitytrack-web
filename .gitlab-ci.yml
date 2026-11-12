@@ -77,8 +77,8 @@ deb:
     # version
     - V=$(sed -n 's/^__version__ = "\(.*\)"/\1/p' server/atweb/__init__.py)
     - if [ -n "$CI_COMMIT_TAG" ]; then test "v$V" = "$CI_COMMIT_TAG"; fi
-    # Debian: a beta 1.1.0-beta.1 is 1.1.0~beta.1 (sorts before 1.1.0)
-    - DV=$(echo "$V" | tr '-' '~')
+    # Debian: a beta 1.1.0-beta.1 is 1.1.0~beta.1 (sorts before 1.1.0) ; only the first "-"
+    - DV=$(echo "$V" | sed 's/-/~/')
     # the package: that version and a Debian revision, 1.1.0~beta.1-1
     - PV=$(dpkg-parsechangelog -S Version)
     - test "$(dpkg-parsechangelog -S Source)" = activitytrack-web && test "${PV%-*}" = "$DV" && test "$PV" != "$DV"
