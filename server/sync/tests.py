@@ -713,6 +713,15 @@ class ActivityWireTests(SyncTestCase):
         self.assertEqual(self.push(a, [self.upsert("entry", uid(), {**todo, "companyUid": None}, T0)])[0]["status"], "applied")
         self.assertEqual(self.push(b, [self.upsert("entry", uid(), {**todo, "companyUid": None}, T0)])[0]["status"], "applied")
 
+    def test_a_blank_external_key_is_none(self):
+        a = self.pair(self.alice)
+        todo = dict(entry_fields(status="TODO", mode=None), externalKey="  ")
+        first, second = uid(), uid()
+        res = self.push(a, [self.upsert("entry", first, todo, T0), self.upsert("entry", second, todo, T0)])
+        # no clash between two blanks: neither has a key
+        self.assertEqual([r["status"] for r in res], ["applied", "applied"])
+        self.assertEqual([Entry.objects.get(uid=u).external_key for u in (first, second)], [None, None])
+
     def test_the_old_types_are_unknown(self):
         phone = self.pair(self.alice)
         res = self.push(phone, [self.upsert("todo", uid(), {"title": "x"}, T0), self.upsert("absence", uid(), {"date": "2026-11-11"}, T0),

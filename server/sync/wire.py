@@ -45,6 +45,9 @@ def _object(name, value):
 
 # the shape of each JSON field: the pages read them as such, a phone's
 # wrong value would break them for everyone who reads the record
+# text fields where a blank value means none: an external key "" would clash with every other ""
+BLANK_IS_NONE = {"external_key"}
+
 JSON_SHAPES = {"tags": _tags, "phones": _strings, "plugin_fields": _object, "extra": _object}
 
 
@@ -124,6 +127,8 @@ class WireField:
                     raise TypeError
                 if self.field.max_length and len(value) > self.field.max_length:
                     raise WireError(f"{self.name}: longer than {self.field.max_length}")
+                if self.field.name in BLANK_IS_NONE and not value.strip():
+                    return None
                 return value
             return JSON_SHAPES[self.field.name](self.name, value)
         except (TypeError, ValueError) as e:

@@ -204,3 +204,10 @@ class MigrationCaseTests(SimpleTestCase):
         self.assertEqual(sorted(out), ["e", "t", "u", "v"])
         self.assertEqual([out[x]["external_key"] for x in ("t", "u", "v")], ["K", None, "K"])
         self.assertEqual(out["e"]["closed_utc_ms"], 1)
+
+    def test_blank_keys_are_none(self):
+        """A blank key is no key: it skips the uniqueness pass and must not reach the constraint of 0009 either."""
+        t = {"uid": "t", "owner": 1, "title": "x", "created_utc_ms": 1, "updated_utc_ms": 1, "external_key": "", "company": "c"}
+        out = migrate({"todos": [t, {**t, "uid": "u", "external_key": " "}, {**t, "uid": "v", "external_key": None}]},
+                      "Europe/Rome")["entries"]
+        self.assertEqual([out[x]["external_key"] for x in ("t", "u", "v")], [None, None, None])

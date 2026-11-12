@@ -164,7 +164,8 @@ def migrate(data, zone):
 
     def todo_fields(t):
         return {
-            "external_key": t.get("external_key"), "due_date": t.get("due_date"), "due_time_min": t.get("due_time_min"),
+            # a blank key is no key: the uniqueness pass skips it, the constraint of 0009 would not
+            "external_key": None if _blank(t.get("external_key")) else t["external_key"], "due_date": t.get("due_date"), "due_time_min": t.get("due_time_min"),
             "plan_date": t.get("plan_date"), "plan_start_min": t.get("plan_start_min"),
             "duration_min": t.get("duration_min"), "priority": A.priority_from_legacy(t.get("priority")),
         }
@@ -272,7 +273,11 @@ def _unique_keys(entries, out):
     rows = []
     for uid, f in out.items():
         old = entries.get(uid, {})
-        if not f.get("external_key") or old.get("deleted"):
+        if _blank(f.get("external_key")):
+            if f.get("external_key") is not None:
+                f["external_key"] = None
+            continue
+        if old.get("deleted"):
             continue
         row = f if f.get("new") else {**old, **f}
         rows.append((row["created_utc_ms"], uid, (row.get("owner"), row.get("company"), f["external_key"])))
