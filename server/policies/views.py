@@ -77,7 +77,9 @@ def _initial(data):
         v[f"setting:{k}"] = value
     for k, value in data.get("behaviours", {}).items():
         v[f"behaviour:{k}"] = value
-    v["entries"] = data.get("entries", {}).get("source", "")
+    # todosOnly is the name before 1.0
+    source = data.get("entries", {}).get("source", "")
+    v["entries"] = {"todosOnly": "plannedOnly"}.get(source, source)
     v["masterData"] = data.get("masterData", {}).get("source", "")
     v["export"] = data.get("export", {}).get("formats", [])
     v["language"] = data.get("ui", {}).get("language", "")

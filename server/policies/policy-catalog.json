@@ -800,7 +800,7 @@
   ],
   "entriesSource": [
     "free",
-    "todosOnly"
+    "plannedOnly"
   ],
   "masterDataSource": [
     "user",

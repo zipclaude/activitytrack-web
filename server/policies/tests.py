@@ -68,6 +68,12 @@ class PolicyTests(PolicyBase):
         self.assertIsNone(r["signature"])
         self.assertEqual(len(r["fingerprint"]), 64)
 
+    def test_the_editor_reads_the_old_name_of_planned_only(self):
+        Policy.objects.create(org=self.org, data={"entries": {"source": "todosOnly"}}, revision=1)
+        self.client.force_login(self.admin)
+        page = self.client.get("/policy/org/").content.decode()
+        self.assertIn("<option selected>plannedOnly</option>", page)
+
     def test_editor_saves_a_valid_body_and_refuses_errors(self):
         self.client.force_login(self.admin)
         form = {
