@@ -110,3 +110,25 @@ class ActivityMigrationTests(TransactionTestCase):
     def leaves(self):
         executor = MigrationExecutor(connection)
         return executor.loader.graph.leaf_nodes()
+
+
+class StaleScopeExitTests(TransactionTestCase):
+    """0010: the exits of the removed types todo and absence would be pulled as gone entries of an unknown type."""
+
+    def test_exits_of_removed_types_go(self):
+        from importlib import import_module
+
+        from django.apps import apps
+
+        from accounts.models import Organization, User
+        from sync import engine
+        from sync.models import ScopeExit
+
+        org = Organization.objects.create(name="Infra")
+        alice = User.objects.create_user("alice", password="x", org=org)
+        for rev, type_ in enumerate(("todo", "absence", "entry", "segment"), start=1):
+            ScopeExit.objects.create(org=org, user=alice, type=type_, uid=uuid.uuid4(), rev=rev)
+        engine.next_rev(org), engine.next_rev(org), engine.next_rev(org), engine.next_rev(org)
+        self.assertEqual({g["type"] for g in engine.pull(alice, 0)["gone"]}, {"todo", "absence", "entry", "segment"})
+        import_module("records.migrations.0010_drop_stale_scope_exits").forward(apps, None)
+        self.assertEqual({g["type"] for g in engine.pull(alice, 0)["gone"]}, {"entry", "segment"})
