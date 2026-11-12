@@ -9,13 +9,18 @@ import csv
 from datetime import date
 
 from django.contrib.auth.decorators import login_required
+from django.db.models import Q
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.utils import timezone
 
 from accounts.models import Profile
 
-from . import data, reporting
+from records.models import ActivityKind
+
+from . import data, reporting, states
+
+ABSENCE = ActivityKind.ABSENCE
 
 
 def _period(request):
@@ -28,16 +33,26 @@ def _period(request):
     return since, until
 
 
-def _lines(request, since, until):
-    """The report lines of the period; an entry's expenses go with its first line in it."""
+def _days(request, since, until):
+    """The report's days of the period; an absence without a company counts for every company."""
     q = data.readable_entries(request.user)
     # a filter that is not an id is left out, as a bad link
     company, person = data.parse_uid(request.GET.get("company")), data.parse_pk(request.GET.get("person"))
     if company:
-        q = q.filter(company__uid=company)
+        q = q.filter(Q(company__uid=company) | Q(kind=ABSENCE, company__isnull=True))
     if person is not None:
         q = q.filter(owner_id=person)
-    days = reporting.report(q, since, until)
+    return reporting.report(q, since, until)
+
+
+def _absences(days):
+    """The absence lines, in order of day."""
+    return [x for d in sorted(days) for x in days[d].absences]
+
+
+def _lines(request, since, until, days=None):
+    """The report lines of the period; an entry's expenses go with its first line in it."""
+    days = days if days is not None else _days(request, since, until)
     lines = [x for d in sorted(days) for x in days[d].lines]
     exps = data.expenses_of([x.entry for x in lines])
     seen = set()
@@ -61,7 +76,20 @@ def _row(x):
 def report(request):
     user = request.user
     since, until = _period(request)
-    lines = _lines(request, since, until)
+    days = _days(request, since, until)
+    lines = _lines(request, since, until, days)
+    # absences apart, by kind: days and hours as recorded
+    away = {}
+    for x in _absences(days):
+        t = away.setdefault(x.entry.absence_kind or "ABSENCE", {"days": set(), "seconds": 0})
+        t["days"].add((x.entry.owner_id, x.day))
+        t["seconds"] += x.seconds
+    order = list(states.ABSENCE_LABELS)
+    absences = [
+        {"kind": states.ABSENCE_LABELS[k], "days": len(v["days"]),
+         "time": reporting.hm_seconds(v["seconds"])}
+        for k, v in sorted(away.items(), key=lambda kv: order.index(kv[0]))]
+    states.annotate({x.entry.uid: x.entry for x in lines}.values())
     totals = {}
     names = ("work", "travel", "pause", "r_work", "r_travel", "r_pause")
     for x in lines:
@@ -84,7 +112,12 @@ def report(request):
     whole = shown({n: sum(v[n] for v in totals.values()) for n in names})
     reader = user.profile == Profile.READER
     return render(request, "web/report.html", {
-        "since": since, "until": until, "f": request.GET, "table": table, "whole": whole, "rows": [_row(x) for x in lines], "reader": reader,
+        "since": since, "until": until, "f": request.GET, "table": table, "whole": whole,
+        "rows": [_row(x) for x in lines], "reader": reader, "absences": absences,
+        "absence_rows": [
+            {"e": x.entry, "day": x.day, "start": x.start, "end": x.end,
+             "time": reporting.hm_seconds(x.seconds)}
+            for x in _absences(days)],
         "companies": user.companies.all() if reader else data.companies(user),
         "people": data.readable_people(user) if (user.is_admin or user.profile == Profile.MANAGER) else None,
         "expenses": sum(v["expenses"] for v in totals.values()),
@@ -107,8 +140,10 @@ def report_csv(request):
     w.writerow([
         "date", "user", "company", "client", "role", "activity", "status", "start", "end", "work_min", "travel_min", "pause_min",
         "expenses_eur", "tags", "uid", "work_rounded_min", "travel_rounded_min", "pause_rounded_min",
+        "absence_min",
     ])
-    for x in _lines(request, since, until):
+    days = _days(request, since, until)
+    for x in _lines(request, since, until, days):
         e = x.entry
         local = lambda t: timezone.localtime(t).strftime("%Y-%m-%d %H:%M") if t else ""  # noqa: E731
         w.writerow([
@@ -116,6 +151,17 @@ def report_csv(request):
             _cell(e.company.name if e.company else ""), _cell(e.client.name if e.client else ""), _cell(e.role.name if e.role else ""),
             _cell(e.activity), e.status, local(x.start), "" if x.running else local(x.end),
             x.work // 60, x.travel // 60, x.pause // 60, f"{x.expenses / 100:.2f}",
-            _cell(" ".join(e.tags or [])), str(e.uid), x.r_work, x.r_travel, x.r_pause,
+            _cell(" ".join(e.tags or [])), str(e.uid), x.r_work, x.r_travel, x.r_pause, 0,
+        ])
+    # absences: a row each and day, status ABSENCE, the kind as activity; only absence_min is filled
+    for x in _absences(days):
+        e = x.entry
+        local = lambda t: timezone.localtime(t).strftime("%Y-%m-%d %H:%M")  # noqa: E731
+        w.writerow([
+            x.day.isoformat(), _cell(e.owner.username if e.owner else ""),
+            _cell(e.company.name if e.company else ""), "", "",
+            _cell(e.activity or str(states.ABSENCE_LABELS.get(e.absence_kind, ""))), "ABSENCE",
+            local(x.start), local(x.end),
+            0, 0, 0, "0.00", _cell(" ".join(e.tags or [])), str(e.uid), 0, 0, 0, x.seconds // 60,
         ])
     return response

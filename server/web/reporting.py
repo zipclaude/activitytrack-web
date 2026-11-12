@@ -95,13 +95,30 @@ class Line:
 
 
 @dataclass
+class AbsenceLine:
+    """One absence on one day (ACTIVITY-MODEL §3.1): counted apart from work, travel and pause."""
+    entry: object
+    day: object
+    start: datetime
+    end: datetime
+    seconds: int = 0
+
+
+@dataclass
 class Day:
     day: object
     lines: list = field(default_factory=list)
+    absences: list = field(default_factory=list)
 
     @property
     def reported(self):
+        """Work and travel, rounded; absences are not in it."""
         return sum(x.reported for x in self.lines)
+
+    @property
+    def absent(self):
+        """Seconds of absence."""
+        return sum(x.seconds for x in self.absences)
 
 
 def _split(start, end, tz):
@@ -160,9 +177,10 @@ def report(entries, since, until, now=None):
     """
     The days since..until (dates) with the lines of the given entries (a
     queryset), each rounded with its owner's rules. Planned segments never
-    count, nor absences.
+    count; the absences of the period are in each day's `absences`, apart
+    from work, travel and pause (their lines and totals).
     """
-    # TODO(activity-1.0-pages): absences counted apart from work, travel and pause (ACTIVITY-MODEL §3.1)
+    absent = entries.filter(kind="ABSENCE")
     entries = entries.filter(kind="ACTIVITY")
     tz = timezone.get_current_timezone()
     now = now or timezone.now()
@@ -182,9 +200,32 @@ def report(entries, since, until, now=None):
         for line in lines(e, segs.get(e.uid, []), r, now, tz):
             if since <= line.day <= until:
                 days.setdefault(line.day, Day(line.day)).lines.append(line)
+    for line in absence_lines(absent, since, until, tz):
+        days.setdefault(line.day, Day(line.day)).absences.append(line)
     for d in days.values():
         d.lines.sort(key=lambda x: x.start)
+        d.absences.sort(key=lambda x: x.start)
     return days
+
+
+def absence_lines(absent, since, until, tz):
+    """The ABSENCE segments of [absent] (a queryset) per entry and local day in since..until."""
+    lo = datetime.combine(since, time.min, tzinfo=tz)
+    hi = datetime.combine(until + timedelta(days=1), time.min, tzinfo=tz)
+    segs = Segment.objects.filter(
+        entry__in=absent, deleted=False, planned=False, kind="ABSENCE", end_utc__isnull=False,
+        start_utc__lt=hi, end_utc__gt=lo)
+    segs = segs.select_related("entry__company", "entry__owner").order_by("start_utc")
+    by = {}
+    for sg in segs:
+        for day, a, b in _split(sg.start_utc, sg.end_utc, tz):
+            if since <= day <= until:
+                line = by.get((sg.entry_id, day))
+                if line is None:
+                    line = by[(sg.entry_id, day)] = AbsenceLine(sg.entry, day, a, b)
+                line.start, line.end = min(line.start, a), max(line.end, b)
+                line.seconds += int((b - a).total_seconds())
+    return list(by.values())
 
 
 def hm(minutes):

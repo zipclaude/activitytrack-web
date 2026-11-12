@@ -33,15 +33,15 @@
 <div class="tl" id="timeline" style="--cols: {{ columns|length }}" data-from="{{ work_from }}" data-to="{{ work_to }}"
 	{% if plannable %}data-plan="{% url 'todo_new' %}" data-back="{{ request.get_full_path }}"{% endif %}>
 	{% if view == "week" %}<div class="tl-row tl-head"><span></span>{% for c in columns %}<a href="{{ c.link }}" class="{% if c.today %}today{% endif %}">{{ c.day|date:"D j" }}<span class="sub">{{ c.reported|default:"&nbsp;" }}</span></a>{% endfor %}</div>{% endif %}
-	{% if columns|length %}<div class="tl-row tl-band"><span class="sub">{% translate "giorno" %}</span>{% for c in columns %}<div>{% for t in c.band %}<a class="bandtodo" href="{{ t.url }}" style="--c: {{ t.color|color }}">☐ {{ t.title }}{% if t.due %} · {% translate "scade" %} {{ t.due }}{% endif %}</a>{% endfor %}</div>{% endfor %}</div>{% endif %}
+	{% if columns|length %}<div class="tl-row tl-band"><span class="sub">{% translate "giorno" %}</span>{% for c in columns %}<div>{% for t in c.band %}<a class="bandtodo" href="{{ t.url }}" style="--c: {{ t.color|color }}">{% icon t.icon %}{{ t.title }}{% if t.due %} · {% translate "scade" %} {{ t.due }}{% endif %}</a>{% endfor %}</div>{% endfor %}</div>{% endif %}
 	<div class="tl-scroll"><div class="tl-grid">
 		<div class="tl-hours">{% for h in hours %}{% if h %}<span style="--m: {% widthratio h 1 60 %}">{{ h|hour_label }}</span>{% endif %}{% endfor %}</div>
 		{% for c in columns %}<div class="tl-col{% if c.today %} today{% endif %}" data-day="{{ c.day|date:'Y-m-d' }}">
-			{% for b in c.blocks %}<a class="blk {{ b.kind }}{% if b.absence %} absence{% endif %}{% if b.done %} done{% endif %}{% if b.running %} running{% endif %}" href="{{ b.url }}{% if b.kind == 'todo' %}?next={{ request.get_full_path|urlencode }}{% endif %}"
+			{% for b in c.blocks %}<a class="blk {{ b.kind }}{% if b.absence %} absence{% endif %}{% if b.running %} running{% endif %}" href="{{ b.url }}{% if b.kind == 'todo' %}?next={{ request.get_full_path|urlencode }}{% endif %}"
 				style="--top: {{ b.top }}; --h: {{ b.height }}; --lane: {{ b.lane }}; --lanes: {{ b.lanes }}; --c: {{ b.color|color }}; --ink: {{ b.color|ink }}"
 				title="{{ b.title }}{% if b.activity %} · {{ b.activity }}{% endif %} · {{ b.span }}{% if b.reported %} · {{ b.reported }}{% endif %}">
 				{% if b.tags %}{% tag_dots b.tags tag_colors %}{% endif %}
-				<b>{% if b.absence %}{% if b.done %}✓ {% endif %}{% elif b.kind == "todo" %}☐ {% endif %}{{ b.title|default:_("Senza cliente") }}</b>{% if b.activity %}<span class="act"> · {{ b.activity }}</span>{% endif %}
+				<b>{% if b.icon %}{% icon b.icon %}{% endif %}{{ b.title|default:_("Senza cliente") }}</b>{% if b.activity %}<span class="act"> · {{ b.activity }}</span>{% endif %}
 				<span class="when">{{ b.span }}{% if b.reported %} · {{ b.reported }}{% endif %}</span>
 			</a>{% endfor %}
 			{% if c.now is not None %}<i class="now" style="--top: {{ c.now }}"></i>{% endif %}

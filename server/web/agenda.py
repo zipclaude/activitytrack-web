@@ -16,15 +16,16 @@ from django.utils import timezone
 from django.utils.translation import gettext as _
 
 from accounts.models import Profile
+from records import activity as A
 from records.models import ActivityKind, Entry, Segment, WorkSchedule
 
-from . import data, formats, reporting
+from . import data, formats, reporting, states
 
 VIEWS = ("day", "week", "month")
 # companies without a colour: the app's neutral grey (Colors.kt NO_COLOR)
 NO_COLOR = 0x6B7280
-# an absence: the palette's red (Todos.kt ABSENCE_COLOR)
-ABSENCE_COLOR = 0xD64545
+# an absence: pink/fuchsia (ACTIVITY-MODEL §2.2)
+ABSENCE_COLOR = 0xC2185B
 DAY_MIN = 24 * 60
 
 
@@ -125,8 +126,9 @@ def agenda(request):
         for d in days.values():
             d.lines = [x for x in d.lines if tag in (x.entry.tags or [])]
 
-    # TODO activities: planned in the period or, without a plan, due in it; hidden by the tag filter
-    # TODO(activity-1.0-pages): planned segments drawn dashed, absences by kind, the displayed states
+    # TODO activities: planned in the period or, without a plan, due in it; hidden by the tag
+    # filter.
+    # Their plan is drawn dashed and never counts in the totals (ACTIVITY-MODEL §1.2).
     todos, planned, absences = [], {}, []
     lo, hi = data.day_bounds(since)[0], data.day_bounds(until)[1]
     if person == user and not tag:
@@ -136,9 +138,11 @@ def agenda(request):
             planned.setdefault(x.entry_id, []).append(x)
         todos = list(open_q.filter(
             Q(plan_date__range=(since, until)) | Q(plan_date__isnull=True, due_date__range=(since, until)) | Q(uid__in=planned.keys())))
+        states.annotate(todos)
         # an absence shows on each day it covers, one block a segment
         mine = Entry.objects.filter(org=user.org, owner=user, deleted=False, deleted_utc__isnull=True, kind=ActivityKind.ABSENCE)
         absences = list(Segment.objects.filter(entry__in=mine, deleted=False, start_utc__lt=hi, end_utc__gt=lo).select_related("entry"))
+    abs_icon = states.UI[A.ABSENCE][0]
 
     def link(**kw):
         q = {"view": view, "date": anchor.isoformat(), "person": person.pk if person != user else "", "tag": tag, **kw}
@@ -170,24 +174,30 @@ def agenda(request):
                         top, bottom = max(0, _minute(x.start_utc, day, tz)), min(DAY_MIN, _minute(x.end_utc, day, tz))
                         blocks.append({
                             "kind": "todo", "top": top, "height": max(bottom - top, 30), "url": url, "color": color,
-                            "title": t.activity or "", "span": f"{_clock(top)}–{_clock(bottom)}",
+                            "icon": states.UI[t.shown][0], "title": t.activity or "",
+                            "span": f"{_clock(top)}–{_clock(bottom)}",
                         })
             elif t.plan_date == day and t.plan_start_min is not None:
                 length = t.duration_min or 0
                 blocks.append({
                     "kind": "todo", "top": t.plan_start_min, "height": max(length, 30), "url": url, "color": color,
-                    "title": t.activity or "", "span": _clock(t.plan_start_min) + (f"–{_clock(t.plan_start_min + length)}" if length else ""),
+                    "icon": states.UI[t.shown][0], "title": t.activity or "",
+                    "span": _clock(t.plan_start_min)
+                    + (f"–{_clock(t.plan_start_min + length)}" if length else ""),
                 })
             elif t.plan_date == day or (t.plan_date is None and t.due_date == day):
                 band.append({"title": t.activity or "", "url": url, "color": color,
+                             "icon": states.UI[t.shown][0],
                              "due": _clock(t.due_time_min) if t.plan_date is None and t.due_time_min is not None else None})
         for x in absences:
             if timezone.localtime(x.start_utc, tz).date() == day:
                 top, bottom = max(0, _minute(x.start_utc, day, tz)), min(DAY_MIN, _minute(x.end_utc, day, tz))
                 blocks.append({
-                    "kind": "todo", "absence": True, "done": True, "top": top, "height": max(bottom - top, 30),
+                    "kind": "todo", "absence": True, "icon": abs_icon, "top": top,
+                    "height": max(bottom - top, 30),
                     "url": reverse("todo_edit", args=[x.entry_id]), "color": ABSENCE_COLOR,
-                    "title": x.entry.activity or _("Assenza"), "span": f"{_clock(top)}–{_clock(bottom)}",
+                    "title": states.ABSENCE_LABELS.get(x.entry.absence_kind, _("Assenza")),
+                    "span": f"{_clock(top)}–{_clock(bottom)}",
                 })
         companies = []
         for x in d.lines if d else []:

@@ -18,7 +18,14 @@
 	{% if table %}<tfoot><tr><th colspan="3">{% translate "Totale" %}</th><th>{{ whole.work }}<span class="sub">{{ whole.real_work }}</span></th><th>{{ whole.travel }}<span class="sub">{{ whole.real_travel }}</span></th><th>{{ whole.pause }}<span class="sub">{{ whole.real_pause }}</span></th><th>{{ expenses|eur }}</th></tr></tfoot>{% endif %}
 </table></section>
 <p class="doc">{% translate "Tempi arrotondati come nel report dell'app, con le regole della policy di ciascuno (altrimenti quelle predefinite); sotto, in piccolo, i tempi registrati. Un'attività a cavallo di più giorni conta in ciascuno." %}</p>
+{% if absences %}<h2>{% translate "Assenze" %}</h2>
+<section class="card"><table class="list totals"><thead><tr><th>{% translate "Tipo" %}</th><th>{% translate "Giorni" %}</th><th>{% translate "Ore" %}</th></tr></thead>
+	<tbody>{% for a in absences %}<tr><td>{{ a.kind }}</td><td>{{ a.days }}</td><td>{{ a.time }}</td></tr>{% endfor %}</tbody></table></section>
+<p class="doc">{% translate "Le assenze si contano a parte: non sono lavoro, viaggio né pausa e non sono arrotondate. Una assenza senza azienda vale per tutte." %}</p>{% endif %}
 <h2>{% translate "Dettaglio" %}</h2>
 {% regroup rows by day as by_day %}{% for d in by_day %}<h3 class="sec">{{ d.grouper|udate:"long" }}</h3>
 {% for r in d.list %}{% include "web/_entry_row.html" with show_owner=people %}{% endfor %}{% endfor %}
+{% for r in absence_rows %}{% if forloop.first %}<h3 class="sec">{% translate "Assenze" %}</h3>{% endif %}<a class="row" href="{% url 'todo_edit' r.e.uid %}" style="--band: var(--absence)">
+	<span class="main"><b>{{ r.e.absence_kind|absence_label }}</b><span class="sub">{{ r.day|udate:"day" }}{% if r.e.company %} · {{ r.e.company.name }}{% endif %}{% if people %} · {{ r.e.owner.get_full_name|default:r.e.owner.username }}{% endif %}</span></span>
+	<span class="side">{{ r.start|utime }}–{{ r.end|utime }}<span class="sub">{{ r.time }}</span></span></a>{% endfor %}
 {% endblock %}
