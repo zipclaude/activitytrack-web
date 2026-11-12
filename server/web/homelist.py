@@ -1,13 +1,15 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 """
 The Home list as in the app (ui/home/HomeTabs.kt homeSections, manual §3):
-to-dos and stopped entries in one list with the filters period, state,
-company and tag.
+to-dos (TODO activities) and stopped activities in one list with the
+filters period, state, company and tag.
 """
 
 from datetime import datetime, time, timedelta
 
 from django.utils import timezone
+
+from records import activity as A
 
 # period: -1 today, 0 everything, else hours
 WINDOWS = (-1, 24, 72, 168, 720, 0)
@@ -42,25 +44,20 @@ def moment(t, tz):
     return None
 
 
-def overdue(t, now, tz):
-    if t.done or t.ignored_utc:
+def overdue(t, now, tz, segments=()):
+    """Late (ACTIVITY-MODEL §2.3); [segments]: the activity's, for its planned ones."""
+    if t.status != A.TODO or t.deleted_utc:
         return False
-    plan = plan_bounds(t, tz)
-    if plan and (now >= plan[1] if plan[2] else now > plan[1]):
-        return True
-    if t.due_date:
-        limit = _at(t.due_date, min(max(t.due_time_min, 0), 1440), tz) if t.due_time_min is not None else _at(t.due_date + timedelta(days=1), 0, tz)
-        return now > limit
-    return False
+    return A.late(t, segments, now, tz)
 
 
-def state(t, now, tz):
-    """done, ignored, overdue, planned or open (todoState)."""
-    if t.done:
+def state(t, now, tz, segments=()):
+    """done, ignored (in the bin), overdue, planned or open (todoState)."""
+    if t.status == A.CLOSED:
         return "done"
-    if t.ignored_utc:
+    if t.deleted_utc:
         return "ignored"
-    if overdue(t, now, tz):
+    if overdue(t, now, tz, segments):
         return "overdue"
     return "planned" if t.plan_date else "open"
 
@@ -72,13 +69,14 @@ def today_from(carry_over_min, now, tz):
     return start if start <= now else _at(today - timedelta(days=1), carry_over_min, tz)
 
 
-def sections(todos, stopped, show, window, company=None, tag=None, carry_over_min=360, now=None, working=frozenset()):
+def sections(todos, stopped, show, window, company=None, tag=None, carry_over_min=360, now=None, incomplete=frozenset()):
     """
-    [(section, [item])], empty sections left out. todos: every to-do of the
-    user; stopped: [(entry, end)] of the closed and details-missing entries;
-    working: uids of to-dos with an activity still open, shown by it.
-    An item is ("todo", to-do, state) or ("entry", entry, end).
+    [(section, [item])], empty sections left out. todos: every TODO activity
+    of the user; stopped: [(entry, end)] of the closed activities; incomplete:
+    the uids of those not complete (§2.4, "details missing").
+    An item is ("todo", activity, state) or ("entry", entry, end).
     """
+    # TODO(activity-1.0-pages): the displayed states of ACTIVITY-MODEL §2.2 instead of the to-do's
     tz = timezone.get_current_timezone()
     now = now or timezone.now()
     today = timezone.localtime(now, tz).date()
@@ -97,20 +95,21 @@ def sections(todos, stopped, show, window, company=None, tag=None, carry_over_mi
             continue
         st = state(t, now, tz)
         if st in ("done", "ignored"):
-            at = (t.done_utc or t.updated_utc) if st == "done" else t.ignored_utc
+            at = (t.closed_utc or t.updated_utc) if st == "done" else t.deleted_utc
             if st == "done" and DONE in show and (behind is None or at >= behind):
                 key = ("1", -at.timestamp()) if at >= start_today else -at.timestamp()
                 groups["today" if at >= start_today else "earlier"].append((key, ("todo", t, st)))
             elif st == "ignored" and IGNORED in show and (behind is None or at >= behind):
                 groups["ignored"].append(((-at.timestamp(),), ("todo", t, st)))
             continue
-        if TODO not in show or t.uid in working:
+        if TODO not in show:
             continue
         m = moment(t, tz)
         if st == "overdue":
             groups["overdue"].append(((m or far).timestamp(), ("todo", t, st)))
         elif m is None:
-            groups["no_date"].append(((t.priority or 99, t.title.lower()), ("todo", t, st)))
+            # the most urgent first (5 emergency .. 1 low), then none
+            groups["no_date"].append(((-(t.priority or 0), (t.activity or "").lower()), ("todo", t, st)))
         elif ahead is not None and m > ahead:
             continue
         elif timezone.localtime(m, tz).date() > today:
@@ -120,7 +119,7 @@ def sections(todos, stopped, show, window, company=None, tag=None, carry_over_mi
     for e, end in stopped:
         if not ours(e.company_id) or (tag and tag not in (e.tags or [])):
             continue
-        if e.status == "TO_COMPLETE":
+        if e.uid in incomplete:
             if MISSING in show:
                 groups["missing"].append((-end.timestamp(), ("entry", e, end)))
         elif DONE in show and (behind is None or end >= behind):

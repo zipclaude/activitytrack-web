@@ -159,18 +159,21 @@ def lines(entry, segments, rules, now, tz):
 def report(entries, since, until, now=None):
     """
     The days since..until (dates) with the lines of the given entries (a
-    queryset), each rounded with its owner's rules.
+    queryset), each rounded with its owner's rules. Planned segments never
+    count, nor absences.
     """
+    # TODO(activity-1.0-pages): absences counted apart from work, travel and pause (ACTIVITY-MODEL §3.1)
+    entries = entries.filter(kind="ACTIVITY")
     tz = timezone.get_current_timezone()
     now = now or timezone.now()
     lo = datetime.combine(since, time.min, tzinfo=tz)
     hi = datetime.combine(until + timedelta(days=1), time.min, tzinfo=tz)
     # entries with time in the period, or the day before (carry-over)
-    near = Segment.objects.filter(entry__in=entries, deleted=False, start_utc__lt=hi).filter(
+    near = Segment.objects.filter(entry__in=entries, deleted=False, planned=False, start_utc__lt=hi).filter(
         Q(end_utc__isnull=True) | Q(end_utc__gt=lo - timedelta(days=1))).values("entry_id")
     picked = list(entries.filter(uid__in=near))
     segs = {}
-    for s in Segment.objects.filter(entry__in=picked, deleted=False).order_by("start_utc"):
+    for s in Segment.objects.filter(entry__in=picked, deleted=False, planned=False).order_by("start_utc"):
         segs.setdefault(s.entry_id, []).append(s)
     rules = {}
     days = {}

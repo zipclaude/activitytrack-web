@@ -4,11 +4,11 @@
 import uuid
 from datetime import datetime, time, timedelta
 
-from django.db.models import Q
+from django.db.models import Exists, OuterRef, Q
 from django.utils import timezone
 
 from accounts.models import Profile, User
-from records.models import Client, Company, Entry, EntryStatus, Expense, Role, Segment, Tag, Todo
+from records.models import ActivityKind, Client, Company, Entry, EntryStatus, Expense, Role, Segment, Tag
 
 
 def parse_pk(value):
@@ -70,10 +70,12 @@ def people(user):
 
 
 def readable_entries(user):
-    q = Entry.objects.filter(org=user.org, deleted=False).select_related("company", "client", "role", "owner")
+    """The activities a user reads, out of the bin (deleted_utc): TODO ones and absences included."""
+    # TODO(activity-1.0-pages): the bin, and lists that tell to-dos and absences apart
+    q = Entry.objects.filter(org=user.org, deleted=False, deleted_utc__isnull=True).select_related("company", "client", "role", "owner")
     if user.profile == Profile.READER:
-        # a client company's administration: closed entries of its companies only
-        return q.filter(company__in=user.companies.all(), status=EntryStatus.CLOSED)
+        # a client company's administration: closed activities of its companies only
+        return q.filter(company__in=user.companies.all(), status=EntryStatus.CLOSED, kind=ActivityKind.ACTIVITY)
     if user.profile == Profile.MANAGER and not user.is_admin:
         # their team's entries, and everyone's done for the companies they are responsible for
         return q.filter(Q(owner__in=people(user)) | Q(company__in=user.companies.all()))
@@ -114,8 +116,20 @@ def can_fix_times(user, entry):
     return (user.is_admin or user.profile == Profile.MANAGER) and people(user).filter(pk=entry.owner_id).exists()
 
 
+def todo_activities(org):
+    """TODO activities, in the bin or not (the to-do pages show the bin as "ignored")."""
+    return Entry.objects.filter(org=org, deleted=False, kind=ActivityKind.ACTIVITY, status=EntryStatus.TODO)
+
+
+def ticked(org):
+    """TODO activities and closed ones without real segments (to-dos ticked off: "done" on the to-do pages)."""
+    real = Segment.objects.filter(entry=OuterRef("pk"), deleted=False, planned=False)
+    return Entry.objects.filter(org=org, deleted=False, kind=ActivityKind.ACTIVITY).filter(
+        Q(status=EntryStatus.TODO) | Q(status=EntryStatus.CLOSED) & ~Exists(real))
+
+
 def todos(user):
-    return Todo.objects.filter(org=user.org, deleted=False, owner=user).select_related("company", "client")
+    return todo_activities(user.org).filter(owner=user).select_related("company", "client")
 
 
 def assignable(user):
@@ -131,7 +145,7 @@ def assignable(user):
 
 def team_todos(user):
     """The to-dos a user reads and edits: their own and those of whom they assign to."""
-    return Todo.objects.filter(org=user.org, deleted=False, owner__in=assignable(user)).select_related("company", "client", "owner", "assignment__by")
+    return ticked(user.org).filter(owner__in=assignable(user)).select_related("company", "client", "owner", "assignment__by")
 
 
 def day_bounds(day):
@@ -141,18 +155,21 @@ def day_bounds(day):
 
 
 def durations(segments, now=None):
-    """Minutes per kind, the open segment up to now."""
+    """Minutes per kind, the open segment up to now; planned segments never count."""
     now = now or timezone.now()
-    out = {"WORK": 0, "TRAVEL": 0, "PAUSE": 0}
+    out = {"WORK": 0, "TRAVEL": 0, "PAUSE": 0, "ABSENCE": 0}
     for s in segments:
+        if s.planned:
+            continue
         end = s.end_utc or now
         out[s.kind] = out.get(s.kind, 0) + max(0, int((end - s.start_utc).total_seconds() // 60))
     return out
 
 
 def segments_of(entries):
+    """The real segments (not planned) of each entry."""
     by = {}
-    for s in Segment.objects.filter(entry__in=entries, deleted=False).order_by("start_utc"):
+    for s in Segment.objects.filter(entry__in=entries, deleted=False, planned=False).order_by("start_utc"):
         by.setdefault(s.entry_id, []).append(s)
     return by
 

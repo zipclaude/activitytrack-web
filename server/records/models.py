@@ -15,6 +15,7 @@ import uuid
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 
@@ -222,75 +223,45 @@ class Place(Synced):
     radius_m = models.IntegerField(default=100)
 
 
-class TodoKind(models.TextChoices):
-    TASK = "TASK"
-    # a planned absence (issue #158): a to-do with a plan and a colour, never worked on
+class ActivityKind(models.TextChoices):
+    ACTIVITY = "ACTIVITY"
+    # an absence (docs ACTIVITY-MODEL §3.1): ABSENCE segments only, always CLOSED
     ABSENCE = "ABSENCE"
 
 
-class Todo(Synced):
-    SYNC_TYPE = "todo"
-
-    company = _fk(Company)
-    client = _fk(Client)
-    # key in the management system; null for to-dos made by hand
-    external_key = models.TextField(null=True, blank=True)
-    # empty only for an absence (issue #158): the apps and the pages require it for a task
-    title = models.TextField(blank=True)
-    notes = models.TextField(null=True, blank=True)
-    # external references, one per line
-    refs = models.TextField(default="", blank=True)
-    due_date = models.DateField(null=True, blank=True)
-    due_time_min = models.IntegerField(null=True, blank=True)
-    priority = models.IntegerField(null=True, blank=True)
-    done = models.BooleanField(default=False)
-    done_utc = models.DateTimeField(null=True, blank=True)
-    created_utc = models.DateTimeField()
-    updated_utc = models.DateTimeField()
-    plan_date = models.DateField(null=True, blank=True)
-    plan_start_min = models.IntegerField(null=True, blank=True)
-    duration_min = models.IntegerField(null=True, blank=True)
-    ignored_utc = models.DateTimeField(null=True, blank=True)
-    plugin_fields = models.JSONField(null=True, blank=True)
-    kind = models.CharField(max_length=16, choices=TodoKind.choices, default=TodoKind.TASK)
-    # 0xRRGGBB of the palette; null = the default (red for an absence)
-    color = models.IntegerField(null=True, blank=True)
-    # last day of a whole-day plan lasting several days (an absence)
-    plan_end_date = models.DateField(null=True, blank=True)
-
-    def __str__(self):
-        return self.title
-
-
-class TodoAssignment(models.Model):
-    """Who gave a to-do to its owner (a manager, an admin), on the server only: it does not travel."""
-
-    todo = models.OneToOneField(Todo, on_delete=models.CASCADE, primary_key=True, related_name="assignment")
-    by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="+")
-    at = models.DateTimeField(auto_now=True)
-
-
 class EntryStatus(models.TextChoices):
-    ACTIVE = "ACTIVE"
-    SUSPENDED = "SUSPENDED"
-    TO_COMPLETE = "TO_COMPLETE"
+    """The lifecycle of an activity (docs ACTIVITY-MODEL §2.1): a to-do is an activity not started yet."""
+    TODO = "TODO"
+    RUNNING = "RUNNING"
     CLOSED = "CLOSED"
 
 
-SEGMENT_KINDS = [("WORK", "WORK"), ("TRAVEL", "TRAVEL"), ("PAUSE", "PAUSE")]
+class AbsenceKind(models.TextChoices):
+    ABSENCE = "ABSENCE"
+    HOLIDAY = "HOLIDAY"
+    LEAVE = "LEAVE"
+    SICK = "SICK"
+
+
+SEGMENT_KINDS = [("WORK", "WORK"), ("TRAVEL", "TRAVEL"), ("PAUSE", "PAUSE"), ("ABSENCE", "ABSENCE")]
 
 
 class Entry(Synced):
+    """
+    An activity (the app's time_entry; docs ACTIVITY-MODEL §1): a to-do while
+    TODO, then running and closed; an absence when kind is ABSENCE. The name
+    stays Entry, as the table and the wire type "entry".
+    """
+
     SYNC_TYPE = "entry"
 
-    todo = _fk(Todo, on_delete=models.SET_NULL)
     contact = _fk(Contact, on_delete=models.SET_NULL)
     company = _fk(Company)
     client = _fk(Client)
     role = _fk(Role)
     activity = models.TextField(null=True, blank=True)
     status = models.CharField(max_length=16, choices=EntryStatus.choices)
-    # kind of the open segment while ACTIVE
+    # kind of the open segment; null when none is open
     mode = models.CharField(max_length=16, choices=SEGMENT_KINDS, null=True, blank=True)
     locality = models.TextField(null=True, blank=True)
     location_kind = models.CharField(max_length=16, null=True, blank=True)
@@ -303,9 +274,53 @@ class Entry(Synced):
     needs_review = models.BooleanField(default=False)
     created_utc = models.DateTimeField()
     updated_utc = models.DateTimeField()
+    # never changes after creation
+    kind = models.CharField(max_length=16, choices=ActivityKind.choices, default=ActivityKind.ACTIVITY)
+    # in the bin ("eliminata"): restorable, hidden everywhere else; not the tombstone `deleted`
+    deleted_utc = models.DateTimeField(null=True, blank=True)
+    # when it was closed: a to-do ticked off has no segment to tell
+    closed_utc = models.DateTimeField(null=True, blank=True)
+    # key in the management system; unique with the company for each owner
+    external_key = models.TextField(null=True, blank=True)
+    # deadline ("Scadenza")
+    due_date = models.DateField(null=True, blank=True)
+    due_time_min = models.IntegerField(null=True, blank=True)
+    # plan: a day; a start (else the whole day); a duration (else a point in time)
+    plan_date = models.DateField(null=True, blank=True)
+    plan_start_min = models.IntegerField(null=True, blank=True)
+    duration_min = models.IntegerField(null=True, blank=True)
+    # 0 none, 1 low, 2 medium, 3 high, 4 urgent, 5 emergency
+    priority = models.IntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(5)])
+    # set iff kind is ABSENCE
+    absence_kind = models.CharField(max_length=16, choices=AbsenceKind.choices, null=True, blank=True)
 
     class Meta(Synced.Meta):
         verbose_name_plural = "entries"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["org", "owner", "company", "external_key"],
+                condition=models.Q(external_key__isnull=False, deleted=False),
+                name="records_entry_external_key",
+            ),
+        ]
+
+    def clean(self):
+        if (self.kind == ActivityKind.ABSENCE) != (self.absence_kind is not None):
+            raise ValidationError({"absence_kind": "set for an absence only"})
+
+    def __str__(self):
+        return self.activity or str(self.uid)
+
+
+class ActivityAssignment(models.Model):
+    """
+    Who gave a TODO activity to its owner (a manager, an admin), on the server
+    only: it does not travel, and means something only while the activity is TODO.
+    """
+
+    entry = models.OneToOneField(Entry, on_delete=models.CASCADE, primary_key=True, related_name="assignment")
+    by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="+")
+    at = models.DateTimeField(auto_now=True)
 
 
 class Segment(Synced):
@@ -322,6 +337,14 @@ class Segment(Synced):
     km_estimated = models.FloatField(null=True, blank=True)
     km_declared = models.FloatField(null=True, blank=True)
     note = models.TextField(null=True, blank=True)
+    # the plan of a TODO activity: never counted, drawn dashed, deleted on start
+    planned = models.BooleanField(default=False)
+
+    def clean(self):
+        if (self.planned or self.kind == "ABSENCE") and self.end_utc is None:
+            raise ValidationError({"end_utc": "a planned or absence segment is never open"})
+        if self.planned and self.kind == "ABSENCE":
+            raise ValidationError({"planned": "an absence segment is never planned"})
 
 
 class Attachment(Synced):
@@ -378,14 +401,6 @@ class ExternalRef(Synced):
     value = models.TextField()
 
 
-class Absence(Synced):
-    SYNC_TYPE = "absence"
-
-    date = models.DateField()
-    kind = models.CharField(max_length=16)
-    time_min = models.IntegerField(null=True, blank=True)
-
-
 class DayOff(Synced):
     SYNC_TYPE = "dayOff"
 
@@ -430,7 +445,7 @@ class RemoteItem(Synced):
 # parents before children: the order of a full push and of the wire schema
 SYNCED_MODELS = [
     Company, CompanySite, Client, ClientSite, Contact, Role, Tag, Preset, Material, Place,
-    Todo, Entry, Segment, Attachment, Expense, EntryMaterial, ExternalRef,
-    Absence, DayOff, WorkSchedule, LunchBreak, RemoteItem,
+    Entry, Segment, Attachment, Expense, EntryMaterial, ExternalRef,
+    DayOff, WorkSchedule, LunchBreak, RemoteItem,
 ]
 BY_TYPE = {m.SYNC_TYPE: m for m in SYNCED_MODELS}

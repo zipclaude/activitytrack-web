@@ -4,10 +4,14 @@ Compatibility between app and server versions (docs/SYNC.md §12).
 
 The wire schema is a number that grows only when what travels changes
 (types, fields, their meaning). Within a major release the server speaks
-its schema and the two before it (owner, 2026-10-31): a change from an
+its schema and the WINDOW before it (owner, 2026-10-31): a change from an
 older app is brought up to the current schema, a record for it is brought
 down to its schema, step by step through STEPS. Outside the window the
 server answers 426 with what to update.
+
+Schema 3 (activity model 1.0, the app's docs/ACTIVITY-MODEL.md §6) reset the
+window: the to-do became a state of the activity, which no step translates,
+so an app of schema 1 or 2 is told to upgrade ("upgrade_required").
 
 The app names its version and schema in two headers on every request; an
 app without them (0.9.x before the rule) speaks schema 1.
@@ -17,9 +21,12 @@ from dataclasses import dataclass
 from typing import Callable
 
 # the current wire schema; raise it with a Step for the previous one
-SCHEMA = 2
+SCHEMA = 3
 # the earlier schemas the server still speaks
-WINDOW = 2
+WINDOW = 0
+
+UPGRADE_REQUIRED = "upgrade_required"
+SERVER_TOO_OLD = "server_too_old"
 
 
 @dataclass(frozen=True)
@@ -29,25 +36,8 @@ class Step:
     down: Callable[[dict], dict]
 
 
-def _todo_up(change):
-    """Schema 1 -> 2: a to-do of an older app is a task; nothing to add (the model defaults)."""
-    return change
-
-
-def _todo_down(record):
-    """Schema 2 -> 1: the fields an older app does not know go; an absence keeps a title to be read by."""
-    if record.get("type") != "todo":
-        return record
-    f = dict(record.get("fields") or {})
-    if f.get("kind") == "ABSENCE" and not f.get("title"):
-        f["title"] = "Assenza"
-    for name in ("kind", "color", "planEndDate"):
-        f.pop(name, None)
-    return {**record, "fields": f}
-
-
 # n -> the step between schema n and n + 1; every schema in the window needs one
-STEPS: dict[int, Step] = {1: Step(up=_todo_up, down=_todo_down)}
+STEPS: dict[int, Step] = {}
 
 APP_HEADER = "X-ActivityTrack-App"
 SCHEMA_HEADER = "X-ActivityTrack-Schema"
@@ -70,9 +60,9 @@ def client(request):
 def refusal(schema):
     """None when the server speaks [schema], else what has to be updated."""
     if schema < min_schema():
-        return "app_too_old"
+        return UPGRADE_REQUIRED
     if schema > SCHEMA:
-        return "server_too_old"
+        return SERVER_TOO_OLD
     return None
 
 

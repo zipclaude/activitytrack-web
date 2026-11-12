@@ -8,18 +8,27 @@ from web import formats
 
 register = template.Library()
 
-STATUS = {
-    "ACTIVE": _("in corso"), "SUSPENDED": _("sospesa"), "TO_COMPLETE": _("dettagli mancanti"), "CLOSED": _("chiusa"),
-}
+# TODO(activity-1.0-pages): the displayed states of ACTIVITY-MODEL §2.2, their icons and colours
+STATUS = {"TODO": _("da fare"), "RUNNING": _("in corso"), "CLOSED": _("chiusa")}
 MODE = {"WORK": _("lavoro"), "TRAVEL": _("viaggio"), "PAUSE": _("pausa")}
 TODO = {"open": _("aperta"), "planned": _("pianificata"), "overdue": _("in ritardo"), "done": _("fatta"), "ignored": _("ignorata")}
 
 
 @register.filter
 def status(entry):
-    if entry.status == "ACTIVE" and entry.mode:
-        return MODE.get(entry.mode, entry.mode)
+    if entry.kind == "ABSENCE":
+        return _("Assenza")
+    if entry.status == "RUNNING":
+        return MODE.get(entry.mode, entry.mode) if entry.mode else _("sospesa")
     return STATUS.get(entry.status, entry.status)
+
+
+@register.filter
+def status_css(entry):
+    """The class of the state's pill and mark: active, suspended, closed, todo."""
+    if entry.status == "RUNNING":
+        return "active" if entry.mode else "suspended"
+    return entry.status.lower()
 
 
 @register.filter

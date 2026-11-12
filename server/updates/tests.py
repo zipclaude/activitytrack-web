@@ -93,6 +93,10 @@ class UpdatesCase(TestCase):
                                     POLICY_CHAIN="", UPDATES_APP_FINGERPRINT=self.app_fp, UPDATES_BACKGROUND=False),):
             o.enable()
             self.addCleanup(o.disable)
+        # every request as an app of the current wire schema
+        from sync import compat
+
+        self.client.defaults["HTTP_X_ACTIVITYTRACK_SCHEMA"] = str(compat.SCHEMA)
         self.org = Organization.objects.create(name="Infra")
         self.admin = User.objects.create_user("root", password="x-x-x-x-x-x", org=self.org, profile=Profile.ADMIN)
         self.alice = User.objects.create_user("alice", password="x-x-x-x-x-x", org=self.org)

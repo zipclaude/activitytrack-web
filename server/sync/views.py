@@ -44,7 +44,15 @@ def _bounded(view):
     return wrapped
 
 
-def device_api(view):
+def device_api(view=None, *, any_schema=False):
+    """
+    A phone's or PC's endpoint: bearer token, active user, a schema the server
+    speaks. [any_schema]: served to an app outside the window too (the update
+    offer and its packages: how an old app learns that it must be updated).
+    """
+    if view is None:
+        return lambda v: device_api(v, any_schema=any_schema)
+
     @csrf_exempt
     @wraps(view)
     def wrapped(request, *args, **kwargs):
@@ -58,7 +66,7 @@ def device_api(view):
             return _error(403, "user_disabled")
         version, schema = compat.client(request)
         refused = compat.refusal(schema)
-        if refused:
+        if refused and not (any_schema and refused == compat.UPGRADE_REQUIRED):
             return _incompatible(refused)
         now = timezone.now()
         seen = {}
@@ -82,7 +90,10 @@ def device_api(view):
 
 def _incompatible(code):
     """426: outside the compatibility window (docs/SYNC.md §12); the app tells what to update."""
-    return JsonResponse({"error": code, "detail": "", **compat.describe()}, status=426)
+    detail = ""
+    if code == compat.UPGRADE_REQUIRED:
+        detail = f"wire schema {compat.min_schema()} or later required: update the app"
+    return JsonResponse({"error": code, "detail": detail, **compat.describe()}, status=426)
 
 
 def _json(request):
@@ -180,7 +191,7 @@ def policy(request):
     return JsonResponse({"policy": text, "signature": signature, "fingerprint": fingerprint(text, signature) if text else None})
 
 
-@device_api
+@device_api(any_schema=True)
 @require_GET
 def head(request):
     org = request.device.user.org
@@ -285,7 +296,7 @@ def serve_file(att, path):
     return _guarded(FileResponse(open(path, "rb"), content_type=att.mime), att)
 
 
-@device_api
+@device_api(any_schema=True)
 @require_GET
 def update_file(request, sha256):
     """A mirrored package (docs/SYNC.md §12.4): through the same offload as the attachments."""

@@ -6,16 +6,14 @@
 	{% if e.needs_review %}<p class="note error">{% translate "Da verificare: dopo una sincronizzazione due periodi si sovrappongono. Correggi gli orari." %}</p>{% endif %}
 	<div class="head"><div><div class="sub">{{ e.company.name }}{% if not can %} · {{ e.owner.get_full_name|default:e.owner.username }}{% endif %}</div>
 		<h1>{{ e.client.name|default:_("Senza cliente") }}</h1><div>{{ e.activity|default:_("senza descrizione") }}</div></div>
-		<div class="big"><span class="pill s-{{ e.status|lower }}">{{ e|status }}</span><div>{% translate "Lavoro" %} {{ d.WORK }}{% if d.TRAVEL != "0:00" %} · {% translate "Viaggio" %} {{ d.TRAVEL }}{% endif %}{% if d.PAUSE != "0:00" %} · {% translate "Pausa" %} {{ d.PAUSE }}{% endif %}</div></div></div>
+		<div class="big"><span class="pill s-{{ e|status_css }}">{{ e|status }}</span><div>{% translate "Lavoro" %} {{ d.WORK }}{% if d.TRAVEL != "0:00" %} · {% translate "Viaggio" %} {{ d.TRAVEL }}{% endif %}{% if d.PAUSE != "0:00" %} · {% translate "Pausa" %} {{ d.PAUSE }}{% endif %}</div></div></div>
 	{% if can %}<form method="post" class="actions">{% csrf_token %}
-		{% if e.status == "ACTIVE" or e.status == "SUSPENDED" %}
-			{% if e.status == "ACTIVE" and e.mode != "PAUSE" %}<button name="action" value="pause" class="c-pause">{% icon "pause" %}{% translate "Pausa" %}</button>{% else %}<button name="action" value="work" class="c-work">{% icon "play" %}{% translate "Riprendi" %}</button>{% endif %}
+		{% if e.status == "RUNNING" %}
+			{% if e.mode and e.mode != "PAUSE" %}<button name="action" value="pause" class="c-pause">{% icon "pause" %}{% translate "Pausa" %}</button>{% else %}<button name="action" value="work" class="c-work">{% icon "play" %}{% translate "Riprendi" %}</button>{% endif %}
 			{% if e.mode != "TRAVEL" %}<button name="action" value="travel" class="c-travel">{% icon "travel" %}{% translate "Viaggio" %}</button>{% endif %}
-			{% if e.status == "ACTIVE" %}<button name="action" value="suspend" class="c-suspend">{% icon "suspend" %}{% translate "Sospendi" %}</button>{% endif %}
+			{% if e.mode %}<button name="action" value="suspend" class="c-suspend">{% icon "suspend" %}{% translate "Sospendi" %}</button>{% endif %}
 			<button name="action" value="stop" class="c-stop">{% icon "stop" %}{% translate "Stop" %}</button>
-		{% elif e.status == "TO_COMPLETE" %}<button name="action" value="complete" class="primary" {% if not complete %}disabled title="{% translate 'Servono cliente e descrizione' %}"{% endif %}>{% translate "Completa" %}</button>
-		<button name="action" value="reopen">{% translate "Riapri" %}</button>
-		{% else %}<button name="action" value="reopen">{% translate "Riapri" %}</button>{% endif %}
+		{% elif e.status == "CLOSED" and e.kind == "ACTIVITY" %}<button name="action" value="reopen">{% translate "Riapri" %}</button>{% endif %}
 	</form>{% endif %}
 </section>
 

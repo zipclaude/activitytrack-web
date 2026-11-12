@@ -33,6 +33,10 @@ class PolicyBase(TestCase):
         self.admin = User.objects.create_user("root", password="x", org=self.org, profile=Profile.ADMIN)
         self.alice = User.objects.create_user("alice", password="x", org=self.org)
         self.bob = User.objects.create_user("bob", password="x", org=self.org, profile=Profile.MANAGER)
+        # every request as an app of the current wire schema
+        from sync import compat
+
+        self.client.defaults["HTTP_X_ACTIVITYTRACK_SCHEMA"] = str(compat.SCHEMA)
 
     def token(self, user):
         _, code = PairingCode.issue(user)

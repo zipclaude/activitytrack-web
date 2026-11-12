@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ActivityTrack Web\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-07 23:59+0100\n"
+"POT-Creation-Date: 2026-11-11 23:51+0100\n"
 "PO-Revision-Date: 2026-11-05 22:00+0100\n"
 "Last-Translator: ActivityTrack\n"
 "Language-Team: English\n"
@@ -632,7 +632,9 @@ msgstr "Check now"
 msgid ""
 "Dimenticare le versioni già viste? Il prossimo manifesto sarà accettato "
 "anche se è più vecchio o ha versioni più basse."
-msgstr "Forget the versions already seen? The next manifest will be accepted even if it is older or has lower versions."
+msgstr ""
+"Forget the versions already seen? The next manifest will be accepted even if "
+"it is older or has lower versions."
 
 msgid "Azzera le versioni viste"
 msgstr "Reset the versions seen"
@@ -641,7 +643,9 @@ msgid ""
 "Serve se chi pubblica il manifesto ha ritirato una versione o è tornato "
 "indietro di proposito: il server rifiuta un manifesto più basso di quello "
 "già accettato."
-msgstr "Needed if whoever publishes the manifest withdrew a version or went back on purpose: the server refuses a manifest lower than the one already accepted."
+msgstr ""
+"Needed if whoever publishes the manifest withdrew a version or went back on "
+"purpose: the server refuses a manifest lower than the one already accepted."
 
 #, python-format
 msgid "Ultimo controllo: %(when)s."
@@ -718,7 +722,9 @@ msgstr "Settings saved."
 msgid ""
 "Fatto: il prossimo manifesto sarà accettato anche se ha versioni più basse o "
 "è più vecchio."
-msgstr "Done: the next manifest will be accepted even if it has lower versions or is older."
+msgstr ""
+"Done: the next manifest will be accepted even if it has lower versions or is "
+"older."
 
 msgid "Controllo avviato: ricarica la pagina fra qualche istante."
 msgstr "Check started: reload the page in a few moments."
@@ -1071,12 +1077,6 @@ msgstr "Suspend"
 
 msgid "Stop"
 msgstr "Stop"
-
-msgid "Servono cliente e descrizione"
-msgstr "A client and a description are needed"
-
-msgid "Completa"
-msgstr "Complete"
 
 msgid "Riapri"
 msgstr "Reopen"
@@ -1725,12 +1725,6 @@ msgstr ""
 "The organisation and the raw data stay in the <a "
 "href=\"%(admin_url)s\">advanced administration</a>."
 
-msgid "sospesa"
-msgstr "suspended"
-
-msgid "dettagli mancanti"
-msgstr "details missing"
-
 msgid "chiusa"
 msgstr "closed"
 
@@ -1757,6 +1751,9 @@ msgstr "done"
 
 msgid "ignorata"
 msgstr "ignored"
+
+msgid "sospesa"
+msgstr "suspended"
 
 msgid "Le due password sono diverse."
 msgstr "The two passwords differ."

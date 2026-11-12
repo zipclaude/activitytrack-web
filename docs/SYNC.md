@@ -22,14 +22,12 @@ node), `fields`, `deleted`. References between records are uids
 | `preset` | activity_preset | central or personal | `lastUsed` is device-local |
 | `material` | material | central or personal | |
 | `place` | place | user | personal places (home…) |
-| `todo` | todo | user (assignee) | managers may create them for their team |
-| `entry` | time_entry + entry_tag | user | `tags` is a list field |
-| `segment` | segment | as its entry | |
+| `entry` | time_entry + entry_tag | user | an activity, to-dos and absences included (§1.1); `tags` is a list field |
+| `segment` | segment | as its entry | `planned`: the plan of a `TODO` activity |
 | `expense` | expense | as its entry | |
 | `entryMaterial` | entry_material | as its entry | |
 | `attachment` | attachment | as its entry | file transferred apart (§6) |
 | `externalRef` | external_ref | as its entry | |
-| `absence` | absence | user | |
 | `dayOff` | day_off | user | uid derived from the date (UUIDv5) |
 | `workSchedule` | work_schedule | user | |
 | `lunchBreak` | lunch_break | user | |
@@ -37,14 +35,42 @@ node), `fields`, `deleted`. References between records are uids
 | `policy` | policy_record | server → phone only | §8 |
 
 Not synced: location_sample, call_log, remote_record, remote_deleted
-(`docs/ARCHITECTURE.md` §9).
+(`docs/ARCHITECTURE.md` §9). The types `todo` and `absence` of schema 2
+are gone (§12.1).
+
+### 1.1 The activity (schema 3)
+
+Since schema 3 (activity model 1.0, the app's `docs/ACTIVITY-MODEL.md`) the
+to-do is a state of the activity, not a record of its own. The type keeps
+the name `entry` (and the children `entryUid`); its fields besides the
+earlier ones (without `todoUid`):
+
+| Field | Values |
+|---|---|
+| `kind` | `ACTIVITY` or `ABSENCE`, never changes |
+| `status` | `TODO`, `RUNNING` (at most one open segment), `CLOSED`; an absence is always `CLOSED` |
+| `mode` | kind of the open segment, null when none is open |
+| `deletedUtcMs` | in the bin ("eliminata"): restorable; not the record's `deleted` tombstone |
+| `closedUtcMs` | when it was closed |
+| `externalKey` | key in the management system; unique with `companyUid` for each owner (a clash is `invalid` / `duplicate`) |
+| `dueDate`, `dueTimeMin` | deadline |
+| `planDate`, `planStartMin`, `durationMin` | plan |
+| `priority` | 0 none … 5 emergency, not null |
+| `absenceKind` | `ABSENCE`, `HOLIDAY`, `LEAVE`, `SICK`; set if and only if `kind` is `ABSENCE` |
+
+A `segment` has `kind` `WORK`, `TRAVEL`, `PAUSE` or `ABSENCE` (absences
+only, never planned, never open) and `planned` (default false; never open,
+never counted). Who assigned a `TODO` activity (`ActivityAssignment`) stays
+on the server; assigning it moves it and its children to the new owner and
+the old owner's phones get them as `gone`.
 
 Field names follow the app's Kotlin properties: references end in `Uid`,
 instants in `UtcMs` (epoch milliseconds UTC), local dates are
 `yyyy-mm-dd` strings (`dueDate`, `planDate`, `date`), times of day are
 minutes (`…Min`), amounts cents (`…Cents`). `manage.py sync_schema` prints
-every type with its fields, kinds and nullability: the app's mapping is
-checked against it.
+every type with its fields, kinds and nullability, and the wire schema it
+describes (`{"version": 1, "schema": 3, "types": […]}`): the app's mapping is
+checked against it (its `docs/samples/sync-schema.json`).
 
 ## 2. Changes on the phone
 
@@ -106,13 +132,13 @@ errors in a list shown under Settings → Sync.
 
 ```json
 { "serverTime": 1761650000123, "cursor": 4711, "more": false,
-  "records": [ { "type": "todo", "uid": "…", "rev": 4702, "deleted": false, "fields": { … } } ],
-  "gone": [ { "type": "todo", "uid": "…" } ] }
+  "records": [ { "type": "entry", "uid": "…", "rev": 4702, "deleted": false, "fields": { … } } ],
+  "gone": [ { "type": "entry", "uid": "…" } ] }
 ```
 
 Records visible to the device's user with `rev > cursor`, oldest first.
-`gone` lists records that left the user's scope (a to-do assigned to
-someone else, a personal record merged into a central one): the phone
+`gone` lists records that left the user's scope (a `TODO` activity, and its
+children, assigned to someone else, a personal record merged into a central one): the phone
 removes them without echoing a delete. A field still pending in the
 phone's `sync_change` is not overwritten: the pending push will settle it.
 
@@ -304,23 +330,28 @@ Rules (owner, 2026-10-31), from release 1.0 on:
 
 An integer, independent of the version numbers: it grows only when what
 travels changes (a type, a field, its meaning, a rule of the engine). A
-release that does not touch the sync keeps it. Today: **schema 2** (since
-0.9.6; schema 1 since 0.9.0).
+release that does not touch the sync keeps it. Today: **schema 3** (since
+1.0.0; schema 2 since 0.9.6, schema 1 since 0.9.0).
 
-Schema 2 (planned absences, issue #158): a `todo` gains `kind` (`TASK` or
-`ABSENCE`, default `TASK`), `color` (0xRRGGBB of the palette, any to-do) and
-`planEndDate` (last day of a whole-day plan lasting several days; an absence).
-An absence is a planned to-do with no company, client, due date or priority,
-and its `title` may be empty. For a schema 1 app (`compat.py`, step 1 → 2) the
-three fields are dropped and an absence with no title is titled "Assenza", so
-the older app shows it as a plain to-do; a schema 1 change needs no `up`
-translation (the model defaults). The `absence` record type (schema 1: a day
-absence or late entry) is still accepted and stored as it was; apps from 0.9.6
-turn their own into done absence to-dos.
+Schema 2 (planned absences, issue #158) gave a `todo` `kind`, `color` and
+`planEndDate`; schema 1 apps got them through a step.
 
-The server speaks its schema and the **two before it** (`sync/compat.py`:
-`SCHEMA`, `WINDOW`), so rule 1 holds and is wider when releases leave the
-schema alone. Between schema *n* and *n + 1* a `Step` translates both ways:
+Schema 3 (activity model 1.0, §1.1): `todo` and `absence` go, `entry` takes
+the to-do's fields and the new states, `segment` gains `planned`. No step
+translates across it, so the window was reset (`WINDOW = 0`): the server
+speaks schema 3 only and answers an older app **426 `upgrade_required`**
+(the app shows "Aggiorna l'app per sincronizzare"). `sync/head` and the
+mirrored packages (`update/files/…`) still answer an older app, so it learns
+of the new version (§12.4). The server's data migration
+(`records/migrations/0007`–`0009`) runs the same function as the app's
+(`records/activity_migration.py`, the cases of the app's
+`docs/samples/activity-migration.json`, with deterministic uids); after its
+own migration a phone's first sync is a full realignment and the server's
+version of every migrated record wins.
+
+The server speaks its schema and the `WINDOW` before it (`sync/compat.py`:
+`SCHEMA`, `WINDOW`; two by rule 1, none right after a reset like schema 3).
+Between schema *n* and *n + 1* a `Step` translates both ways:
 `up` brings a change of an older app to the current schema, `down` brings
 a record to the app's schema (pull, push answers, file uploads). CI tests
 every step.
@@ -331,7 +362,7 @@ Every request of the app names its version and schema:
 
 ```
 X-ActivityTrack-App: 1.0.0
-X-ActivityTrack-Schema: 1
+X-ActivityTrack-Schema: 3
 ```
 
 An app without them (0.9.x) speaks schema 1. The server records the app's
@@ -341,7 +372,8 @@ pages show them). `pair` and `sync/head` answer, besides their fields,
 (§12.4).
 
 Outside the window the server answers **426** with
-`{"error": "app_too_old" | "server_too_old", "server", "schema", "minSchema"}`;
+`{"error": "upgrade_required" | "server_too_old", "detail", "server", "schema", "minSchema"}`
+(`upgrade_required` was `app_too_old` before schema 3);
 the app stops syncing and tells what to update. The data stay on the
 phone and sync once the versions match again.
 

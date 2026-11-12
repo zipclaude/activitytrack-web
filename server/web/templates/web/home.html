@@ -8,11 +8,11 @@
 <section class="card running" style="--band: {{ r.e.client.color|color|default:'var(--accent)' }}">{% tag_dots r.e.tags tag_colors %}
 	<div class="head"><div><div class="sub">{{ r.e.company.name }}</div><h2><a href="{% url 'entry' r.e.uid %}">{{ r.e.client.name|default:_("Senza cliente") }}</a></h2>
 	<div>{{ r.e.activity|default:_("senza descrizione") }}</div></div>
-	<div class="big"><span class="pill s-{{ r.e.status|lower }}">{{ r.e|status }}</span><div>{{ r.work }}</div></div></div>
+	<div class="big"><span class="pill s-{{ r.e|status_css }}">{{ r.e|status }}</span><div>{{ r.work }}</div></div></div>
 	<form method="post" action="{% url 'entry_quick' r.e.uid %}" class="actions">{% csrf_token %}
-		{% if r.e.status == "ACTIVE" and r.e.mode != "PAUSE" %}<button name="action" value="pause" class="c-pause">{% icon "pause" %}{% translate "Pausa" %}</button>{% else %}<button name="action" value="work" class="c-work">{% icon "play" %}{% translate "Riprendi" %}</button>{% endif %}
+		{% if r.e.mode and r.e.mode != "PAUSE" %}<button name="action" value="pause" class="c-pause">{% icon "pause" %}{% translate "Pausa" %}</button>{% else %}<button name="action" value="work" class="c-work">{% icon "play" %}{% translate "Riprendi" %}</button>{% endif %}
 		{% if r.e.mode != "TRAVEL" %}<button name="action" value="travel" class="c-travel">{% icon "travel" %}{% translate "Viaggio" %}</button>{% endif %}
-		{% if r.e.status == "ACTIVE" %}<button name="action" value="suspend" class="c-suspend">{% icon "suspend" %}{% translate "Sospendi" %}</button>{% endif %}
+		{% if r.e.mode %}<button name="action" value="suspend" class="c-suspend">{% icon "suspend" %}{% translate "Sospendi" %}</button>{% endif %}
 		<button name="action" value="stop" class="c-stop">{% icon "stop" %}{% translate "Stop" %}</button>
 	</form>
 </section>

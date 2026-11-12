@@ -14,7 +14,7 @@ from django.utils import timezone
 
 from accounts.models import Device, Organization, PairingCode, Profile, User
 from records.models import Company, Contact, Entry, Segment
-from sync import engine, wire
+from sync import compat, engine, wire
 
 T0 = 1761600000000  # 2025-10-27T21:20:00Z
 
@@ -25,7 +25,7 @@ def uid():
 
 def entry_fields(**over):
     fields = {
-        "status": "ACTIVE",
+        "status": "RUNNING",
         "mode": "WORK",
         "zoneId": "Europe/Rome",
         "activity": "Patching",
@@ -44,6 +44,8 @@ class SyncTestCase(TestCase):
         self.admin = User.objects.create_user("root", password="x", org=self.org, profile=Profile.ADMIN)
         self.files = tempfile.mkdtemp()
         self.addCleanup(shutil.rmtree, self.files)
+        # every request as an app of the current schema
+        self.client.defaults["HTTP_X_ACTIVITYTRACK_SCHEMA"] = str(compat.SCHEMA)
 
     def pair(self, user, name="Telefono", **more):
         _, code = PairingCode.issue(user)
@@ -439,33 +441,53 @@ class CompatTests(SyncTestCase):
     def test_window_and_versions(self):
         from accounts.models import Device
         from atweb import __version__
-        from sync import compat
 
         phone = self.pair(self.alice)
-        # an app without the headers (0.9.x) speaks schema 1
         head = self.get(phone, "/api/v1/sync/head").json()
-        self.assertEqual((head["schema"], head["minSchema"], head["server"]), (compat.SCHEMA, compat.min_schema(), __version__))
-        self.get(phone, "/api/v1/sync/head", schema=1, app="1.0.0")
+        self.assertEqual((head["schema"], head["minSchema"], head["server"]), (3, 3, __version__))
+        self.get(phone, "/api/v1/sync/head", schema=3, app="1.0.0")
         self.assertEqual(Device.objects.get(user=self.alice).app_version, "1.0.0")
         too_new = self.get(phone, "/api/v1/sync/head", schema=compat.SCHEMA + 1)
         self.assertEqual((too_new.status_code, too_new.json()["error"]), (426, "server_too_old"))
-        too_old = self.get(phone, "/api/v1/sync/head", schema=0)
-        self.assertEqual((too_old.status_code, too_old.json()["error"]), (426, "app_too_old"))
         # pairing refuses too, and the code stays good
         from accounts.models import PairingCode
 
         _, code = PairingCode.issue(self.alice)
         r = self.client.post("/api/v1/pair", json.dumps({"code": code}), content_type="application/json", HTTP_X_ACTIVITYTRACK_SCHEMA="99")
         self.assertEqual(r.status_code, 426)
-        r = self.client.post("/api/v1/pair", json.dumps({"code": code, "appVersion": "1.0.0"}), content_type="application/json", HTTP_X_ACTIVITYTRACK_SCHEMA="1")
+        r = self.client.post("/api/v1/pair", json.dumps({"code": code}), content_type="application/json", HTTP_X_ACTIVITYTRACK_SCHEMA="2")
+        self.assertEqual((r.status_code, r.json()["error"]), (426, "upgrade_required"))
+        r = self.client.post("/api/v1/pair", json.dumps({"code": code, "appVersion": "1.0.0"}), content_type="application/json")
         self.assertEqual((r.status_code, r.json()["schema"]), (200, compat.SCHEMA))
+
+    def test_schema_3_accepts_no_older_app(self):
+        """Activity model 1.0: no step reaches back across the to-do's removal (ACTIVITY-MODEL §6)."""
+        phone = self.pair(self.alice)
+        for schema in (None, 1, 2):
+            for path in ("/api/v1/sync/pull?cursor=0", "/api/v1/policy", "/api/v1/maps"):
+                headers = {"HTTP_AUTHORIZATION": f"Bearer {phone}"}
+                if schema is not None:
+                    headers["HTTP_X_ACTIVITYTRACK_SCHEMA"] = str(schema)
+                else:
+                    # an app without the header speaks schema 1
+                    self.client.defaults.pop("HTTP_X_ACTIVITYTRACK_SCHEMA", None)
+                r = self.client.get(path, **headers)
+                self.assertEqual(r.status_code, 426, (schema, path))
+                body = r.json()
+                self.assertEqual((body["error"], body["schema"], body["minSchema"]), ("upgrade_required", 3, 3))
+                self.assertIn("update the app", body["detail"])
+            r = self.client.post("/api/v1/sync/push", json.dumps({"changes": []}), content_type="application/json",
+                                 HTTP_AUTHORIZATION=f"Bearer {phone}", **({"HTTP_X_ACTIVITYTRACK_SCHEMA": str(schema)} if schema else {}))
+            self.assertEqual((r.status_code, r.json()["error"]), (426, "upgrade_required"))
+            # the update offer still reaches it: that is how it learns to update
+            r = self.client.get("/api/v1/sync/head", HTTP_AUTHORIZATION=f"Bearer {phone}", **({"HTTP_X_ACTIVITYTRACK_SCHEMA": str(schema)} if schema else {}))
+            self.assertEqual((r.status_code, r.json()["minSchema"]), (200, 3))
+        self.assertEqual(Device.objects.get(user=self.alice).schema, 2)
 
     def test_an_older_schema_is_translated_both_ways(self):
         from unittest import mock
 
-        from sync import compat
-
-        # a schema 2 that renamed the entry's "activity" to "description"
+        # a later schema 4 that renamed the entry's "activity" to "description", speaking schema 3 too
         def up(change):
             f = dict(change.get("fields") or {})
             if change.get("type") == "entry" and "activity" in f:
@@ -480,38 +502,20 @@ class CompatTests(SyncTestCase):
                 record = {**record, "fields": f}
             return record
 
-        with mock.patch.object(compat, "SCHEMA", 2), mock.patch.dict(compat.STEPS, {1: compat.Step(up=up, down=down)}):
+        with mock.patch.object(compat, "SCHEMA", 4), mock.patch.object(compat, "WINDOW", 1), \
+                mock.patch.dict(compat.STEPS, {3: compat.Step(up=up, down=down)}):
             phone = self.pair(self.alice)
             e = uid()
-            # the schema 1 app writes "activity": the server, in schema 2, reads "description"
+            # the schema 3 app writes "activity": the server, in schema 4, reads "description"
             with mock.patch("sync.engine.apply", wraps=__import__("sync.engine", fromlist=["apply"]).apply) as apply:
                 self.push(phone, [self.upsert("entry", e, {**entry_fields(), "activity": "Riunione"}, T0)])
                 self.assertIn("description", apply.call_args[0][1]["fields"])
-            # a record for a schema 1 app comes back with "activity"
-            records = self.get(phone, "/api/v1/sync/pull?cursor=0", schema=1).json()["records"]
+            # a record for a schema 3 app comes back with "activity"
+            records = self.get(phone, "/api/v1/sync/pull?cursor=0", schema=3).json()["records"]
             entry = next(r for r in records if r["uid"] == e)
             self.assertNotIn("description", entry["fields"])
-            # schema 0 is outside the window of a schema 2 server (2 and the two before)
-            self.assertEqual(self.get(phone, "/api/v1/sync/head", schema=0).status_code, 426)
-
-    def test_a_schema_1_app_gets_todos_without_the_absence_fields(self):
-        phone = self.pair(self.alice)
-        absent, task = uid(), uid()
-        fields = {"title": "", "refs": "", "done": False, "createdUtcMs": T0, "updatedUtcMs": T0, "planDate": "2026-10-27"}
-        # a schema 2 app writes an absence, an older one reads a to-do titled for it, without the new fields
-        self.push(phone, [self.upsert("todo", absent, {**fields, "kind": "ABSENCE", "color": 0xD64545, "planEndDate": "2026-10-29"}, T0)], schema=2)
-        self.push(phone, [self.upsert("todo", task, {**fields, "title": "Rinnovo"}, T0)])
-        from records.models import Todo
-
-        a = Todo.objects.get(uid=absent)
-        self.assertEqual((a.kind, a.color, str(a.plan_end_date)), ("ABSENCE", 0xD64545, "2026-10-29"))
-        self.assertEqual(Todo.objects.get(uid=task).kind, "TASK")
-        records = {r["uid"]: r for r in self.get(phone, "/api/v1/sync/pull?cursor=0", schema=1).json()["records"]}
-        for u in (absent, task):
-            self.assertFalse({"kind", "color", "planEndDate"} & records[u]["fields"].keys())
-        self.assertEqual(records[absent]["fields"]["title"], "Assenza")
-        current = {r["uid"]: r for r in self.get(phone, "/api/v1/sync/pull?cursor=0", schema=2).json()["records"]}
-        self.assertEqual((current[absent]["fields"]["kind"], current[absent]["fields"]["planEndDate"]), ("ABSENCE", "2026-10-29"))
+            # schema 2 is outside the window of a schema 4 server (4 and the one before)
+            self.assertEqual(self.get(phone, "/api/v1/sync/pull?cursor=0", schema=2).status_code, 426)
 
     def test_version_order(self):
         from sync.compat import version_key
@@ -629,3 +633,89 @@ class JsonShapeTests(SyncTestCase):
         out = StringIO()
         call_command("clean_json_fields", stdout=out)
         self.assertIn("0 record(s) repaired", out.getvalue())
+
+
+class ActivityWireTests(SyncTestCase):
+    """Wire schema 3 (the app's docs/ACTIVITY-MODEL.md §6.2): the to-do is a state of the entry."""
+
+    ENTRY_NEW = ["kind", "deletedUtcMs", "closedUtcMs", "externalKey", "dueDate", "dueTimeMin", "planDate", "planStartMin",
+                 "durationMin", "priority", "absenceKind"]
+
+    def test_the_schema(self):
+        types = {t["type"]: t for t in wire.schema()}
+        self.assertFalse({"todo", "absence"} & types.keys())
+        entry = [f["name"] for f in types["entry"]["fields"]]
+        self.assertNotIn("todoUid", entry)
+        self.assertEqual(entry[-len(self.ENTRY_NEW):], self.ENTRY_NEW)
+        kinds = {f["name"]: (f["kind"], f["null"]) for f in types["entry"]["fields"]}
+        self.assertEqual((kinds["priority"], kinds["kind"], kinds["dueDate"], kinds["closedUtcMs"]),
+                         (("int", False), ("text", False), ("date", True), ("instant", True)))
+        self.assertIn({"name": "planned", "kind": "bool", "null": False}, types["segment"]["fields"])
+
+    def test_sync_schema_command(self):
+        from io import StringIO
+
+        from django.core.management import call_command
+
+        out = StringIO()
+        call_command("sync_schema", stdout=out)
+        doc = json.loads(out.getvalue())
+        self.assertEqual(doc["schema"], compat.SCHEMA)
+        self.assertEqual([t["type"] for t in doc["types"]], [t["type"] for t in wire.schema()])
+
+    def test_a_todo_with_its_plan_reaches_the_other_phone(self):
+        phone, tablet = self.pair(self.alice, "phone"), self.pair(self.alice, "tablet")
+        e, s = uid(), uid()
+        res = self.push(phone, [
+            self.upsert("entry", e, entry_fields(status="TODO", mode=None, kind="ACTIVITY", externalKey="T-1", dueDate="2026-11-20",
+                                                 planDate="2026-11-12", planStartMin=540, durationMin=90, priority=4), T0),
+            self.upsert("segment", s, {"entryUid": e, "kind": "WORK", "startUtcMs": T0, "endUtcMs": T0 + 3600000, "zoneId": "Europe/Rome",
+                                       "planned": True}, T0),
+        ])
+        self.assertEqual([r["status"] for r in res], ["applied", "applied"])
+        got = {r["uid"]: r["fields"] for r in self.pull(tablet)["records"]}
+        self.assertEqual((got[e]["status"], got[e]["priority"], got[e]["planDate"], got[e]["externalKey"]), ("TODO", 4, "2026-11-12", "T-1"))
+        self.assertTrue(got[s]["planned"])
+
+    def test_values_are_checked(self):
+        phone = self.pair(self.alice)
+        bad = [
+            entry_fields(status="ACTIVE"),
+            entry_fields(priority=6),
+            entry_fields(priority=None),
+            entry_fields(kind="ABSENCE"),
+            entry_fields(absenceKind="SICK"),
+            entry_fields(kind="ABSENCE", status="CLOSED", mode=None, absenceKind="VACATION"),
+        ]
+        res = self.push(phone, [self.upsert("entry", uid(), f, T0) for f in bad])
+        self.assertEqual([r.get("error") for r in res], ["invalid"] * len(bad))
+        e = uid()
+        ok = self.push(phone, [self.upsert("entry", e, entry_fields(kind="ABSENCE", status="CLOSED", mode=None, absenceKind="SICK"), T0)])
+        self.assertEqual(ok[0]["status"], "applied")
+        segs = [
+            {"entryUid": e, "kind": "ABSENCE", "startUtcMs": T0, "zoneId": "Europe/Rome"},
+            {"entryUid": e, "kind": "ABSENCE", "startUtcMs": T0, "endUtcMs": T0 + 1, "zoneId": "Europe/Rome", "planned": True},
+            {"entryUid": e, "kind": "WORK", "startUtcMs": T0, "zoneId": "Europe/Rome", "planned": True},
+            {"entryUid": e, "kind": "ABSENCE", "startUtcMs": T0, "endUtcMs": T0 + 1, "zoneId": "Europe/Rome"},
+        ]
+        res = self.push(phone, [self.upsert("segment", uid(), f, T0) for f in segs])
+        self.assertEqual([r.get("error") for r in res], ["invalid", "invalid", "invalid", None])
+
+    def test_the_external_key_is_unique_with_the_company_per_owner(self):
+        a, b = self.pair(self.alice), self.pair(self.bob)
+        company = uid()
+        self.push(a, [self.upsert("company", company, {"name": "Acme"}, T0)])
+        todo = dict(entry_fields(status="TODO", mode=None), companyUid=company, externalKey="T-1")
+        self.assertEqual(self.push(a, [self.upsert("entry", uid(), todo, T0)])[0]["status"], "applied")
+        dup = self.push(a, [self.upsert("entry", uid(), todo, T0)])[0]
+        self.assertEqual((dup["error"], dup["detail"]), ("invalid", "duplicate"))
+        # without the company, or another person's: another key
+        self.assertEqual(self.push(a, [self.upsert("entry", uid(), {**todo, "companyUid": None}, T0)])[0]["status"], "applied")
+        self.assertEqual(self.push(b, [self.upsert("entry", uid(), {**todo, "companyUid": None}, T0)])[0]["status"], "applied")
+
+    def test_the_old_types_are_unknown(self):
+        phone = self.pair(self.alice)
+        res = self.push(phone, [self.upsert("todo", uid(), {"title": "x"}, T0), self.upsert("absence", uid(), {"date": "2026-11-11"}, T0),
+                                self.upsert("entry", uid(), entry_fields(todoUid=uid()), T0)])
+        # an unknown field is ignored, as for a newer app
+        self.assertEqual([r.get("error") for r in res], ["unknown_type", "unknown_type", None])

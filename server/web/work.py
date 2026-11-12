@@ -7,7 +7,7 @@ from datetime import date, datetime, timedelta
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
-from django.db.models import Q
+from django.db.models import Exists, OuterRef, Q
 from django.http import JsonResponse, QueryDict
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -17,10 +17,10 @@ from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 
 from accounts.models import Profile
-from records.models import Attachment, Client, Company, Entry, EntryStatus, Expense, Role, Segment, Todo, TodoKind, tag_name
+from records import activity as A
+from records.models import ActivityKind, Attachment, Client, Company, Entry, EntryStatus, Expense, Role, Segment, tag_name
 
 from . import data, homelist, ops, reporting
-from .masters import PALETTE, _color
 
 # the longest absence: a year (the app: TodoRepository.MAX_ABSENCE_DAYS)
 MAX_ABSENCE_DAYS = 366
@@ -69,16 +69,16 @@ def _rows(entries):
     return out
 
 
-def _todo_state(t, today):
-    if t.done:
-        return "done"
-    if t.ignored_utc:
-        return "ignored"
-    if t.due_date and t.due_date < today:
-        return "overdue"
-    if t.plan_date:
-        return "planned"
-    return "open"
+def _todo_state(t, now):
+    """The to-do pages' state of a TODO (or ticked) activity: the Home's rule (ACTIVITY-MODEL §2.3)."""
+    return homelist.state(t, now, timezone.get_current_timezone())
+
+
+def _incomplete(entries):
+    """Uids of the closed activities that are not complete (ACTIVITY-MODEL §2.4), the "details missing"."""
+    # TODO(activity-1.0-pages): the plugins' required fields (missingRequired) are not known here
+    segs = data.segments_of(entries)
+    return {e.uid for e in entries if e.status == EntryStatus.CLOSED and not A.complete(e, segs.get(e.uid, []))}
 
 
 @login_required
@@ -109,21 +109,25 @@ def home(request):
     company = _pick(user, Company, f["company"])
     company = company if company and not company.archived else None
 
-    mine = Entry.objects.filter(org=user.org, owner=user, deleted=False).select_related("company", "client", "role")
-    running = _rows(list(mine.filter(status__in=[EntryStatus.ACTIVE, EntryStatus.SUSPENDED]).order_by("-created_utc")))
+    mine = Entry.objects.filter(org=user.org, owner=user, deleted=False, deleted_utc__isnull=True, kind=ActivityKind.ACTIVITY)
+    mine = mine.select_related("company", "client", "role")
+    running = _rows(list(mine.filter(status=EntryStatus.RUNNING).order_by("-created_utc")))
     window = f["period"]
-    stopped_q = mine.filter(status__in=[EntryStatus.TO_COMPLETE, EntryStatus.CLOSED])
+    stopped_q = mine.filter(status=EntryStatus.CLOSED)
     if window != 0:
         since = now - timedelta(hours=window if window > 0 else 36)
-        stopped_q = stopped_q.filter(Q(status=EntryStatus.TO_COMPLETE) | Q(updated_utc__gte=since))
+        # the incomplete ones whatever their age (§2.4: some work, and no client or no work segment)
+        real = Segment.objects.filter(entry=OuterRef("pk"), deleted=False, planned=False)
+        incomplete_q = Exists(real) & (Q(client__isnull=True) | ~Exists(real.filter(kind=ops.WORK)))
+        stopped_q = stopped_q.filter(incomplete_q | Q(updated_utc__gte=since))
     rows = {r["e"].uid: r for r in _rows(list(stopped_q.order_by("-updated_utc")[:300]))}
-    stopped = [(r["e"], r["end"] or r["e"].updated_utc) for r in rows.values()]
-    working = {r["e"].todo_id for r in running} | {e.todo_id for e, _ in stopped if e.status == EntryStatus.TO_COMPLETE}
-    todos = list(data.todos(user).select_related("company", "client")) if todos_on else []
+    stopped = [(r["e"], r["end"] or r["e"].closed_utc or r["e"].updated_utc) for r in rows.values()]
+    incomplete = _incomplete([e for e, _ in stopped])
+    todos = list(data.todos(user)) if todos_on else []
     carry = reporting.rules_for(user).carry_over_min
     tag = f["tag"] if (homelist.MISSING in show or homelist.DONE in show) else ""
     sections = homelist.sections(todos, stopped, show, window, company=company.uid if company else None, tag=tag or None,
-                                 carry_over_min=carry, now=now, working=working)
+                                 carry_over_min=carry, now=now, incomplete=incomplete)
     tags = sorted({t for e, _ in stopped for t in (e.tags or [])})
     listed = [(name, [(kind, obj, extra, rows.get(obj.uid) if kind == "entry" else None) for kind, obj, extra in items]) for name, items in sections]
 
@@ -138,7 +142,7 @@ def home(request):
     return render(request, "web/home.html", {
         "running": running, "sections": listed, "first": not user.devices.exists() if user.syncs else False,
         "f": f, "show": show, "offered": offered, "windows": homelist.WINDOWS, "companies": data.companies(user), "company": company,
-        "tags": tags, "tag": tag, "todos_on": todos_on, "today": timezone.localdate(),
+        "tags": tags, "tag": tag, "todos_on": todos_on, "today": timezone.localdate(), "incomplete": incomplete,
         "show_changed": set(show) != set(homelist.DEFAULT_SHOW) & set(offered),
         "only_todo": link(show=[homelist.TODO]), "only_done": link(show=[homelist.DONE]), "show_all": link(show=offered),
     })
@@ -167,7 +171,7 @@ def entry_new(request):
             return redirect("entry", uid=e.uid)
         except (ops.OpError, TypeError) as e:
             messages.error(request, str(e))
-    initial = {"client": str(todo.client_id or "") if todo else "", "company": str(todo.company_id or "") if todo else "", "activity": todo.title if todo else ""}
+    initial = {"client": str(todo.client_id or "") if todo else "", "company": str(todo.company_id or "") if todo else "", "activity": todo.activity or "" if todo else ""}
     return render(request, "web/entry_new.html", {"companies": data.companies(user), "clients": data.clients(user), "roles": data.roles(user), "todo": todo, "initial": initial, "fixed": fixed})
 
 
@@ -251,7 +255,7 @@ def busy(request):
     tz = timezone.get_current_timezone()
     start = timezone.make_aware(datetime.combine(day, datetime.min.time()), tz)
     end = start + timedelta(days=1)
-    q = Segment.objects.filter(owner=owner, deleted=False, entry__deleted=False, start_utc__lt=end).filter(Q(end_utc__isnull=True) | Q(end_utc__gt=start))
+    q = Segment.objects.filter(owner=owner, deleted=False, planned=False, entry__deleted=False, entry__deleted_utc__isnull=True, start_utc__lt=end).filter(Q(end_utc__isnull=True) | Q(end_utc__gt=start))
     if segment_uid:
         q = q.exclude(uid=segment_uid)
     now = timezone.now()
@@ -297,12 +301,11 @@ def entry(request, uid):
                 ops.suspend(user, e)
             elif action == "stop":
                 ops.stop(user, e)
-            elif action == "complete":
-                ops.complete(user, e)
             elif action == "reopen":
                 ops.reopen(user, e)
             elif action == "delete":
-                ops.delete(user, "entry", e.uid)
+                # into the bin (ACTIVITY-MODEL §3 delete); TODO(activity-1.0-pages): a page to restore it
+                ops.to_bin(user, e)
                 messages.success(request, _("Attività eliminata."))
                 return redirect("entries")
             elif action == "segment":
@@ -331,7 +334,7 @@ def entry(request, uid):
         "expenses": Expense.objects.filter(entry=e, deleted=False).order_by("created_utc"),
         "attachments": Attachment.objects.filter(entry=e, deleted=False).order_by("created_utc"),
         "companies": data.companies(user), "clients": data.clients(user), "roles": data.roles(user),
-        "complete": ops.complete_enough(e), "kinds": [ops.WORK, ops.TRAVEL, ops.PAUSE] if fix else [ops.TRAVEL, ops.PAUSE],
+        "complete": A.complete(e, segs), "kinds": [ops.WORK, ops.TRAVEL, ops.PAUSE] if fix else [ops.TRAVEL, ops.PAUSE],
     })
 
 
@@ -349,7 +352,7 @@ def todos(request):
     user = request.user
     if not user.syncs:
         raise PermissionDenied
-    today = timezone.localdate()
+    now = timezone.now()
     show = request.GET.get("show", "open")
     # a manager or an admin: their own, one person's, or everyone's they assign to ("all")
     people = data.assignable(user)
@@ -363,8 +366,8 @@ def todos(request):
         who = ""
         q = q.filter(owner=user)
     items = []
-    for t in q.order_by("due_date", "plan_date", "title"):
-        state = _todo_state(t, today)
+    for t in q.order_by("due_date", "plan_date", "activity"):
+        state = _todo_state(t, now)
         if (show == "open" and state in ("done", "ignored")) or (show == "done" and state != "done") or (show == "ignored" and state != "ignored"):
             continue
         items.append((t, state))
@@ -374,25 +377,50 @@ def todos(request):
     })
 
 
+def _absence_days(entry):
+    """(first day, last day, start "HH:MM", duration) of an absence's segments, as the form shows them."""
+    tz = timezone.get_current_timezone()
+    segs = list(Segment.objects.filter(entry=entry, deleted=False).order_by("start_utc"))
+    if not segs:
+        return "", "", "", ""
+    first, last = (timezone.localtime(s.start_utc, tz) for s in (segs[0], segs[-1]))
+    if len(segs) == 1 and segs[0].end_utc:
+        length = int((segs[0].end_utc - segs[0].start_utc).total_seconds() // 60)
+        return first.date().isoformat(), "", first.strftime("%H:%M"), str(length)
+    return first.date().isoformat(), last.date().isoformat() if last.date() != first.date() else "", "", ""
+
+
 @login_required
 def todo_edit(request, uid=None):
+    """
+    A to-do (a TODO activity) or an absence (an ABSENCE activity), new or
+    changed; the form of the to-do of before 1.0.
+    """
+    # TODO(activity-1.0-pages): the creation and detail dialogs of ACTIVITY-MODEL §3 and §8
     user = request.user
     if not user.syncs:
         raise PermissionDenied
-    todo = get_object_or_404(data.team_todos(user), uid=uid) if uid else None
-    # a planned absence (issue #158): its own form, no company, client, due date or priority
-    absence = (todo.kind if todo else request.POST.get("kind") or request.GET.get("kind")) == TodoKind.ABSENCE
     people = data.assignable(user)
+    todo = None
+    if uid:
+        absences = Entry.objects.filter(org=user.org, deleted=False, kind=ActivityKind.ABSENCE, owner__in=people)
+        todo = get_object_or_404(data.team_todos(user) | absences.select_related("company", "client", "owner", "assignment__by"), uid=uid)
+    absence = (todo.kind if todo else request.POST.get("kind") or request.GET.get("kind")) == ActivityKind.ABSENCE
     # opened from the agenda: back there afterwards
     back = request.POST.get("next") or request.GET.get("next") or ""
     if not url_has_allowed_host_and_scheme(back, allowed_hosts={request.get_host()}, require_https=request.is_secure()):
         back = ""
     back = back or reverse("todos")
+    days = _absence_days(todo) if todo and absence else ("", "", "", "")
     if request.method == "POST":
         p = request.POST
         try:
             if p.get("state") and todo:
-                ops.todo_state(user, todo, p["state"])
+                if absence:
+                    # an absence is never to do: "ignored" puts it in the bin, "open" takes it out
+                    {"ignored": ops.to_bin, "open": ops.restore}.get(p["state"], lambda *_: None)(todo.owner, todo)
+                else:
+                    ops.todo_state(user, todo, p["state"])
                 return redirect(back)
             title = p.get("title", "").strip()
             if not title and not absence:
@@ -401,38 +429,54 @@ def todo_edit(request, uid=None):
             to = people.filter(pk=data.parse_pk(p.get("owner"))).first() if p.get("owner") else owner
             if to is None:
                 raise PermissionDenied
-            client = None if absence else _pick(user, Client, p.get("client"))
-            company = None if absence else client.company if client and client.company_id else _pick(user, Company, p.get("company"))
-            plan_time = p.get("plan_time") or None
-            due_time = None if absence else p.get("due_time") or None
-            plan_end = None
-            if absence:
-                if not p.get("plan_date"):
-                    raise ops.OpError(_("la data è obbligatoria"))
-                # several days only for a whole-day plan (the app's rule)
-                plan_end = p.get("plan_end") or None if not plan_time else None
-                if plan_end and not 0 <= (date.fromisoformat(plan_end) - date.fromisoformat(p["plan_date"])).days < MAX_ABSENCE_DAYS:
-                    raise ops.OpError(_("l'ultimo giorno non è valido"))
-                if plan_end == p["plan_date"]:
-                    plan_end = None
 
             def minutes(t):
                 hh, mm = t.split(":")
                 return int(hh) * 60 + int(mm)
+            plan_time = p.get("plan_time") or None
+            if absence:
+                if not p.get("plan_date"):
+                    raise ops.OpError(_("la data è obbligatoria"))
+                first = date.fromisoformat(p["plan_date"])
+                # several days only for a whole-day plan (the app's rule)
+                last = date.fromisoformat(p["plan_end"]) if p.get("plan_end") and not plan_time else first
+                if not 0 <= (last - first).days < MAX_ABSENCE_DAYS:
+                    raise ops.OpError(_("l'ultimo giorno non è valido"))
+                start = minutes(plan_time) if plan_time else None
+                duration = int(p["duration"]) if start is not None and p.get("duration") else None
+                kind = A.absence_kind_of(title)
+                if todo and to != todo.owner:
+                    raise PermissionDenied
+                # the segments are written anew only when the days or times change
+                same = todo and (p.get("plan_date", ""), p.get("plan_end", "") if not plan_time else "", plan_time or "",
+                                 p.get("duration", "") if plan_time else "") == days
+                if same:
+                    ops.edit_entry(to, todo, {"absenceKind": kind or todo.absence_kind, "notes": p.get("notes", "").strip() or None,
+                                              "activity": None if kind else title or None})
+                else:
+                    ops.save_absence(user, todo.uid if todo else None, first=first, last=last, start_min=start, duration_min=duration,
+                                     absence_kind=kind or (todo.absence_kind if todo else A.ABSENCE), activity=None if kind else title or None,
+                                     company=todo.company if todo else None,
+                                     notes=p.get("notes", "").strip() or None, owner=to)
+                messages.success(request, _("Voce salvata.") if to == user else _("Voce assegnata a %(name)s.") % {"name": to.get_full_name() or to.username})
+                return redirect(back)
+            client = _pick(user, Client, p.get("client"))
+            company = client.company if client and client.company_id else _pick(user, Company, p.get("company"))
+            due_time = p.get("due_time") or None
             fields = {
-                "title": title, "notes": p.get("notes", "").strip() or None,
+                "activity": title, "notes": p.get("notes", "").strip() or None,
                 "companyUid": str(company.uid) if company else None, "clientUid": str(client.uid) if client else None,
-                "dueDate": None if absence else p.get("due_date") or None, "dueTimeMin": minutes(due_time) if due_time else None,
+                "dueDate": p.get("due_date") or None, "dueTimeMin": minutes(due_time) if due_time else None,
                 "planDate": p.get("plan_date") or None, "planStartMin": minutes(plan_time) if plan_time and p.get("plan_date") else None,
                 "durationMin": int(p["duration"]) if p.get("duration") else None,
-                "priority": None if absence else int(p["priority"]) if p.get("priority") else None,
-                "kind": TodoKind.ABSENCE if absence else TodoKind.TASK, "color": _color(p), "planEndDate": plan_end,
+                # 0 none .. 5 emergency (ACTIVITY-MODEL §5)
+                "priority": min(max(int(p["priority"]), 0), A.PRIORITY_MAX) if p.get("priority") else 0,
             }
             if todo and to != todo.owner:
                 ops.assign(user, todo, to)
             saved = ops.save_todo(user, todo.uid if todo else None, fields, owner=to)
             if not todo and to != user:
-                ops.assign(user, Todo.objects.get(uid=saved), to)
+                ops.assign(user, Entry.objects.get(uid=saved), to)
             messages.success(request, _("Voce salvata.") if to == user else _("Voce assegnata a %(name)s.") % {"name": to.get_full_name() or to.username})
             return redirect(back)
         except (ops.OpError, ValueError) as err:
@@ -440,13 +484,17 @@ def todo_edit(request, uid=None):
 
     def hhmm(m):
         return f"{m // 60:02d}:{m % 60:02d}" if m is not None else ""
+    if absence and todo:
+        plan_date, plan_end, plan_time, duration = days
+    else:
+        plan_date = todo.plan_date.isoformat() if todo and todo.plan_date else "" if todo else _iso_date(request.GET.get("plan_date"))
+        plan_end, duration = "", todo.duration_min if todo and todo.duration_min else ""
+        plan_time = hhmm(todo.plan_start_min) if todo else _hhmm(request.GET.get("plan_time"))
     return render(request, "web/todo_edit.html", {
         "t": todo, "companies": data.companies(user), "clients": data.clients(user),
         "due_time": hhmm(todo.due_time_min) if todo else "",
-        "absence": absence, "palette": PALETTE,
-        "plan_end": todo.plan_end_date.isoformat() if todo and todo.plan_end_date else "",
-        "plan_date": todo.plan_date.isoformat() if todo and todo.plan_date else "" if todo else _iso_date(request.GET.get("plan_date")),
-        "plan_time": hhmm(todo.plan_start_min) if todo else _hhmm(request.GET.get("plan_time")),
+        "absence": absence, "plan_end": plan_end, "plan_date": plan_date, "plan_time": plan_time, "duration": duration,
+        "done": bool(todo and todo.status == EntryStatus.CLOSED and not absence),
         "next": back if back != reverse("todos") else "",
         "people": people if people.count() > 1 else None,
         "owner_pk": todo.owner_id if todo else int(request.GET["person"]) if request.GET.get("person", "").isdigit() else user.pk,
@@ -482,7 +530,7 @@ def quick(request, uid):
         elif action == "stop":
             ops.stop(request.user, e)
             e.refresh_from_db()
-            if e.status == EntryStatus.TO_COMPLETE:
+            if e.uid in _incomplete([e]):
                 messages.info(request, _("Mancano dei dettagli: completa l'attività."))
                 return redirect("entry", uid=e.uid)
     except ops.OpError as err:

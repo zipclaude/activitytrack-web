@@ -57,21 +57,41 @@ class WorkTests(TestCase):
         r = self.client.post("/attivita/nuova/", {"when": "now", "client": "22222222-2222-4222-8222-222222222222"})
         e = self.entry()
         self.assertRedirects(r, f"/attivita/{e.uid}/")
-        self.assertEqual((e.status, e.mode, e.company_id), (EntryStatus.ACTIVE, "WORK", self.acme.uid))
+        self.assertEqual((e.status, e.mode, e.company_id, e.kind), (EntryStatus.RUNNING, "WORK", self.acme.uid, "ACTIVITY"))
         self.assertGreater(e.rev, 0)
         self.client.post(f"/attivita/{e.uid}/comando/", {"action": "pause"})
         self.assertEqual(self.entry().mode, "PAUSE")
         self.assertEqual(Segment.objects.filter(entry=e, end_utc__isnull=True).count(), 1)
+        self.client.post(f"/attivita/{e.uid}/comando/", {"action": "suspend"})
+        self.assertEqual((self.entry().status, self.entry().mode), (EntryStatus.RUNNING, None))
+        self.client.post(f"/attivita/{e.uid}/comando/", {"action": "work"})
         r = self.client.post(f"/attivita/{e.uid}/comando/", {"action": "stop"})
-        # no description: details missing, to the entry
-        self.assertRedirects(r, f"/attivita/{e.uid}/")
-        self.assertEqual(self.entry().status, EntryStatus.TO_COMPLETE)
+        # a client and some work: complete (ACTIVITY-MODEL §2.4), back home
+        self.assertRedirects(r, "/")
+        e = self.entry()
+        self.assertEqual((e.status, e.mode), (EntryStatus.CLOSED, None))
+        self.assertIsNotNone(e.closed_utc)
         self.assertFalse(Segment.objects.filter(entry=e, end_utc__isnull=True).exists())
         self.client.post(f"/attivita/{e.uid}/", {"action": "save", "client": "22222222-2222-4222-8222-222222222222", "activity": "Patch", "tags": "#Rete urgente"})
         e = self.entry()
         self.assertEqual((e.status, e.activity, e.tags), (EntryStatus.CLOSED, "Patch", ["rete", "urgente"]))
         page = self.client.get(f"/attivita/{e.uid}/").content.decode()
         self.assertIn("Banca", page)
+        # reopened: running again with work open, then into the bin
+        self.client.post(f"/attivita/{e.uid}/", {"action": "reopen"})
+        e = self.entry()
+        self.assertEqual((e.status, e.mode, e.closed_utc), (EntryStatus.RUNNING, "WORK", None))
+        self.client.post(f"/attivita/{e.uid}/", {"action": "delete"})
+        e = self.entry()
+        self.assertIsNotNone(e.deleted_utc)
+        self.assertEqual(self.client.get(f"/attivita/{e.uid}/").status_code, 404)
+
+    def test_without_a_client_details_are_missing(self):
+        r = self.client.post("/attivita/nuova/", {"when": "now"})
+        e = self.entry()
+        r = self.client.post(f"/attivita/{e.uid}/comando/", {"action": "stop"})
+        self.assertRedirects(r, f"/attivita/{e.uid}/")
+        self.assertEqual(self.entry().status, "CLOSED")
 
     def test_a_past_activity_and_its_times(self):
         from records.models import EntryStatus, Segment
@@ -92,17 +112,41 @@ class WorkTests(TestCase):
         self.assertIn(";Acme;Banca;;Riunione;CLOSED;2026-10-27 09:00;2026-10-27 10:00;60;0;0;4.50;", csv)
 
     def test_todos_and_starting_one(self):
-        from records.models import Todo
+        from records.models import Entry, Segment
 
-        self.client.post("/dafare/nuova/", {"title": "Rinnovo certificati", "client": "22222222-2222-4222-8222-222222222222", "plan_date": "2026-10-30", "plan_time": "10:00"})
-        t = Todo.objects.get(title="Rinnovo certificati")
-        self.assertEqual((t.plan_start_min, t.company_id, t.owner_id), (600, self.acme.uid, self.alice.pk))
+        self.client.post("/dafare/nuova/", {"title": "Rinnovo certificati", "client": "22222222-2222-4222-8222-222222222222", "plan_date": "2026-10-30",
+                                            "plan_time": "10:00", "priority": "4"})
+        t = Entry.objects.get(activity="Rinnovo certificati")
+        self.assertEqual((t.kind, t.status, t.plan_start_min, t.company_id, t.owner_id, t.priority), ("ACTIVITY", "TODO", 600, self.acme.uid, self.alice.pk, 4))
+        self.assertContains(self.client.get("/dafare/"), "Rinnovo certificati")
         self.assertContains(self.client.get(f"/attivita/nuova/?todo={t.uid}"), "Rinnovo certificati")
+        # a planned segment goes when it starts (§1.2)
+        from web import ops
+
+        ops.put(self.alice, "segment", ops.new_uid(), {"entryUid": str(t.uid), "kind": "WORK", "startUtcMs": 1761811200000,
+                                                       "endUtcMs": 1761814800000, "zoneId": "Europe/Rome", "planned": True})
         self.client.post("/attivita/nuova/", {"when": "now", "todo": str(t.uid), "client": "22222222-2222-4222-8222-222222222222", "activity": "Rinnovo"})
-        self.assertEqual(self.entry().todo_id, t.uid)
-        self.client.post(f"/dafare/{t.uid}/", {"state": "done"})
+        # the same activity, started
         t.refresh_from_db()
-        self.assertTrue(t.done and t.done_utc)
+        self.assertEqual((t.status, t.mode, t.activity, t.plan_start_min), ("RUNNING", "WORK", "Rinnovo", 600))
+        self.assertEqual(Entry.objects.filter(owner=self.alice, deleted=False).count(), 1)
+        self.assertEqual([(s.kind, s.planned, s.end_utc) for s in Segment.objects.filter(entry=t, deleted=False)], [("WORK", False, None)])
+        # another one ticked off: closed without segments, "done" on the to-do pages
+        self.client.post("/dafare/nuova/", {"title": "Chiamare"})
+        c = Entry.objects.get(activity="Chiamare")
+        self.client.post(f"/dafare/{c.uid}/", {"state": "done"})
+        c.refresh_from_db()
+        self.assertEqual(c.status, "CLOSED")
+        self.assertTrue(c.closed_utc)
+        self.assertContains(self.client.get("/dafare/?show=done"), "Chiamare")
+        self.client.post(f"/dafare/{c.uid}/", {"state": "open"})
+        c.refresh_from_db()
+        self.assertEqual((c.status, c.closed_utc), ("TODO", None))
+        self.client.post(f"/dafare/{c.uid}/", {"state": "ignored"})
+        c.refresh_from_db()
+        self.assertIsNotNone(c.deleted_utc)
+        self.assertContains(self.client.get("/dafare/?show=ignored"), "Chiamare")
+        self.assertNotContains(self.client.get("/dafare/"), "Chiamare")
 
     def test_central_master_data_are_read_only_for_users(self):
         from records.models import Role
@@ -449,31 +493,57 @@ class AgendaTests(WorkTests):
         # the last view comes back
         self.assertIn('class="month"', self.client.get("/agenda/").content.decode())
 
-    def test_a_planned_absence_covers_its_days_in_its_colour(self):
-        from records.models import Todo, TodoKind, WorkSchedule
+    def test_an_absence_covers_its_working_days(self):
+        from records.models import Entry, LunchBreak, Segment, WorkSchedule
 
+        # Wednesday (3) only, with a lunch break
         WorkSchedule.objects.create(org=self.org, owner=None, day_of_week=3, start_min=9 * 60, end_min=17 * 60)
+        LunchBreak.objects.create(org=self.org, owner=self.alice, day_of_week=3, start_min=12 * 60 + 30, end_min=13 * 60 + 30)
         # a form of its own: no company, client or due date; the label is optional
         self.assertNotContains(self.client.get("/dafare/nuova/?kind=ABSENCE"), 'name="client"')
-        self.client.post("/dafare/nuova/", {"kind": "ABSENCE", "plan_date": "2026-10-27", "plan_end": "2026-10-29", "color": str(0x8E5CD9), "client": "22222222-2222-4222-8222-222222222222", "due_date": "2026-11-01"})
-        a = Todo.objects.get(kind=TodoKind.ABSENCE)
-        self.assertEqual((a.title, a.company_id, a.client_id, a.due_date, a.color, str(a.plan_end_date)), ("", None, None, None, 0x8E5CD9, "2026-10-29"))
+        self.client.post("/dafare/nuova/", {"kind": "ABSENCE", "plan_date": "2026-10-27", "plan_end": "2026-10-29",
+                                            "client": "22222222-2222-4222-8222-222222222222", "due_date": "2026-11-01"})
+        a = Entry.objects.get(kind="ABSENCE")
+        self.assertEqual((a.status, a.absence_kind, a.activity, a.company_id, a.client_id, a.due_date), ("CLOSED", "ABSENCE", None, None, None, None))
+        segs = list(Segment.objects.filter(entry=a, deleted=False).order_by("start_utc"))
+        self.assertEqual([s.kind for s in segs], ["ABSENCE", "ABSENCE"])
+        self.assertEqual(a.closed_utc, segs[-1].end_utc)
         week = self.client.get("/agenda/?view=week&date=2026-10-27").content.decode()
-        # one block on each of the three days, "Absence" for the empty label; Wednesday (3) over the working hours
-        self.assertEqual(week.count("blk todo absence"), 3)
-        self.assertIn("09:00–17:00", week)
+        # Tuesday and Thursday have no working hours: one day, cut by the lunch break
+        self.assertEqual(week.count("blk todo absence"), 2)
+        self.assertIn("09:00–12:30", week)
+        self.assertIn("13:30–17:00", week)
         self.assertNotIn("☐ Assenza", week)
-        # a last day before the first one, or a time with several days, is refused or ignored
+        # absences are not worked time
+        from datetime import date
+
+        from web import reporting
+
+        self.assertEqual(reporting.report(Entry.objects.filter(owner=self.alice), date(2026, 10, 27), date(2026, 10, 29)), {})
+        # a last day before the first one is refused
         r = self.client.post("/dafare/nuova/", {"kind": "ABSENCE", "plan_date": "2026-11-05", "plan_end": "2026-11-03"})
-        self.assertEqual(Todo.objects.filter(kind=TodoKind.ABSENCE).count(), 1)
+        self.assertEqual(Entry.objects.filter(kind="ABSENCE").count(), 1)
         self.assertEqual(r.status_code, 200)
-        # done, it stays on the agenda
-        self.client.post(f"/dafare/{a.uid}/", {"state": "done"})
-        self.assertIn("blk todo absence done", self.client.get("/agenda/?view=day&date=2026-10-28").content.decode())
-        # an absence cannot be made a task from the form
-        self.client.post(f"/dafare/{a.uid}/", {"kind": "TASK", "plan_date": "2026-10-27", "title": "x"})
+        # a label that names a kind; the days as the form shows them (the working ones): the segments stay
+        page = self.client.get(f"/dafare/{a.uid}/").content.decode()
+        self.assertIn('name="plan_date" value="2026-10-28"', page)
+        self.client.post(f"/dafare/{a.uid}/", {"title": "Ferie", "plan_date": "2026-10-28", "plan_end": ""})
         a.refresh_from_db()
-        self.assertEqual(a.kind, TodoKind.ABSENCE)
+        self.assertEqual((a.absence_kind, a.activity), ("HOLIDAY", None))
+        self.assertEqual(list(Segment.objects.filter(entry=a, deleted=False).order_by("start_utc")), segs)
+        # a "permesso": one day with times
+        self.client.post(f"/dafare/{a.uid}/", {"title": "Dentista", "plan_date": "2026-10-28", "plan_time": "15:00", "duration": "90"})
+        a.refresh_from_db()
+        self.assertEqual((a.absence_kind, a.activity, a.kind), ("HOLIDAY", "Dentista", "ABSENCE"))
+        self.assertIn("15:00–16:30", self.client.get("/agenda/?view=day&date=2026-10-28").content.decode())
+        page = self.client.get(f"/dafare/{a.uid}/").content.decode()
+        self.assertIn('value="15:00"', page)
+        self.assertIn('value="90"', page)
+        # into the bin and back
+        self.client.post(f"/dafare/{a.uid}/", {"state": "ignored"})
+        self.assertNotIn("blk todo absence", self.client.get("/agenda/?view=day&date=2026-10-28").content.decode())
+        self.client.post(f"/dafare/{a.uid}/", {"state": "open"})
+        self.assertIn("blk todo absence done", self.client.get("/agenda/?view=day&date=2026-10-28").content.decode())
 
     def test_a_tag_filter_hides_the_todos(self):
         self.client.post("/attivita/nuova/", {"when": "past", "client": "22222222-2222-4222-8222-222222222222", "activity": "Riunione", "start": "2026-10-27T09:00", "end": "2026-10-27T10:00"})
@@ -554,10 +624,10 @@ class HomeListTests(WorkTests):
         self.assertNotIn("Fra un mese", page)
 
     def test_a_started_todo_leaves_the_list(self):
-        from records.models import Todo
+        from records.models import Entry
 
         self.client.post("/dafare/nuova/", {"title": "Avviata", "due_date": "2026-01-01"})
-        t = Todo.objects.get(title="Avviata")
+        t = Entry.objects.get(activity="Avviata")
         self.assertIn("Avviata", self.client.get("/").content.decode())
         self.client.post("/attivita/nuova/", {"when": "now", "todo": str(t.uid), "client": "22222222-2222-4222-8222-222222222222"})
         page = self.client.get("/").content.decode()
@@ -571,20 +641,25 @@ class HomeListTests(WorkTests):
         from web.homelist import state
 
         tz = ZoneInfo("Europe/Rome")
-        t = lambda **k: S(**{"done": False, "ignored_utc": None, "plan_date": None, "plan_start_min": None, "duration_min": None, "due_date": None, "due_time_min": None, **k})  # noqa: E731
+        t = lambda **k: S(**{"status": "TODO", "deleted_utc": None, "plan_date": None, "plan_start_min": None, "duration_min": None, "due_date": None, "due_time_min": None, **k})  # noqa: E731
         now = datetime(2026, 10, 30, 12, 0, tzinfo=tz)
         self.assertEqual(state(t(due_date=date(2026, 10, 30)), now, tz), "open")
         self.assertEqual(state(t(due_date=date(2026, 10, 30), due_time_min=600), now, tz), "overdue")
         self.assertEqual(state(t(plan_date=date(2026, 10, 30)), now, tz), "planned")
         self.assertEqual(state(t(plan_date=date(2026, 10, 30), plan_start_min=600, duration_min=60), now, tz), "overdue")
         self.assertEqual(state(t(plan_date=date(2026, 10, 30), plan_start_min=660, duration_min=90), now, tz), "planned")
+        self.assertEqual(state(t(status="CLOSED"), now, tz), "done")
+        self.assertEqual(state(t(deleted_utc=now), now, tz), "ignored")
+        # a planned segment over makes it late, whatever the plan (ACTIVITY-MODEL §2.3)
+        over = S(planned=True, kind="WORK", start_utc=datetime(2026, 10, 30, 9, 0, tzinfo=tz), end_utc=datetime(2026, 10, 30, 11, 0, tzinfo=tz))
+        self.assertEqual(state(t(plan_date=date(2026, 10, 30)), now, tz, [over]), "overdue")
 
 
 class TodoAssignmentTests(WorkTests):
     """A manager gives to-dos to the team (ARCHITECTURE §5): the phones follow the owner."""
 
     def test_assign_and_reassign(self):
-        from records.models import Todo
+        from records.models import Entry
         from sync import engine
 
         carl = User.objects.create_user("carl", password="x-x-x-x-x-x", org=self.org, manager=self.boss)
@@ -596,11 +671,17 @@ class TodoAssignmentTests(WorkTests):
         cursor = engine.head(self.org)
         r = self.client.post("/dafare/nuova/", {"title": "Rinnovo", "owner": str(self.alice.pk)})
         self.assertRedirects(r, "/dafare/", fetch_redirect_response=False)
-        t = Todo.objects.get(title="Rinnovo")
-        self.assertEqual(t.owner, self.alice)
+        t = Entry.objects.get(activity="Rinnovo")
+        self.assertEqual((t.owner, t.status), (self.alice, "TODO"))
         self.assertEqual(t.assignment.by, self.boss)
-        self.assertEqual([x["uid"] for x in engine.pull(self.alice, cursor)["records"] if x["type"] == "todo"], [str(t.uid)])
-        self.assertFalse([x for x in engine.pull(self.boss, cursor)["records"] if x["type"] == "todo"])
+        self.assertEqual([x["uid"] for x in engine.pull(self.alice, cursor)["records"] if x["type"] == "entry"], [str(t.uid)])
+        self.assertFalse([x for x in engine.pull(self.boss, cursor)["records"] if x["type"] == "entry"])
+        # its planned segment follows it
+        from web import ops
+
+        seg = ops.new_uid()
+        ops.put(self.alice, "segment", seg, {"entryUid": str(t.uid), "kind": "WORK", "startUtcMs": 1761811200000,
+                                             "endUtcMs": 1761814800000, "zoneId": "Europe/Rome", "planned": True})
         # the team's list and the person's
         self.assertIn("Rinnovo", self.client.get("/dafare/?person=all").content.decode())
         self.assertNotIn("Rinnovo", self.client.get("/dafare/").content.decode())
@@ -609,8 +690,9 @@ class TodoAssignmentTests(WorkTests):
         self.client.post(f"/dafare/{t.uid}/", {"title": "Rinnovo", "owner": str(carl.pk), "notes": "urgente"})
         t.refresh_from_db()
         self.assertEqual((t.owner, t.notes), (carl, "urgente"))
-        self.assertEqual(engine.pull(self.alice, cursor)["gone"], [{"type": "todo", "uid": str(t.uid)}])
-        self.assertEqual([x["uid"] for x in engine.pull(carl, cursor)["records"]], [str(t.uid)])
+        gone = sorted(engine.pull(self.alice, cursor)["gone"], key=lambda x: x["type"])
+        self.assertEqual(gone, [{"type": "entry", "uid": str(t.uid)}, {"type": "segment", "uid": seg}])
+        self.assertEqual(sorted(x["uid"] for x in engine.pull(carl, cursor)["records"]), sorted([str(t.uid), seg]))
         # the assignee sees who gave it and starts it; the manager does not start it
         self.client.force_login(carl)
         page = self.client.get(f"/dafare/{t.uid}/").content.decode()
@@ -624,14 +706,22 @@ class TodoAssignmentTests(WorkTests):
         self.assertEqual(self.client.get(f"/dafare/{t.uid}/").status_code, 404)
 
     def test_a_manager_marks_a_team_todo_done(self):
-        from records.models import Todo
+        from records.models import Entry
 
         self.client.force_login(self.boss)
         self.client.post("/dafare/nuova/", {"title": "Chiamata", "owner": str(self.alice.pk)})
-        t = Todo.objects.get(title="Chiamata")
+        t = Entry.objects.get(activity="Chiamata")
         self.client.post(f"/dafare/{t.uid}/", {"state": "done"})
         t.refresh_from_db()
-        self.assertEqual((t.done, t.owner), (True, self.alice))
+        self.assertEqual((t.status, t.owner), ("CLOSED", self.alice))
+        # a started one is no longer to do: it cannot be given to someone else
+        self.client.post("/dafare/nuova/", {"title": "Avviata", "owner": str(self.alice.pk)})
+        u = Entry.objects.get(activity="Avviata")
+        from web import ops
+
+        ops.start(self.alice, todo=u)
+        with self.assertRaises(ops.OpError):
+            ops.assign(self.boss, Entry.objects.get(uid=u.uid), self.boss)
 
 
 class ManagerCompaniesTests(WorkTests):
