@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ActivityTrack Web\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-12 02:51+0100\n"
+"POT-Creation-Date: 2026-11-12 13:09+0100\n"
 "PO-Revision-Date: 2026-11-05 22:00+0100\n"
 "Last-Translator: ActivityTrack\n"
 "Language-Team: English\n"
@@ -914,6 +914,9 @@ msgid ""
 "L'organizzazione chiede la verifica in due passaggi: attivala per continuare."
 msgstr ""
 "The organisation requires two-step verification: switch it on to continue."
+
+msgid "chi la riceve ha già un'attività con la stessa chiave esterna"
+msgstr "the assignee already has an activity with the same external key"
 
 msgid "Eliminata"
 msgstr "Deleted"
@@ -1921,6 +1924,9 @@ msgstr "the policy does not allow choosing the times"
 #, python-format
 msgid "solo i tag dell'anagrafica: %(t)s non c'è"
 msgstr "only the master data's tags: %(t)s is not there"
+
+msgid "azione non consentita in questo stato"
+msgstr "action not allowed in this state"
 
 msgid "Mancano dei dettagli: completa l'attività."
 msgstr "Details are missing: complete the activity."

@@ -1008,6 +1008,89 @@ class TodoAssignmentTests(WorkTests):
             ops.assign(self.boss, Entry.objects.get(uid=u.uid), self.boss)
 
 
+class ReviewFixTests(WorkTests):
+    """The independent review of 1.0: concurrency on every command, the states' commands, one-day absences, key clashes."""
+
+    def no_concurrency(self):
+        from policies.models import Policy
+
+        Policy.objects.create(org=self.org, data={"features": {"concurrentEntries": False}}, revision=1)
+
+    def test_going_back_to_work_suspends_the_other_running_activity(self):
+        from web import ops
+
+        a = ops.start(self.alice, activity="A")
+        ops.suspend(self.alice, a)
+        b = ops.start(self.alice, activity="B")
+        self.no_concurrency()
+        # resume A: B is suspended
+        ops.switch(self.alice, a, ops.WORK)
+        a.refresh_from_db()
+        b.refresh_from_db()
+        self.assertEqual((a.mode, b.mode), ("WORK", None))
+        # reopen B after closing it: A is suspended
+        ops.stop(self.alice, b)
+        b.refresh_from_db()
+        ops.reopen(self.alice, b)
+        a.refresh_from_db()
+        b.refresh_from_db()
+        self.assertEqual((a.status, a.mode, b.status, b.mode), ("RUNNING", None, "RUNNING", "WORK"))
+        # a pause makes no room: the other stays as it is
+        ops.switch(self.alice, b, ops.PAUSE)
+        a.refresh_from_db()
+        self.assertEqual(a.mode, None)
+
+    def test_a_command_the_state_does_not_allow_is_refused(self):
+        from django.contrib.messages import get_messages
+
+        from web import ops
+
+        e = ops.start(self.alice, activity="A")
+        ops.stop(self.alice, e)
+        e.refresh_from_db()
+        # a stale page posts "pause" to a closed activity
+        r = self.client.post(f"/attivita/{e.uid}/", {"action": "pause"})
+        self.assertRedirects(r, f"/attivita/{e.uid}/", fetch_redirect_response=False)
+        e.refresh_from_db()
+        self.assertEqual((e.status, e.mode), ("CLOSED", None))
+        self.assertIn("azione non consentita in questo stato", [str(m) for m in get_messages(r.wsgi_request)])
+        # what the state allows goes
+        self.client.post(f"/attivita/{e.uid}/", {"action": "reopen_work"})
+        e.refresh_from_db()
+        self.assertEqual((e.status, e.mode), ("RUNNING", "WORK"))
+        # an answer of the question page stands for its command: travel, allowed at work
+        self.client.post(f"/attivita/{e.uid}/", {"action": "travel_no"})
+        e.refresh_from_db()
+        self.assertEqual(e.mode, "TRAVEL")
+
+    def test_one_day_with_times_is_kept_on_a_day_without_work(self):
+        from datetime import date
+
+        from records.models import Segment, WorkSchedule
+        from web import ops
+
+        # Wednesday only; Saturday 31 October has no working hours
+        WorkSchedule.objects.create(org=self.org, owner=None, day_of_week=3, start_min=9 * 60, end_min=17 * 60)
+        one = ops.save_absence(self.alice, None, first=date(2026, 10, 31), last=date(2026, 10, 31), start_min=600, duration_min=60)
+        self.assertEqual(Segment.objects.filter(entry_id=one, deleted=False).count(), 1)
+        # over several days the days without work are still skipped
+        more = ops.save_absence(self.alice, None, first=date(2026, 10, 27), last=date(2026, 10, 31), start_min=600, duration_min=60)
+        self.assertEqual(Segment.objects.filter(entry_id=more, deleted=False).count(), 1)
+
+    def test_assigning_onto_a_key_the_owner_has_is_refused(self):
+        from records.models import Entry
+        from web import ops
+
+        fields = {"activity": "Rinnovo", "companyUid": str(self.acme.uid), "externalKey": "K-1"}
+        mine = Entry.objects.get(uid=ops.save_todo(self.alice, None, fields))
+        theirs = Entry.objects.get(uid=ops.save_todo(self.boss, None, fields))
+        with self.assertRaises(ops.OpError):
+            ops.assign(self.boss, theirs, self.alice)
+        theirs.refresh_from_db()
+        mine.refresh_from_db()
+        self.assertEqual((theirs.owner, mine.owner), (self.boss, self.alice))
+
+
 class ManagerCompaniesTests(WorkTests):
     """A manager reads every entry done for the companies they are responsible for, an admin's too."""
 

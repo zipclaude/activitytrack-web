@@ -12,8 +12,9 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from django.conf import settings as dj
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.db.models import Q
+from django.utils.translation import gettext as _
 
 from records import activity as A
 from records.models import ActivityKind, Entry, EntryStatus, Segment
@@ -117,12 +118,24 @@ def _new_activity(user, status, company, client, role, activity, **more):
     return Entry.objects.get(uid=uid)
 
 
+def _alone(user, entry, at):
+    """
+    Without concurrent activities what goes to work or travel suspends the user's others with an open
+    segment, as a start does (the library's Work._step, app issue #132).
+    """
+    if concurrent_allowed(user):
+        return
+    others = Entry.objects.filter(owner=user, deleted=False, deleted_utc__isnull=True, status=RUNNING).exclude(mode=None)
+    if entry is not None:
+        others = others.exclude(uid=entry.uid)
+    for other in others:
+        suspend(user, other, at)
+
+
 def start(user, *, company=None, client=None, role=None, activity="", todo=None, mode=WORK, at=None):
     """A new running activity, or [todo] (a TODO activity) started: TODO -> RUNNING."""
     at = at or datetime.now().astimezone()
-    if not concurrent_allowed(user):
-        for other in Entry.objects.filter(owner=user, deleted=False, deleted_utc__isnull=True, status=RUNNING).exclude(mode=None):
-            suspend(user, other, at)
+    _alone(user, todo, at)
     if todo is not None:
         if todo.status != TODO:
             raise OpError("not to do")
@@ -164,6 +177,8 @@ def switch(user, entry, mode, at=None):
     """Pause, travel or back to work (resume when none is open): the open segment closes, one of [mode] opens."""
     at = at or datetime.now().astimezone()
     _running(entry)
+    if mode in (WORK, TRAVEL):
+        _alone(user, entry, at)
     _close_open(user, entry, at)
     _open(user, entry, mode, at)
     _touch(user, entry, {"mode": mode})
@@ -189,6 +204,7 @@ def reopen(user, entry, mode=WORK, at=None):
     at = at or datetime.now().astimezone()
     if entry.status != CLOSED or entry.kind != ActivityKind.ACTIVITY:
         raise OpError("not closed")
+    _alone(user, entry, at)
     _open(user, entry, mode, at)
     _touch(user, entry, {"status": RUNNING, "mode": mode, "closedUtcMs": None})
 
@@ -378,7 +394,9 @@ def save_absence(user, uid, *, first, last, start_min=None, duration_min=None, a
             return [(r.day_of_week, r.start_min, r.end_min) for r in mine]
         off = DayOff.objects.filter(org=user.org, deleted=False, date__range=(first, last)).filter(Q(owner=user) | Q(owner__isnull=True))
         off = off.values_list("date", flat=True)
-        spans = A.absence_segments(first, last, ZoneInfo(dj.TIME_ZONE), start_min, duration_min, rows(WorkSchedule), rows(LunchBreak), off)
+        # one day with times is taken as chosen, as the app's AbsencePlanner (a permesso on a Saturday)
+        spans = A.absence_segments(first, last, ZoneInfo(dj.TIME_ZONE), start_min, duration_min, rows(WorkSchedule), rows(LunchBreak), off,
+                                   with_times_every_day=first == last)
         for _, _, a, b in spans:
             put(user, "segment", new_uid(), {
                 "entryUid": str(uid), "kind": A.ABSENCE, "startUtcMs": ms(a), "endUtcMs": ms(b), "zoneId": entry.zone_id, "source": "MANUAL",
@@ -409,12 +427,16 @@ def assign(by, todo, to):
 
     if todo.status != TODO:
         raise OpError("not to do")
-    with transaction.atomic():
-        rev = engine.next_rev(todo.org)
-        if todo.owner_id != to.pk:
-            _moved(todo, to, rev)
-            todo.refresh_from_db()
-        if to.pk == by.pk:
-            ActivityAssignment.objects.filter(entry=todo).delete()
-        else:
-            ActivityAssignment.objects.update_or_create(entry=todo, defaults={"by": by})
+    try:
+        with transaction.atomic():
+            rev = engine.next_rev(todo.org)
+            if todo.owner_id != to.pk:
+                _moved(todo, to, rev)
+                todo.refresh_from_db()
+            if to.pk == by.pk:
+                ActivityAssignment.objects.filter(entry=todo).delete()
+            else:
+                ActivityAssignment.objects.update_or_create(entry=todo, defaults={"by": by})
+    except IntegrityError:
+        # the external key is unique with the company for each owner: the new one has it already
+        raise OpError(_("chi la riceve ha già un'attività con la stessa chiave esterna")) from None

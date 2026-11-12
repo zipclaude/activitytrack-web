@@ -286,6 +286,12 @@ TODO_COMMANDS = (
 LEGACY_STATES = {"done": "tick", "ignored": "delete", "open": "untick"}
 # the commands of ACTIVITY-MODEL §3 the pages post; "travel" and "stop" may first ask (3 and 3.2)
 SWITCH = {"pause": ops.PAUSE, "travel_no": ops.TRAVEL, "work": ops.WORK, "travel": ops.TRAVEL}
+# the answers of the question pages and the older names, as the command they stand for
+ASKED = {"travel_yes": "travel", "travel_no": "travel", "finish": "stop", "stop_return": "stop", "stop_travel": "stop",
+         "reopen": "reopen_work"}
+# what _command runs
+COMMANDS_RUN = set(SWITCH) | set(ASKED) | {
+    "resume", "start_work", "start_travel", "stop", "reopen_work", "reopen_travel", "tick", "untick", "delete"}
 
 
 def _command(request, e, action, actor=None):
@@ -296,6 +302,11 @@ def _command(request, e, action, actor=None):
     """
     user = actor or request.user
     here = reverse("entry", args=[e.uid])
+    # only what the state allows (§3), as the buttons: a stale page or a forged post runs nothing else
+    if action in COMMANDS_RUN:
+        states.annotate([e])
+        if ASKED.get(action, action) not in states.allowed(e.shown, bool(ops.real_segments(e)), ops.previous_kind(e)):
+            raise ops.OpError(_("azione non consentita in questo stato"))
     if action == "travel" and e.status == EntryStatus.RUNNING and e.mode == ops.WORK:
         return here + "?ask=travel"
     if action in SWITCH:
