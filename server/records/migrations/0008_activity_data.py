@@ -2,8 +2,9 @@
 # The rows go through records.activity_migration.migrate, the same pure function
 # the tests run against the shared cases. Every record it touches gets a new
 # revision and its fields a clock of now: the phones, realigned after their own
-# migration, take the server's version. Not reversible: going back leaves the
-# new columns' values and no to-dos.
+# migration, take the server's version. Not reversible (no reverse code, so
+# migrating back raises IrreversibleError): going back would leave the TODO
+# status, drop the to-dos and the absences' kind.
 
 import time
 import uuid
@@ -173,5 +174,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(forward, migrations.RunPython.noop),
+        migrations.RunPython(forward),
     ]

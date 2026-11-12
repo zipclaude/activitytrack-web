@@ -79,6 +79,8 @@ service.
 Updating to 1.0.0-alfa-2 (an alpha of 1.0): nothing to do besides what the package does; the data is migrated
 automatically by `migrate`. The sync wire schema is now 3: **the server and every device must be on 1.0**, older
 apps are told to update before they can sync, and backups made by older versions can still be restored.
+The data migration cannot be undone (`migrate` refuses to go back to 0.9): the way back is the backup taken before the
+upgrade, so make one first.
 
 Updating to 0.9.9: nothing to do besides what the package does (no migration). A request body
 above 16 MB is now answered with 413 (`too_large`) instead of 400.

@@ -28,7 +28,7 @@ class ActivityMigrationTests(TransactionTestCase):
         return executor.loader.project_state(others + targets).apps
 
     def test_todos_and_absences_become_activities(self):
-        old = self.migrate(BEFORE)
+        old = self.back_to_0006()
         Organization, User = old.get_model("accounts", "Organization"), old.get_model("accounts", "User")
         Company, Entry, Segment = (old.get_model("records", n) for n in ("Company", "Entry", "Segment"))
         Todo, TodoAssignment, Absence = (old.get_model("records", n) for n in ("Todo", "TodoAssignment", "Absence"))
@@ -89,6 +89,23 @@ class ActivityMigrationTests(TransactionTestCase):
         self.assertEqual(Entry.objects.get(uid=legacy.uid).kind, "ABSENCE")
         top = max(max(m.objects.values_list("rev", flat=True)) for m in (Entry, Segment, ExternalRef))
         self.assertEqual(Counter.objects.get(org_id=org.pk).value, top)
+
+    def back_to_0006(self):
+        # 0008 cannot be undone: it is taken off the record without running (the tables are empty here)
+        self.migrate([("records", "0008_activity_data")])
+        MigrationExecutor(connection).migrate([("records", "0007_activity_model")], fake=True)
+        return self.migrate(BEFORE)
+
+    def test_going_back_is_refused(self):
+        """Back to 0.9 would leave TODO entries and kindless absences: the way back is the backup."""
+        from django.db.migrations.exceptions import IrreversibleError
+
+        self.migrate(self.leaves())
+        try:
+            with self.assertRaises(IrreversibleError):
+                self.migrate(BEFORE)
+        finally:
+            self.migrate(self.leaves())
 
     def leaves(self):
         executor = MigrationExecutor(connection)
