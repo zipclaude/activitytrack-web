@@ -17,7 +17,8 @@ stages: [test, package, install, release]
 
 default:
   # every job runs on the owner's local runner (podman, rootless, one job at a time)
-  tags: [local]
+  # the owner's test VM (agents/testvm-ci.md): faster and with a steady network; [local] = the owner's runner
+  tags: [testvm]
   interruptible: true
 
 variables:
