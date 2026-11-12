@@ -24,6 +24,7 @@
 		<a class="{% nav_on 'report' %}" href="{% url 'report' %}">{% icon "report" %}{% translate "Report" %}</a>
 		{% if user.syncs %}
 		<a class="{% nav_on 'entries' 'entry' 'entry_new' %}" href="{% url 'entries' %}">{% icon "list" %}{% translate "Attività" %}</a>
+		<a class="{% nav_on 'bin' %}" href="{% url 'bin' %}">{% icon "bin" %}{% translate "Cestino" %}</a>
 		<a class="{% nav_on 'masters_home' 'masters' 'master_new' 'master_edit' %}" href="{% url 'masters_home' %}">{% icon "folder" %}{% translate "Anagrafiche" %}</a>
 		<a class="{% nav_on 'phones' 'pair_new' %}" href="{% url 'phones' %}">{% icon "devices" %}{% translate "Dispositivi" %}</a>
 		{% endif %}
@@ -48,9 +49,10 @@
 	<a class="{% nav_on 'agenda' %}" href="{% url 'agenda' %}">{% icon "agenda" %}<span>{% translate "Agenda" %}</span></a>
 	<a class="{% nav_on 'report' %}" href="{% url 'report' %}">{% icon "report" %}<span>{% translate "Report" %}</span></a>
 	<details class="more">
-		<summary class="{% nav_on 'entries' 'entry' 'entry_new' 'masters_home' 'masters' 'master_new' 'master_edit' 'phones' 'pair_new' 'policies:index' 'policies:edit' 'maps:index' 'maps:new' 'maps:edit' 'updates:index' 'users' 'user_new' 'user_edit' 'my_password' 'security' 'preferences' %}">{% icon "more" %}<span>{% translate "Altro" %}</span></summary>
+		<summary class="{% nav_on 'bin' 'entries' 'entry' 'entry_new' 'masters_home' 'masters' 'master_new' 'master_edit' 'phones' 'pair_new' 'policies:index' 'policies:edit' 'maps:index' 'maps:new' 'maps:edit' 'updates:index' 'users' 'user_new' 'user_edit' 'my_password' 'security' 'preferences' %}">{% icon "more" %}<span>{% translate "Altro" %}</span></summary>
 		<div class="sheet">
 			<a href="{% url 'entries' %}">{% icon "list" %}{% translate "Attività" %}</a>
+			<a href="{% url 'bin' %}">{% icon "bin" %}{% translate "Cestino" %}</a>
 			<a href="{% url 'masters_home' %}">{% icon "folder" %}{% translate "Anagrafiche" %}</a>
 			<a href="{% url 'phones' %}">{% icon "devices" %}{% translate "Dispositivi" %}</a>
 			{% if user.is_admin %}<a href="{% url 'policies:index' %}">{% icon "tune" %}{% translate "Policy" %}</a>

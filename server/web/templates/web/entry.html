@@ -6,16 +6,15 @@
 	{% if e.needs_review %}<p class="note error">{% translate "Da verificare: dopo una sincronizzazione due periodi si sovrappongono. Correggi gli orari." %}</p>{% endif %}
 	<div class="head"><div><div class="sub">{{ e.company.name }}{% if not can %} · {{ e.owner.get_full_name|default:e.owner.username }}{% endif %}</div>
 		<h1>{{ e.client.name|default:_("Senza cliente") }}</h1><div>{{ e.activity|default:_("senza descrizione") }}</div></div>
-		<div class="big"><span class="pill s-{{ e|status_css }}">{{ e|status }}</span><div>{% translate "Lavoro" %} {{ d.WORK }}{% if d.TRAVEL != "0:00" %} · {% translate "Viaggio" %} {{ d.TRAVEL }}{% endif %}{% if d.PAUSE != "0:00" %} · {% translate "Pausa" %} {{ d.PAUSE }}{% endif %}</div></div></div>
-	{% if can %}<form method="post" class="actions">{% csrf_token %}
-		{% if e.status == "RUNNING" %}
-			{% if e.mode and e.mode != "PAUSE" %}<button name="action" value="pause" class="c-pause">{% icon "pause" %}{% translate "Pausa" %}</button>{% else %}<button name="action" value="work" class="c-work">{% icon "play" %}{% translate "Riprendi" %}</button>{% endif %}
-			{% if e.mode != "TRAVEL" %}<button name="action" value="travel" class="c-travel">{% icon "travel" %}{% translate "Viaggio" %}</button>{% endif %}
-			{% if e.mode %}<button name="action" value="suspend" class="c-suspend">{% icon "suspend" %}{% translate "Sospendi" %}</button>{% endif %}
-			<button name="action" value="stop" class="c-stop">{% icon "stop" %}{% translate "Stop" %}</button>
-		{% elif e.status == "CLOSED" and e.kind == "ACTIVITY" %}<button name="action" value="reopen">{% translate "Riapri" %}</button>{% endif %}
-	</form>{% endif %}
+		<div class="big">{% state_pill e %}<div>{% translate "Lavoro" %} {{ d.WORK }}{% if d.TRAVEL != "0:00" %} · {% translate "Viaggio" %} {{ d.TRAVEL }}{% endif %}{% if d.PAUSE != "0:00" %} · {% translate "Pausa" %} {{ d.PAUSE }}{% endif %}</div></div></div>
+	{% if can and not ask %}{% include "web/_actions.html" %}{% endif %}
 </section>
+{% if ask == "travel" %}<form method="post" class="card">{% csrf_token %}<h2>{% translate "Hai completato l'attività lavorativa?" %}</h2>
+	<p class="doc">{% translate "Sì: l'attività si chiude e parte un viaggio senza attività. No: il viaggio continua in questa attività." %}</p>
+	<div class="actions"><button name="action" value="travel_yes" class="primary">{% translate "Sì" %}</button><button name="action" value="travel_no">{% translate "No" %}</button><a class="button" href="{% url 'entry' e.uid %}">{% translate "Annulla" %}</a></div></form>{% endif %}
+{% if ask == "stop" %}<form method="post" class="card">{% csrf_token %}<h2>{% translate "Come termina l'attività?" %}</h2>
+	<p class="doc">{% translate "L'attività ha un viaggio di andata: puoi avviare il ritorno." %}</p>
+	<div class="actions"><button name="action" value="stop_travel" class="c-travel">{% icon "travel" %}{% translate "Avvia viaggio di ritorno" %}</button><button name="action" value="finish" class="c-stop">{% icon "stop" %}{% translate "Termina l'attività" %}</button>{% if return_trip %}<button name="action" value="stop_return" class="c-stop">{% icon "stop" %}{% translate "Termina l'attività ed aggiungi il viaggio di ritorno" %}</button>{% endif %}<a class="button" href="{% url 'entry' e.uid %}">{% translate "Annulla" %}</a></div></form>{% endif %}
 
 {% if can %}
 <form method="post" class="card">{% csrf_token %}<input type="hidden" name="action" value="save">
@@ -62,5 +61,4 @@
 {% empty %}<p class="muted">{% translate "Si aggiungono dall'app." %}</p>{% endfor %}
 </section>
 
-{% if can %}<form class="danger-zone" method="post" data-confirm="{% translate "Eliminare questa attività? Si elimina anche sui dispositivi." %}">{% csrf_token %}<input type="hidden" name="action" value="delete"><button class="danger">{% translate "Elimina l'attività" %}</button></form>{% endif %}
 {% endblock %}

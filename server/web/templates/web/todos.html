@@ -8,7 +8,7 @@
 <p class="tabs">
 	<a href="?show=open{{ person_q }}" class="{% if show == 'open' %}on{% endif %}">{% translate "Aperte" %}</a>
 	<a href="?show=done{{ person_q }}" class="{% if show == 'done' %}on{% endif %}">{% translate "Fatte" %}</a>
-	<a href="?show=ignored{{ person_q }}" class="{% if show == 'ignored' %}on{% endif %}">{% translate "Ignorate" %}</a>
-	<a href="?show=all{{ person_q }}" class="{% if show == 'all' %}on{% endif %}">{% translate "Tutte" %}</a></p>
+	<a href="?show=absences{{ person_q }}" class="{% if show == 'absences' %}on{% endif %}">{% translate "Assenze" %}</a>
+	<a href="?show=all{{ person_q }}" class="{% if show == 'all' %}on{% endif %}">{% translate "Tutte" %}</a> <a href="{% url 'bin' %}">{% icon "bin" %}{% translate "Cestino" %}</a></p>
 {% for t, state in items %}{% include "web/_todo_row.html" %}{% empty %}<p class="muted">{% translate "Nessuna voce." %}</p>{% endfor %}
 {% endblock %}

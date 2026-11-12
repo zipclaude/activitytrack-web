@@ -266,19 +266,86 @@ def save_todo(user, uid, fields, owner=None):
     return uid
 
 
-def todo_state(user, todo, state):
-    """The to-do page's buttons: done (tick), ignored (into the bin), open (out of it)."""
-    # TODO(activity-1.0-pages): the bin and the states of ACTIVITY-MODEL §2 on the pages
-    owner = todo.owner
-    if state == "done":
-        tick(owner, todo)
-    elif state == "ignored":
-        to_bin(owner, todo)
-    else:
-        restore(owner, todo)
-        if todo.status == CLOSED and not Segment.objects.filter(entry=todo, deleted=False, planned=False).exists():
-            # a to-do ticked off by mistake: to do again (the web's "Riapri"; the app has no such command)
-            _touch(owner, todo, {"status": TODO, "closedUtcMs": None})
+def untick(user, entry):
+    """CLOSED without real segments -> TODO: a task ticked off by mistake (§3 untick)."""
+    if entry.status != CLOSED or entry.kind != ActivityKind.ACTIVITY or real_segments(entry):
+        raise OpError("not ticked")
+    _touch(user, entry, {"status": TODO, "closedUtcMs": None})
+
+
+def purge(user, entry):
+    """Deleted for good: only an activity already in the bin (the web's bin page)."""
+    if entry.deleted_utc is None:
+        raise OpError("not in the bin")
+    delete(user, "entry", entry.uid)
+
+
+def real_segments(entry):
+    segs = Segment.objects.filter(entry=entry, deleted=False, planned=False)
+    return list(segs.order_by("start_utc"))
+
+
+def previous_kind(entry):
+    """The kind open before the pause now open (what "Riprendi" goes back to), else None."""
+    before = [s for s in real_segments(entry) if s.end_utc is not None and s.kind in (WORK, TRAVEL)]
+    return before[-1].kind if before else None
+
+
+def travel_from_work(user, entry, completed, at=None):
+    """
+    The question of §3: "Hai completato l'attività lavorativa?" Yes: the activity
+    stops and an anonymous one starts travelling at the same instant; no: it switches.
+    """
+    at = at or datetime.now().astimezone()
+    if not completed:
+        switch(user, entry, TRAVEL, at)
+        return entry
+    with transaction.atomic():
+        stop(user, entry, at)
+        return start(user, mode=TRAVEL, at=at)
+
+
+def outbound(entry):
+    """
+    The travel §3.2 mirrors, when the activity has a return trip to offer: a TRAVEL
+    segment followed later by a WORK one, and no TRAVEL after the last WORK; the
+    last TRAVEL before the first WORK that follows a travel. None otherwise.
+    """
+    segs = real_segments(entry)
+    works = [i for i, s in enumerate(segs) if s.kind == WORK]
+    if not works or any(s.kind == TRAVEL for s in segs[works[-1]:]):
+        return None
+    travels = [i for i, s in enumerate(segs) if s.kind == TRAVEL and i < works[-1]]
+    if not travels:
+        return None
+    first_work = next(i for i in works if i > travels[0])
+    return [s for s in segs[:first_work] if s.kind == TRAVEL][-1]
+
+
+def stop_with_return(user, entry, at=None):
+    """
+    §3.2 choice 3: close the open segment at [at], add a TRAVEL segment as long
+    as the outbound one with its kilometres, and close the activity. The server
+    stores no location samples, so the return has none.
+    """
+    at = at or datetime.now().astimezone()
+    _running(entry)
+    out = outbound(entry)
+    if out is None or out.end_utc is None:
+        raise OpError("no return trip")
+    length = out.end_utc - out.start_utc
+    with transaction.atomic():
+        _close_open(user, entry, at)
+        fields = {
+            "entryUid": str(entry.uid), "kind": TRAVEL, "startUtcMs": ms(at),
+            "endUtcMs": ms(at + length), "zoneId": entry.zone_id, "source": "MANUAL",
+        }
+        if out.km_estimated is not None:
+            fields["kmEstimated"] = out.km_estimated
+        if out.km_declared is not None:
+            fields["kmDeclared"] = out.km_declared
+        put(user, "segment", new_uid(), fields)
+        _touch(user, entry, {"status": CLOSED, "mode": None, "closedUtcMs": engine.now_ms()})
 
 
 def save_absence(user, uid, *, first, last, start_min=None, duration_min=None, absence_kind=A.ABSENCE, company=None, activity=None, notes=None,

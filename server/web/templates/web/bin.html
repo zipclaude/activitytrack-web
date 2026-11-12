@@ -1,0 +1,15 @@
+{% extends "web/base.html" %}{% load i18n at %}
+{% block title %}{% translate "Cestino" %} · ActivityTrack{% endblock %}
+{% block content %}
+<div class="head"><h1>{% translate "Cestino" %}</h1></div>
+<p class="doc">{% translate "Le attività eliminate: si possono ripristinare, o eliminare per sempre (qui soltanto). Eliminare per sempre vale anche sui dispositivi." %}</p>
+{% for e, mine in items %}<div class="row hrow over" style="--band: {{ e.company.color|color|default:'var(--line)' }}">
+	{% state_mark e %}
+	<span class="main"><b>{% firstof e.activity e.client.name e.company.name _("senza descrizione") %}</b>
+		<span class="sub">{% if e.kind == "ABSENCE" %}{{ e.absence_kind|absence_label }} · {% endif %}{% firstof e.client.name e.company.name %}{% if e.client or e.company %} · {% endif %}{% translate "eliminata" %} {{ e.deleted_utc|udatetime:"day" }}{% if not mine %} · {{ e.owner.get_full_name|default:e.owner.username }}{% endif %}</span></span>
+	{% if mine %}<form method="post" class="actions">{% csrf_token %}<input type="hidden" name="uid" value="{{ e.uid }}">
+		<button name="action" value="restore">{% icon restore.2 %}{{ restore.1 }}</button>
+		<button name="action" value="purge" class="danger" data-confirm="{{ purge.4 }}">{% icon purge.2 %}{{ purge.1 }}</button></form>{% endif %}
+</div>
+{% empty %}<p class="muted">{% translate "Il cestino è vuoto." %}</p>{% endfor %}
+{% endblock %}

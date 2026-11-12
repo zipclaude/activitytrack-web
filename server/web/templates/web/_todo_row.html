@@ -1,6 +1,7 @@
-{% load i18n at %}<div class="row" style="--band: {% if t.kind == 'ABSENCE' %}#D64545{% else %}{{ t.client.color|color|default:'var(--line)' }}{% endif %}">
-	<a class="main" href="{% url 'todo_edit' t.uid %}"><b>{% if t.kind == "ABSENCE" %}{{ t.activity|default:_("Assenza") }}{% else %}{{ t.activity }}{% endif %}</b>
-		<span class="sub">{% firstof t.client.name t.company.name %}{% if t.due_date %} · {% translate "scad." %} {{ t.due_date|udate:"day" }}{% endif %}{% if t.plan_date %} · {{ t.plan_date|udate:"day" }} {{ t.plan_start_min|minutes_hm }}{% endif %}{% if t.priority %} · P{{ t.priority }}{% endif %}{% if t.owner_id != user.pk %} · {% icon "person" %}{{ t.owner.get_full_name|default:t.owner.username }}{% endif %}</span></a>
-	<span class="pill t-{{ state }}">{{ state|todo_state }}</span>
-	{% if state != "done" and state != "ignored" and t.owner_id == user.pk %}<a class="button tonal" href="{% url 'entry_new' %}?todo={{ t.uid }}" title="{% translate 'Avvia' %}">{% icon "play" _("Avvia") %}</a>{% endif %}
+{% load i18n at %}<div class="row{% if state == "DONE" %} over{% endif %}" style="--band: {% if t.kind == 'ABSENCE' %}var(--absence){% else %}{{ t.client.color|color|default:'var(--line)' }}{% endif %}">
+	{% state_mark t %}
+	<a class="main" href="{% url 'todo_edit' t.uid %}"><b>{% if t.kind == "ABSENCE" %}{{ t.absence_kind|absence_label }}{% if t.activity %} · {{ t.activity }}{% endif %}{% else %}{{ t.activity|default:_("senza descrizione") }}{% endif %}</b>
+		<span class="sub">{% firstof t.client.name t.company.name %}{% if t.due_date %} · {% translate "scad." %} {{ t.due_date|udate:"day" }}{% endif %}{% if t.plan_date %} · {{ t.plan_date|udate:"day" }}{% if t.plan_start_min is not None %} {{ t.plan_start_min|minutes_hm }}{% endif %}{% endif %}{% if t.priority %} · {{ t.priority|priority_label }}{% endif %}{% if t.owner_id != user.pk %} · {% icon "person" %}{{ t.owner.get_full_name|default:t.owner.username }}{% endif %}</span></a>
+	{% state_pill t state %}
+	{% if state == "TODO" or state == "PLANNED" or state == "LATE" %}{% if t.owner_id == user.pk %}<a class="button tonal" href="{% url 'entry_new' %}?todo={{ t.uid }}" title="{% translate 'Avvia' %}">{% icon "play" _("Avvia") %}</a>{% endif %}{% endif %}
 </div>

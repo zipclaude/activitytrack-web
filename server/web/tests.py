@@ -48,7 +48,7 @@ class WorkTests(TestCase):
         return Entry.objects.filter(owner=self.alice, deleted=False).latest("created_utc")
 
     def test_pages_render(self):
-        for url in ["/", "/attivita/", "/attivita/nuova/", "/dafare/", "/dafare/nuova/", "/anagrafiche/", "/anagrafiche/clienti/", "/report/", "/dispositivi/", "/agenda/"]:
+        for url in ["/", "/attivita/", "/attivita/nuova/", "/cestino/", "/dafare/", "/dafare/nuova/", "/anagrafiche/", "/anagrafiche/clienti/", "/report/", "/dispositivi/", "/agenda/"]:
             self.assertEqual(self.client.get(url).status_code, 200, url)
 
     def test_an_activity_from_start_to_closed(self):
@@ -62,8 +62,15 @@ class WorkTests(TestCase):
         self.client.post(f"/attivita/{e.uid}/comando/", {"action": "pause"})
         self.assertEqual(self.entry().mode, "PAUSE")
         self.assertEqual(Segment.objects.filter(entry=e, end_utc__isnull=True).count(), 1)
+        # no "Sospendi" button: an activity is suspended when another starts (ops.suspend)
+        self.assertNotContains(self.client.get("/"), "Sospendi")
         self.client.post(f"/attivita/{e.uid}/comando/", {"action": "suspend"})
+        self.assertEqual(self.entry().mode, "PAUSE")
+        from web import ops
+
+        ops.suspend(self.alice, self.entry())
         self.assertEqual((self.entry().status, self.entry().mode), (EntryStatus.RUNNING, None))
+        self.assertContains(self.client.get("/"), "Sospesa")
         self.client.post(f"/attivita/{e.uid}/comando/", {"action": "work"})
         r = self.client.post(f"/attivita/{e.uid}/comando/", {"action": "stop"})
         # a client and some work: complete (ACTIVITY-MODEL §2.4), back home
@@ -85,6 +92,9 @@ class WorkTests(TestCase):
         e = self.entry()
         self.assertIsNotNone(e.deleted_utc)
         self.assertEqual(self.client.get(f"/attivita/{e.uid}/").status_code, 404)
+        self.assertContains(self.client.get("/cestino/"), "Patch")
+        self.client.post("/cestino/", {"action": "restore", "uid": str(e.uid)})
+        self.assertIsNone(self.entry().deleted_utc)
 
     def test_without_a_client_details_are_missing(self):
         r = self.client.post("/attivita/nuova/", {"when": "now"})
@@ -142,11 +152,22 @@ class WorkTests(TestCase):
         self.client.post(f"/dafare/{c.uid}/", {"state": "open"})
         c.refresh_from_db()
         self.assertEqual((c.status, c.closed_utc), ("TODO", None))
-        self.client.post(f"/dafare/{c.uid}/", {"state": "ignored"})
+        self.client.post(f"/dafare/{c.uid}/", {"action": "delete"})
         c.refresh_from_db()
         self.assertIsNotNone(c.deleted_utc)
-        self.assertContains(self.client.get("/dafare/?show=ignored"), "Chiamare")
+        # in the bin only, restorable there; deleted for good only from the bin
         self.assertNotContains(self.client.get("/dafare/"), "Chiamare")
+        self.assertContains(self.client.get("/cestino/"), "Chiamare")
+        self.client.post("/cestino/", {"action": "restore", "uid": str(c.uid)})
+        c.refresh_from_db()
+        self.assertIsNone(c.deleted_utc)
+        self.assertContains(self.client.get("/dafare/"), "Chiamare")
+        self.client.post("/cestino/", {"action": "purge", "uid": str(c.uid)})
+        self.assertTrue(Entry.objects.filter(uid=c.uid, deleted=False).exists())
+        self.client.post(f"/dafare/{c.uid}/", {"action": "delete"})
+        self.client.post("/cestino/", {"action": "purge", "uid": str(c.uid)})
+        self.assertTrue(Entry.objects.get(uid=c.uid).deleted)
+        self.assertNotContains(self.client.get("/cestino/"), "Chiamare")
 
     def test_central_master_data_are_read_only_for_users(self):
         from records.models import Role
@@ -484,7 +505,8 @@ class AgendaTests(WorkTests):
         self.assertIn("09:00–10:07 · 1:15", day)
         self.assertIn("Riunione", day)
         week = self.client.get("/agenda/?view=week&date=2026-10-27").content.decode()
-        self.assertIn("☐ Rinnovo certificati", week)
+        self.assertIn("Rinnovo certificati", week)
+        self.assertIn("blk todo", week)
         self.assertIn("15:00–16:00", week)
         self.assertIn('data-plan="/dafare/nuova/"', week)
         month = self.client.get("/agenda/?view=month&date=2026-10-27").content.decode()
@@ -513,13 +535,20 @@ class AgendaTests(WorkTests):
         self.assertEqual(week.count("blk todo absence"), 2)
         self.assertIn("09:00–12:30", week)
         self.assertIn("13:30–17:00", week)
-        self.assertNotIn("☐ Assenza", week)
+        self.assertIn("Assenza", week)
         # absences are not worked time
         from datetime import date
 
         from web import reporting
 
-        self.assertEqual(reporting.report(Entry.objects.filter(owner=self.alice), date(2026, 10, 27), date(2026, 10, 29)), {})
+        days = reporting.report(
+            Entry.objects.filter(owner=self.alice), date(2026, 10, 27), date(2026, 10, 29)
+        )
+        self.assertEqual([x.reported for d in days.values() for x in d.lines], [])
+        self.assertEqual(
+            [(d.reported, d.absent) for d in days.values()],
+            [(0, (3 * 60 + 30 + 3 * 60 + 30) * 60)]
+        )
         # a last day before the first one is refused
         r = self.client.post("/dafare/nuova/", {"kind": "ABSENCE", "plan_date": "2026-11-05", "plan_end": "2026-11-03"})
         self.assertEqual(Entry.objects.filter(kind="ABSENCE").count(), 1)
@@ -538,12 +567,29 @@ class AgendaTests(WorkTests):
         self.assertIn("15:00–16:30", self.client.get("/agenda/?view=day&date=2026-10-28").content.decode())
         page = self.client.get(f"/dafare/{a.uid}/").content.decode()
         self.assertIn('value="15:00"', page)
-        self.assertIn('value="90"', page)
+        self.assertIn('name="end_time" value="16:30"', page)
+        # the form's own fields: a kind, an optional company, from-to days, times for every day
+        self.client.post("/dafare/nuova/", {
+            "kind": "ABSENCE", "absence_kind": "SICK", "company": str(self.acme.uid),
+            "plan_date": "2026-11-02",
+            "plan_end": "2026-11-03", "plan_time": "09:00", "end_time": "11:30"})
+        sick = Entry.objects.get(absence_kind="SICK")
+        self.assertEqual(sick.company_id, self.acme.uid)
+        self.assertEqual(len(Segment.objects.filter(entry=sick, deleted=False)), 0)
+        self.client.post("/dafare/nuova/", {
+            "kind": "ABSENCE", "absence_kind": "LEAVE", "plan_date": "2026-10-28",
+            "plan_end": "2026-10-28",
+            "plan_time": "09:00", "end_time": "08:00"})
+        self.assertFalse(Entry.objects.filter(absence_kind="LEAVE").exists())
         # into the bin and back
         self.client.post(f"/dafare/{a.uid}/", {"state": "ignored"})
         self.assertNotIn("blk todo absence", self.client.get("/agenda/?view=day&date=2026-10-28").content.decode())
-        self.client.post(f"/dafare/{a.uid}/", {"state": "open"})
-        self.assertIn("blk todo absence done", self.client.get("/agenda/?view=day&date=2026-10-28").content.decode())
+        self.assertEqual(self.client.get(f"/dafare/{a.uid}/").status_code, 404)
+        self.client.post("/cestino/", {"action": "restore", "uid": str(a.uid)})
+        self.assertIn(
+            "blk todo absence",
+            self.client.get("/agenda/?view=day&date=2026-10-28").content.decode()
+        )
 
     def test_a_tag_filter_hides_the_todos(self):
         self.client.post("/attivita/nuova/", {"when": "past", "client": "22222222-2222-4222-8222-222222222222", "activity": "Riunione", "start": "2026-10-27T09:00", "end": "2026-10-27T10:00"})
@@ -577,7 +623,7 @@ class AgendaTests(WorkTests):
         self.assertIn("<b>1:15</b><span class=\"sub\">1:07</span>", page)
         csv = self.client.get("/report/csv/?from=2026-10-01&to=2026-10-31").content.decode()
         self.assertIn(";67;0;0;0.00;;", csv)
-        self.assertTrue(csv.strip().endswith(";75;0;0"), csv)
+        self.assertTrue(csv.strip().endswith(";75;0;0;0"), csv)
 
 
 class HomeListTests(WorkTests):
@@ -633,26 +679,264 @@ class HomeListTests(WorkTests):
         page = self.client.get("/").content.decode()
         self.assertNotIn('<b>Avviata</b>', page)
 
-    def test_overdue_rules(self):
+    def test_displayed_states_of_the_to_dos(self):
         from datetime import date, datetime
-        from types import SimpleNamespace as S
         from zoneinfo import ZoneInfo
 
-        from web.homelist import state
+        from records.models import Entry
+        from web import states
 
         tz = ZoneInfo("Europe/Rome")
-        t = lambda **k: S(**{"status": "TODO", "deleted_utc": None, "plan_date": None, "plan_start_min": None, "duration_min": None, "due_date": None, "due_time_min": None, **k})  # noqa: E731
         now = datetime(2026, 10, 30, 12, 0, tzinfo=tz)
-        self.assertEqual(state(t(due_date=date(2026, 10, 30)), now, tz), "open")
-        self.assertEqual(state(t(due_date=date(2026, 10, 30), due_time_min=600), now, tz), "overdue")
-        self.assertEqual(state(t(plan_date=date(2026, 10, 30)), now, tz), "planned")
-        self.assertEqual(state(t(plan_date=date(2026, 10, 30), plan_start_min=600, duration_min=60), now, tz), "overdue")
-        self.assertEqual(state(t(plan_date=date(2026, 10, 30), plan_start_min=660, duration_min=90), now, tz), "planned")
-        self.assertEqual(state(t(status="CLOSED"), now, tz), "done")
-        self.assertEqual(state(t(deleted_utc=now), now, tz), "ignored")
-        # a planned segment over makes it late, whatever the plan (ACTIVITY-MODEL §2.3)
-        over = S(planned=True, kind="WORK", start_utc=datetime(2026, 10, 30, 9, 0, tzinfo=tz), end_utc=datetime(2026, 10, 30, 11, 0, tzinfo=tz))
-        self.assertEqual(state(t(plan_date=date(2026, 10, 30)), now, tz, [over]), "overdue")
+
+        def state(**k):
+            base = {"kind": "ACTIVITY", "status": "TODO", "activity": "x", "org": self.org,
+                    "owner": self.alice, "zone_id": "UTC"}
+            e = Entry(**{**base, **k})
+            return states.annotate([e], now, tz)[e.uid][0]
+
+        self.assertEqual(state(due_date=date(2026, 10, 30)), "PLANNED")
+        self.assertEqual(state(due_date=date(2026, 10, 30), due_time_min=600), "LATE")
+        self.assertEqual(state(plan_date=date(2026, 10, 30)), "PLANNED")
+        self.assertEqual(
+            state(plan_date=date(2026, 10, 30), plan_start_min=600, duration_min=60), "LATE"
+        )
+        self.assertEqual(
+            state(plan_date=date(2026, 10, 30), plan_start_min=660, duration_min=90), "PLANNED"
+        )
+        self.assertEqual(state(), "TODO")
+        self.assertEqual(state(status="CLOSED"), "DONE")
+        self.assertEqual(state(deleted_utc=now), "DELETED")
+        self.assertEqual(state(kind="ABSENCE", status="CLOSED", absence_kind="SICK"), "ABSENCE")
+
+    def test_the_commands_each_state_allows(self):
+        from web import states
+
+        self.assertEqual(
+            states.allowed("PLANNED"), ["start_work", "start_travel", "tick", "delete"]
+        )
+        self.assertNotIn("suspend", sum((states.allowed(s) for s in states.UI), []))
+        self.assertEqual(states.allowed("DONE", has_real_segments=False)[-2:], ["untick", "delete"])
+        self.assertNotIn("untick", states.allowed("DONE", has_real_segments=True))
+        self.assertEqual(states.allowed("DELETED"), ["restore", "purge"])
+        self.assertEqual(states.allowed("PAUSE", previous="TRAVEL")[:2], ["resume", "work"])
+
+    def _running(self, mode="WORK"):
+        from web import ops
+
+        self.client.post("/attivita/nuova/", {
+            "when": "now", "client": "22222222-2222-4222-8222-222222222222", "activity": "Intervento"})
+        e = self.entry()
+        if mode != "WORK":
+            ops.switch(self.alice, e, mode)
+        return e
+
+    def test_travel_from_work_asks_first(self):
+        from records.models import Entry, Segment
+
+        e = self._running()
+        r = self.client.post(f"/attivita/{e.uid}/comando/", {"action": "travel"})
+        self.assertRedirects(r, f"/attivita/{e.uid}/?ask=travel", fetch_redirect_response=False)
+        self.assertEqual(self.entry().mode, "WORK")
+        self.assertContains(
+            self.client.get(f"/attivita/{e.uid}/?ask=travel"),
+            "Hai completato l'attività lavorativa?"
+        )
+        # no: the same activity travels
+        self.client.post(f"/attivita/{e.uid}/", {"action": "travel_no"})
+        self.assertEqual((self.entry().uid, self.entry().mode), (e.uid, "TRAVEL"))
+        # yes (from work again): it closes and an anonymous one travels from the same instant
+        self.client.post(f"/attivita/{e.uid}/", {"action": "work"})
+        self.client.post(f"/attivita/{e.uid}/", {"action": "travel_yes"})
+        e.refresh_from_db()
+        self.assertEqual(e.status, "CLOSED")
+        new = Entry.objects.get(owner=self.alice, status="RUNNING")
+        self.assertEqual((new.mode, new.company_id, new.client_id), ("TRAVEL", None, None))
+        closed = Segment.objects.filter(entry=e, deleted=False).order_by("-start_utc").first()
+        self.assertEqual(closed.end_utc, Segment.objects.get(entry=new, deleted=False).start_utc)
+
+    def test_stopping_offers_the_return_trip(self):
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        from records.models import Segment
+        from web import ops
+
+        now = timezone.now()
+        e = ops.start(
+            self.alice, mode="TRAVEL", at=now - timedelta(hours=4), company=self.acme,
+            activity="Posa"
+        )
+        ops.switch(self.alice, e, "WORK", now - timedelta(hours=3))
+        out = Segment.objects.get(entry=e, kind="TRAVEL")
+        ops.put(self.alice, "segment", out.uid, {"kmDeclared": 12.5})
+        # an outbound travel and then work: three choices
+        r = self.client.post(f"/attivita/{e.uid}/comando/", {"action": "stop"})
+        self.assertRedirects(r, f"/attivita/{e.uid}/?ask=stop", fetch_redirect_response=False)
+        page = self.client.get(f"/attivita/{e.uid}/?ask=stop").content.decode()
+        for text in ("Avvia viaggio di ritorno", "Termina l'attività",
+                     "Termina l'attività ed aggiungi il viaggio di ritorno"):
+            self.assertIn(text, page)
+        self.client.post(f"/attivita/{e.uid}/", {"action": "stop_travel"})
+        self.assertEqual(self.entry().mode, "TRAVEL")
+        self.assertEqual(self.entry().status, "RUNNING")
+        e = ops.start(
+            self.alice, mode="TRAVEL", at=now - timedelta(hours=4), company=self.acme,
+            activity="Posa 2"
+        )
+        ops.switch(self.alice, e, "WORK", now - timedelta(hours=3))
+        ops.put(
+            self.alice, "segment", Segment.objects.get(entry=e, kind="TRAVEL").uid,
+            {"kmDeclared": 12.5}
+        )
+        self.client.post(f"/attivita/{e.uid}/", {"action": "stop_return"})
+        e.refresh_from_db()
+        self.assertEqual(e.status, "CLOSED")
+        legs = Segment.objects.filter(entry=e, kind="TRAVEL", deleted=False)
+        back = legs.order_by("start_utc").last()
+        self.assertEqual((back.end_utc - back.start_utc), timedelta(hours=1))
+        self.assertEqual((back.km_declared, back.source), (12.5, "MANUAL"))
+        # no travel before the work: a plain stop, no question
+        f = self._running()
+        r = self.client.post(f"/attivita/{f.uid}/comando/", {"action": "stop"})
+        self.assertRedirects(r, "/")
+
+    def test_the_return_trip_needs_editable_times(self):
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        from web import ops
+
+        now = timezone.now()
+        e = ops.start(self.alice, mode="TRAVEL", at=now - timedelta(hours=4), company=self.acme)
+        ops.switch(self.alice, e, "WORK", now - timedelta(hours=3))
+        from unittest import mock
+
+        with mock.patch("web.data.owner_times_fixed", return_value=True):
+            page = self.client.get(f"/attivita/{e.uid}/?ask=stop").content.decode()
+            self.client.post(f"/attivita/{e.uid}/", {"action": "stop_return"})
+        self.assertNotIn("aggiungi il viaggio di ritorno", page)
+        self.assertEqual(self.entry().status, "RUNNING")
+
+    def test_the_bin_is_the_only_place_to_delete_for_good(self):
+        from records.models import Entry
+
+        e = self._running()
+        self.client.post(f"/attivita/{e.uid}/", {"action": "delete"})
+        self.assertIsNotNone(Entry.objects.get(uid=e.uid).deleted_utc)
+        self.assertContains(self.client.get("/cestino/"), "Intervento")
+        self.assertContains(self.client.get("/cestino/"), "Elimina definitivamente")
+        # a manager reads the team's bin but changes nothing in it
+        self.client.force_login(self.boss)
+        self.assertContains(self.client.get("/cestino/"), "Intervento")
+        self.assertEqual(
+            self.client.post("/cestino/", {"action": "purge", "uid": str(e.uid)}).status_code, 403
+        )
+        self.assertFalse(Entry.objects.get(uid=e.uid).deleted)
+        # nothing is purged out of the bin
+        from web import ops
+
+        self.client.force_login(self.alice)
+        self.client.post("/cestino/", {"action": "restore", "uid": str(e.uid)})
+        with self.assertRaises(ops.OpError):
+            ops.purge(self.alice, Entry.objects.get(uid=e.uid))
+
+    def test_a_closed_task_can_be_ticked_off_again_and_reopened_with_confirmation(self):
+        from records.models import Entry
+
+        self.client.post("/dafare/nuova/", {"title": "Chiamare"})
+        c = Entry.objects.get(activity="Chiamare")
+        self.client.post(f"/dafare/{c.uid}/", {"action": "tick"})
+        page = self.client.get(f"/attivita/{c.uid}/").content.decode()
+        self.assertIn('value="untick"', page)
+        self.assertEqual(page.count('value="reopen_'), 2)
+        self.assertEqual(page.count("data-confirm"), 3)
+        self.client.post(f"/attivita/{c.uid}/", {"action": "untick"})
+        c.refresh_from_db()
+        self.assertEqual((c.status, c.closed_utc), ("TODO", None))
+        # a task that has work cannot be unticked
+        e = self._running()
+        self.client.post(f"/attivita/{e.uid}/", {"action": "stop"})
+        self.assertNotIn('value="untick"', self.client.get(f"/attivita/{e.uid}/").content.decode())
+
+    def test_absences_are_counted_apart_in_the_report(self):
+        from datetime import date
+
+        from records.models import Entry, WorkSchedule
+        from web import reporting
+
+        for dow in (1, 2, 3, 4, 5):
+            WorkSchedule.objects.create(
+                org=self.org, owner=None, day_of_week=dow, start_min=9 * 60, end_min=13 * 60
+            )
+        self.client.post("/attivita/nuova/", {
+            "when": "past", "client": "22222222-2222-4222-8222-222222222222", "activity": "Riunione",
+            "start": "2026-10-27T09:00", "end": "2026-10-27T10:00"})
+        self.client.post("/dafare/nuova/", {
+            "kind": "ABSENCE", "absence_kind": "HOLIDAY", "plan_date": "2026-10-28",
+            "plan_end": "2026-10-29"})
+        page = self.client.get("/report/?from=2026-10-01&to=2026-10-31").content.decode()
+        self.assertIn("Ferie", page)
+        self.assertIn(">8:00<", page)
+        # the work total is the work's alone
+        self.assertIn("<b>1:00</b>", page)
+        csv = self.client.get("/report/csv/?from=2026-10-01&to=2026-10-31").content.decode()
+        csv = csv.splitlines()
+        self.assertTrue(csv[0].endswith("absence_min"))
+        absences = [row.split(";") for row in csv if ";ABSENCE;" in row]
+        self.assertEqual(
+            [(r[0], r[-1]) for r in absences], [("2026-10-28", "240"), ("2026-10-29", "240")]
+        )
+        # an absence without a company stays under a company filter
+        filtered = self.client.get(f"/report/?from=2026-10-01&to=2026-10-31&company={self.acme.uid}")
+        self.assertIn("Ferie", filtered.content.decode())
+        days = reporting.report(
+            Entry.objects.filter(owner=self.alice), date(2026, 10, 1), date(2026, 10, 31)
+        )
+        self.assertEqual(sum(d.reported for d in days.values()), 60)
+
+    def test_the_travel_button_starts_an_anonymous_activity(self):
+        r = self.client.post("/attivita/viaggio/")
+        e = self.entry()
+        self.assertRedirects(r, f"/attivita/{e.uid}/")
+        self.assertEqual(
+            (e.status, e.mode, e.company_id, e.client_id), ("RUNNING", "TRAVEL", None, None)
+        )
+        page = self.client.get("/").content.decode()
+        self.assertIn("st-TRAVEL", page)
+        self.assertNotIn("Sospendi", page)
+
+    def test_planned_segments_never_count(self):
+        from datetime import date
+
+        from records.models import Entry, Segment
+        from web import data, ops, reporting
+
+        self.client.post(
+            "/dafare/nuova/",
+            {"title": "Posa", "plan_date": "2026-10-27", "plan_time": "09:00", "duration": "60"}
+        )
+        t = Entry.objects.get(activity="Posa")
+        ops.put(self.alice, "segment", ops.new_uid(), {
+            "entryUid": str(t.uid), "kind": "WORK", "startUtcMs": 1761555600000,
+            "endUtcMs": 1761559200000, "zoneId": "Europe/Rome", "planned": True})
+        mine = Entry.objects.filter(owner=self.alice)
+        self.assertEqual(reporting.report(mine, date(2026, 10, 1), date(2026, 10, 31)), {})
+        self.assertEqual(sum(data.durations(list(Segment.objects.filter(entry=t))).values()), 0)
+
+    def test_priorities_are_a_drop_down_of_labels(self):
+        from records.models import Entry
+
+        page = self.client.get("/dafare/nuova/").content.decode()
+        for n, name in enumerate(("Nessuna", "Bassa", "Media", "Alta", "Urgente", "Emergenza")):
+            self.assertIn(
+                f'<option value="{n}" {"selected" if n == 0 else ""}>{name}</option>', page
+            )
+        self.client.post("/dafare/nuova/", {"title": "Urgenza", "priority": "5"})
+        self.assertEqual(Entry.objects.get(activity="Urgenza").priority, 5)
+        self.assertIn("Emergenza", self.client.get("/dafare/").content.decode())
 
 
 class TodoAssignmentTests(WorkTests):

@@ -69,10 +69,13 @@ def people(user):
     return User.objects.filter(pk=user.pk)
 
 
-def readable_entries(user):
-    """The activities a user reads, out of the bin (deleted_utc): TODO ones and absences included."""
-    # TODO(activity-1.0-pages): the bin, and lists that tell to-dos and absences apart
-    q = Entry.objects.filter(org=user.org, deleted=False, deleted_utc__isnull=True).select_related("company", "client", "role", "owner")
+def readable_entries(user, binned=False):
+    """
+    The activities a user reads, out of the bin (deleted_utc): TODO ones and
+    absences included; with [binned], the ones in the bin only (the bin page).
+    """
+    q = Entry.objects.filter(org=user.org, deleted=False, deleted_utc__isnull=not binned)
+    q = q.select_related("company", "client", "role", "owner")
     if user.profile == Profile.READER:
         # a client company's administration: closed activities of its companies only
         return q.filter(company__in=user.companies.all(), status=EntryStatus.CLOSED, kind=ActivityKind.ACTIVITY)
@@ -117,7 +120,7 @@ def can_fix_times(user, entry):
 
 
 def todo_activities(org):
-    """TODO activities, in the bin or not (the to-do pages show the bin as "ignored")."""
+    """TODO activities, in the bin or not."""
     return Entry.objects.filter(org=org, deleted=False, kind=ActivityKind.ACTIVITY, status=EntryStatus.TODO)
 
 

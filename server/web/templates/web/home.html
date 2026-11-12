@@ -1,20 +1,18 @@
 {% extends "web/base.html" %}{% load i18n at %}
 {% block content %}
 <div class="head"><h1>{% blocktranslate with name=user.first_name|default:user.username %}Ciao {{ name }}{% endblocktranslate %}</h1>
-<a class="button primary" href="{% url 'entry_new' %}">{% icon "play" %}{% translate "Nuova attività" %}</a></div>
+<div class="actions"><a class="button primary" href="{% url 'entry_new' %}">{% icon "play" %}{% translate "Lavoro" %}</a>
+	<form method="post" action="{% url 'entry_travel' %}">{% csrf_token %}<button class="c-travel">{% icon "travel" %}{% translate "Viaggio" %}</button></form>
+	{% if todos_on %}<a class="button" href="{% url 'todo_new' %}">{% icon "checkbox" %}{% translate "Da fare" %}</a>{% endif %}
+	<a class="button" href="{% url 'todo_new' %}?kind=ABSENCE">{% icon "dot" %}{% translate "Assenza" %}</a></div></div>
 {% if first %}<section class="card"><h2>{% translate "Associa il telefono o il PC" %}</h2><p>{% translate "Collega l'app ActivityTrack a questo server: i dati restano sincronizzati nei due sensi." %}</p><a class="button tonal" href="{% url 'phones' %}">{% icon "devices" %}{% translate "Associa un dispositivo" %}</a></section>{% endif %}
 
 {% for r in running %}
 <section class="card running" style="--band: {{ r.e.client.color|color|default:'var(--accent)' }}">{% tag_dots r.e.tags tag_colors %}
 	<div class="head"><div><div class="sub">{{ r.e.company.name }}</div><h2><a href="{% url 'entry' r.e.uid %}">{{ r.e.client.name|default:_("Senza cliente") }}</a></h2>
 	<div>{{ r.e.activity|default:_("senza descrizione") }}</div></div>
-	<div class="big"><span class="pill s-{{ r.e|status_css }}">{{ r.e|status }}</span><div>{{ r.work }}</div></div></div>
-	<form method="post" action="{% url 'entry_quick' r.e.uid %}" class="actions">{% csrf_token %}
-		{% if r.e.mode and r.e.mode != "PAUSE" %}<button name="action" value="pause" class="c-pause">{% icon "pause" %}{% translate "Pausa" %}</button>{% else %}<button name="action" value="work" class="c-work">{% icon "play" %}{% translate "Riprendi" %}</button>{% endif %}
-		{% if r.e.mode != "TRAVEL" %}<button name="action" value="travel" class="c-travel">{% icon "travel" %}{% translate "Viaggio" %}</button>{% endif %}
-		{% if r.e.mode %}<button name="action" value="suspend" class="c-suspend">{% icon "suspend" %}{% translate "Sospendi" %}</button>{% endif %}
-		<button name="action" value="stop" class="c-stop">{% icon "stop" %}{% translate "Stop" %}</button>
-	</form>
+	<div class="big">{% state_pill r.e %}<div>{{ r.work }}</div></div></div>
+	{% url 'entry_quick' r.e.uid as quick_url %}{% include "web/_actions.html" with actions=r.actions form_url=quick_url %}
 </section>
 {% empty %}
 <section class="card muted">{% translate "Nessuna attività in corso." %}</section>
@@ -24,7 +22,7 @@
 	<input type="hidden" name="f" value="1">
 	<label>{% translate "Periodo" %}<select name="period">{% for w in windows %}<option value="{{ w }}" {% if w == f.period %}selected{% endif %}>{% if w == -1 %}{% translate "Oggi" %}{% elif w == 0 %}{% translate "Tutti" %}{% elif w == 24 %}24 h{% elif w == 72 %}{% translate "3 gg" %}{% elif w == 168 %}{% translate "7 gg" %}{% else %}{% translate "30 gg" %}{% endif %}</option>{% endfor %}</select></label>
 	<details class="dropdown{% if show_changed %} changed{% endif %}"><summary class="button">{% translate "Stato" %} ▾</summary><div class="menu">
-		{% for s in offered %}<label class="check"><input type="checkbox" name="show" value="{{ s }}" {% if s in show %}checked{% endif %}> {% if s == "todo" %}{% translate "Da fare" %}{% elif s == "missing" %}{% translate "Dettagli mancanti" %}{% elif s == "done" %}{% translate "Fatte" %}{% else %}{% translate "Ignorate" %}{% endif %}</label>{% endfor %}
+		{% for s in offered %}<label class="check"><input type="checkbox" name="show" value="{{ s }}" {% if s in show %}checked{% endif %}> {% if s == "todo" %}{% translate "Da fare" %}{% elif s == "missing" %}{% translate "Dettagli mancanti" %}{% else %}{% translate "Fatte" %}{% endif %}</label>{% endfor %}
 		<hr>{% if todos_on %}<a href="{{ only_todo }}">{% translate "Solo da fare" %}</a>{% endif %}<a href="{{ only_done }}">{% translate "Solo fatte" %}</a><a href="{{ show_all }}">{% translate "Tutti" %}</a>
 	</div></details>
 	<label>{% translate "Azienda" %}<select name="company" class="{% if company %}changed{% endif %}"><option value="">{% translate "Tutte le aziende" %}</option>{% for c in companies %}<option value="{{ c.uid }}" {% if company == c %}selected{% endif %}>{{ c.name }}</option>{% endfor %}</select></label>
@@ -32,9 +30,9 @@
 	<noscript><button>{% translate "Filtra" %}</button></noscript>
 </form>
 {% for name, items in sections %}
-<h3 class="sec{% if name == 'overdue' or name == 'missing' %} late{% endif %}">{% if name == "overdue" %}{% translate "In ritardo" %}{% elif name == "missing" %}{% translate "Dettagli mancanti" %}{% elif name == "today" %}{% translate "Oggi" %}{% elif name == "next" %}{% translate "Prossimi giorni" %}{% elif name == "earlier" %}{% translate "Giorni precedenti" %}{% elif name == "no_date" %}{% translate "Senza data" %}{% else %}{% translate "Ignorate" %}{% endif %}</h3>
+<h3 class="sec{% if name == 'overdue' or name == 'missing' %} late{% endif %}">{% if name == "overdue" %}{% translate "In ritardo" %}{% elif name == "missing" %}{% translate "Dettagli mancanti" %}{% elif name == "today" %}{% translate "Oggi" %}{% elif name == "next" %}{% translate "Prossimi giorni" %}{% elif name == "earlier" %}{% translate "Giorni precedenti" %}{% else %}{% translate "Senza data" %}{% endif %}</h3>
 {% for kind, obj, extra, r in items %}{% include "web/_home_row.html" %}{% endfor %}
 {% empty %}<p class="muted">{% translate "Niente da mostrare con questi filtri." %}</p>
 {% endfor %}
-{% if todos_on %}<p><a href="{% url 'todos' %}">{% translate "Tutte le Da fare" %} →</a></p>{% endif %}
+<p>{% if todos_on %}<a href="{% url 'todos' %}">{% translate "Tutte le Da fare" %} →</a> · {% endif %}<a href="{% url 'bin' %}">{% icon "bin" %}{% translate "Cestino" %}</a></p>
 {% endblock %}

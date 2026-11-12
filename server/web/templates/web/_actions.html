@@ -1,0 +1,4 @@
+{% load i18n at %}<form method="post" action="{{ form_url }}" class="actions">{% csrf_token %}{% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+	{% for key, label, icon_name, css, confirm in actions %}<button name="{{ field|default:'action' }}" value="{{ key }}" class="{{ css }}"{% if confirm %} data-confirm="{{ confirm }}"{% endif %}>{% icon icon_name %}{{ label }}</button>
+	{% endfor %}
+</form>

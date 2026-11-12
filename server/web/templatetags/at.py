@@ -4,41 +4,51 @@ from django.utils.html import format_html, format_html_join
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 
-from web import formats
+from web import formats, states
 
 register = template.Library()
 
-# TODO(activity-1.0-pages): the displayed states of ACTIVITY-MODEL §2.2, their icons and colours
-STATUS = {"TODO": _("da fare"), "RUNNING": _("in corso"), "CLOSED": _("chiusa")}
-MODE = {"WORK": _("lavoro"), "TRAVEL": _("viaggio"), "PAUSE": _("pausa")}
-TODO = {"open": _("aperta"), "planned": _("pianificata"), "overdue": _("in ritardo"), "done": _("fatta"), "ignored": _("ignorata")}
+MODE = {"WORK": _("lavoro"), "TRAVEL": _("viaggio"), "PAUSE": _("pausa"), "ABSENCE": _("assenza")}
+
+
+@register.simple_tag
+def state_pill(entry, state=None):
+    """The displayed state of an annotated activity (web/states.py): icon, colour and label."""
+    state = state or entry.shown
+    icon_name, _label = states.UI[state]
+    return format_html(
+        '<span class="pill st st-{}">{}{}</span>', state, icon(icon_name),
+        states.label(state, entry))
+
+
+@register.simple_tag
+def state_mark(entry, state=None):
+    """The round mark of a list row: the state's icon in its colour, titled with its label."""
+    state = state or entry.shown
+    return format_html(
+        '<span class="mark st st-{}" title="{}">{}</span>', state, states.label(state, entry),
+        icon(states.UI[state][0]))
 
 
 @register.filter
-def status(entry):
-    if entry.kind == "ABSENCE":
-        return _("Assenza")
-    if entry.status == "RUNNING":
-        return MODE.get(entry.mode, entry.mode) if entry.mode else _("sospesa")
-    return STATUS.get(entry.status, entry.status)
+def state_label(entry):
+    return states.label(entry.shown, entry)
 
 
 @register.filter
-def status_css(entry):
-    """The class of the state's pill and mark: active, suspended, closed, todo."""
-    if entry.status == "RUNNING":
-        return "active" if entry.mode else "suspended"
-    return entry.status.lower()
+def absence_label(value):
+    """Assenza, Ferie, Permesso or Malattia of an absence kind."""
+    return states.ABSENCE_LABELS.get(value, states.ABSENCE_LABELS["ABSENCE"])
+
+
+@register.filter
+def priority_label(value):
+    return dict(states.PRIORITIES).get(value or 0, value)
 
 
 @register.filter
 def kind(value):
     return MODE.get(value, value)
-
-
-@register.filter
-def todo_state(value):
-    return TODO.get(value, value)
 
 
 @register.filter

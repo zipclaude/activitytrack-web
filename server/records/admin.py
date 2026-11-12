@@ -3,7 +3,7 @@
 
 from django.contrib import admin
 
-from .models import SYNCED_MODELS
+from .models import SYNCED_MODELS, Entry
 
 
 class SyncedAdmin(admin.ModelAdmin):
@@ -21,5 +21,15 @@ class SyncedAdmin(admin.ModelAdmin):
         return False
 
 
+class EntryAdmin(SyncedAdmin):
+    """Activities with the activity model's words: kind, status, in the bin (deleted_utc)."""
+
+    list_display = (
+        "uid", "__str__", "kind", "status", "absence_kind", "priority", "owner", "deleted_utc",
+        "rev", "deleted",
+    )
+    list_filter = ("kind", "status", "absence_kind", "priority", "deleted")
+
+
 for model in SYNCED_MODELS:
-    admin.site.register(model, SyncedAdmin)
+    admin.site.register(model, EntryAdmin if model is Entry else SyncedAdmin)

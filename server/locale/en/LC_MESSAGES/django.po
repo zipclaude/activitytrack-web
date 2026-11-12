@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ActivityTrack Web\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-11 23:51+0100\n"
+"POT-Creation-Date: 2026-11-12 02:51+0100\n"
 "PO-Revision-Date: 2026-11-05 22:00+0100\n"
 "Last-Translator: ActivityTrack\n"
 "Language-Team: English\n"
@@ -915,6 +915,97 @@ msgid ""
 msgstr ""
 "The organisation requires two-step verification: switch it on to continue."
 
+msgid "Eliminata"
+msgstr "Deleted"
+
+msgid "In ritardo"
+msgstr "Overdue"
+
+msgid "Pianificata"
+msgstr "Planned"
+
+msgctxt "stato"
+msgid "Da fare"
+msgstr "To do"
+
+msgid "Lavoro"
+msgstr "Work"
+
+msgid "Viaggio"
+msgstr "Travel"
+
+msgid "Pausa"
+msgstr "Pause"
+
+msgid "Sospesa"
+msgstr "Suspended"
+
+msgid "Fatta"
+msgstr "Done"
+
+msgid "Incompleta"
+msgstr "Incomplete"
+
+msgid "Ferie"
+msgstr "Holiday"
+
+msgid "Permesso"
+msgstr "Leave"
+
+msgid "Malattia"
+msgstr "Sick leave"
+
+msgid "Nessuna"
+msgstr "None"
+
+msgid "Bassa"
+msgstr "Low"
+
+msgid "Media"
+msgstr "Medium"
+
+msgid "Alta"
+msgstr "High"
+
+msgid "Urgente"
+msgstr "Urgent"
+
+msgid "Emergenza"
+msgstr "Emergency"
+
+msgid "Avvia lavoro"
+msgstr "Start work"
+
+msgid "Riprendi"
+msgstr "Resume"
+
+msgid "Stop"
+msgstr "Stop"
+
+msgid "Riapri · Lavoro"
+msgstr "Reopen · Work"
+
+msgid "Riapri · Viaggio"
+msgstr "Reopen · Travel"
+
+msgid "Rimetti da fare"
+msgstr "Back to to-do"
+
+msgid "Ripristina"
+msgstr "Restore"
+
+msgid "Elimina definitivamente"
+msgstr "Delete permanently"
+
+msgid "Riaprire l'attività?"
+msgstr "Reopen the activity?"
+
+msgid "Eliminare questa attività? Va nel cestino e si può ripristinare."
+msgstr "Delete this activity? It goes to the bin and can be restored."
+
+msgid "Eliminare definitivamente? Non si può annullare."
+msgstr "Delete permanently? This cannot be undone."
+
 msgid "Azienda"
 msgstr "Company"
 
@@ -935,9 +1026,6 @@ msgstr "no description"
 
 msgid "registrati"
 msgstr "recorded"
-
-msgid "da fare"
-msgstr "to do"
 
 msgid "scad."
 msgstr "due"
@@ -1013,6 +1101,9 @@ msgstr "Report"
 msgid "Attività"
 msgstr "Activities"
 
+msgid "Cestino"
+msgstr "Bin"
+
 msgid "Anagrafiche"
 msgstr "Master data"
 
@@ -1040,6 +1131,19 @@ msgstr "More"
 msgid "Sicurezza dell'account"
 msgstr "Account security"
 
+msgid ""
+"Le attività eliminate: si possono ripristinare, o eliminare per sempre (qui "
+"soltanto). Eliminare per sempre vale anche sui dispositivi."
+msgstr ""
+"Deleted activities: restore them, or delete them for good (here only). "
+"Deleting for good applies on the devices too."
+
+msgid "eliminata"
+msgstr "deleted"
+
+msgid "Il cestino è vuoto."
+msgstr "The bin is empty."
+
 msgid "Nuova"
 msgstr "New"
 
@@ -1060,26 +1164,36 @@ msgid ""
 "Correggi gli orari."
 msgstr "To check: after a sync two periods overlap. Correct the times."
 
-msgid "Lavoro"
-msgstr "Work"
+msgid "Hai completato l'attività lavorativa?"
+msgstr "Have you finished the work activity?"
 
-msgid "Viaggio"
-msgstr "Travel"
+msgid ""
+"Sì: l'attività si chiude e parte un viaggio senza attività. No: il viaggio "
+"continua in questa attività."
+msgstr ""
+"Yes: the activity closes and a trip with no activity starts. No: the trip "
+"goes on in this activity."
 
-msgid "Pausa"
-msgstr "Pause"
+msgid "Sì"
+msgstr "Yes"
 
-msgid "Riprendi"
-msgstr "Resume"
+msgid "No"
+msgstr "No"
 
-msgid "Sospendi"
-msgstr "Suspend"
+msgid "Come termina l'attività?"
+msgstr "How does the activity end?"
 
-msgid "Stop"
-msgstr "Stop"
+msgid "L'attività ha un viaggio di andata: puoi avviare il ritorno."
+msgstr "The activity has an outbound trip: you can start the return."
 
-msgid "Riapri"
-msgstr "Reopen"
+msgid "Avvia viaggio di ritorno"
+msgstr "Start the return trip"
+
+msgid "Termina l'attività"
+msgstr "End the activity"
+
+msgid "Termina l'attività ed aggiungi il viaggio di ritorno"
+msgstr "End the activity and add the return trip"
 
 msgid "Dettagli"
 msgstr "Details"
@@ -1123,12 +1237,6 @@ msgstr "file on its way"
 
 msgid "Si aggiungono dall'app."
 msgstr "They are added from the app."
-
-msgid "Eliminare questa attività? Si elimina anche sui dispositivi."
-msgstr "Delete this activity? It is deleted on the devices too."
-
-msgid "Elimina l'attività"
-msgstr "Delete the activity"
 
 msgid "Nuova attività"
 msgstr "New activity"
@@ -1187,9 +1295,6 @@ msgstr "Details missing"
 msgid "Fatte"
 msgstr "Done"
 
-msgid "Ignorate"
-msgstr "Ignored"
-
 msgid "Solo da fare"
 msgstr "Only to-dos"
 
@@ -1198,9 +1303,6 @@ msgstr "Only done"
 
 msgid "Tutte le aziende"
 msgstr "All companies"
-
-msgid "In ritardo"
-msgstr "Overdue"
 
 msgid "Prossimi giorni"
 msgstr "Next days"
@@ -1419,6 +1521,22 @@ msgstr ""
 "(the default ones otherwise); below, in small print, the recorded times. An "
 "activity spanning several days counts in each."
 
+msgid "Assenze"
+msgstr "Absences"
+
+msgid "Giorni"
+msgstr "Days"
+
+msgid "Ore"
+msgstr "Hours"
+
+msgid ""
+"Le assenze si contano a parte: non sono lavoro, viaggio né pausa e non sono "
+"arrotondate. Una assenza senza azienda vale per tutte."
+msgstr ""
+"Absences are counted apart: they are not work, travel or pause, and are not "
+"rounded. An absence with no company counts for every company."
+
 msgid "Dettaglio"
 msgstr "Detail"
 
@@ -1538,8 +1656,27 @@ msgstr ""
 "Assigning it to another person moves the item to their devices and removes "
 "it from those of whoever had it."
 
-msgid "Etichetta (facoltativa)"
-msgstr "Label (optional)"
+msgid "Azienda (facoltativa: vuota vale per tutte)"
+msgstr "Company (optional: empty means all)"
+
+msgid "Dal giorno"
+msgstr "From day"
+
+msgid "al giorno"
+msgstr "to day"
+
+msgid "dalle (facoltativo)"
+msgstr "from (optional)"
+
+msgid "alle"
+msgstr "at"
+
+msgid ""
+"Senza orari l'assenza copre l'orario di lavoro di ogni giorno lavorativo; "
+"con gli orari, un periodo al giorno."
+msgstr ""
+"Without times the absence covers the working hours of each working day; with "
+"times, one period a day."
 
 msgid "Titolo"
 msgstr "Title"
@@ -1553,23 +1690,14 @@ msgstr "time"
 msgid "Pianificata il"
 msgstr "Planned on"
 
-msgid "alle"
-msgstr "at"
-
 msgid "durata (min)"
 msgstr "duration (min)"
-
-msgid "fino al (ultimo giorno)"
-msgstr "until (last day)"
 
 msgid "Priorità"
 msgstr "Priority"
 
-msgid "Fatta"
-msgstr "Done"
-
-msgid "Ignora"
-msgstr "Ignore"
+msgid "Avvia con i dettagli"
+msgstr "Start with the details"
 
 msgid "Le mie"
 msgstr "Mine"
@@ -1725,9 +1853,6 @@ msgstr ""
 "The organisation and the raw data stay in the <a "
 "href=\"%(admin_url)s\">advanced administration</a>."
 
-msgid "chiusa"
-msgstr "closed"
-
 msgid "lavoro"
 msgstr "work"
 
@@ -1737,23 +1862,8 @@ msgstr "travel"
 msgid "pausa"
 msgstr "pause"
 
-msgid "aperta"
-msgstr "open"
-
-msgid "pianificata"
-msgstr "planned"
-
-msgid "in ritardo"
-msgstr "overdue"
-
-msgid "fatta"
-msgstr "done"
-
-msgid "ignorata"
-msgstr "ignored"
-
-msgid "sospesa"
-msgstr "suspended"
+msgid "assenza"
+msgstr "absence"
 
 msgid "Le due password sono diverse."
 msgstr "The two passwords differ."
@@ -1812,14 +1922,23 @@ msgstr "the policy does not allow choosing the times"
 msgid "solo i tag dell'anagrafica: %(t)s non c'è"
 msgstr "only the master data's tags: %(t)s is not there"
 
+msgid "Mancano dei dettagli: completa l'attività."
+msgstr "Details are missing: complete the activity."
+
+msgid "Attività eliminata: è nel cestino."
+msgstr "Activity deleted: it is in the bin."
+
 msgid "Attività salvata."
 msgstr "Activity saved."
 
-msgid "Attività eliminata."
-msgstr "Activity deleted."
-
 msgid "azione sconosciuta"
 msgstr "unknown action"
+
+msgid "Attività ripristinata."
+msgstr "Activity restored."
+
+msgid "Attività eliminata definitivamente."
+msgstr "Activity deleted permanently."
 
 msgid "il titolo è obbligatorio"
 msgstr "the title is required"
@@ -1830,12 +1949,12 @@ msgstr "the date is required"
 msgid "l'ultimo giorno non è valido"
 msgstr "the last day is not valid"
 
+msgid "l'ora di fine deve seguire quella di inizio"
+msgstr "the end time must be after the start time"
+
 msgid "Voce salvata."
 msgstr "To-do saved."
 
 #, python-format
 msgid "Voce assegnata a %(name)s."
 msgstr "To-do assigned to %(name)s."
-
-msgid "Mancano dei dettagli: completa l'attività."
-msgstr "Details are missing: complete the activity."
