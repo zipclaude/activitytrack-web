@@ -7,6 +7,7 @@ from datetime import date, datetime, timedelta
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
+from django.db import transaction
 from django.db.models import Exists, OuterRef, Q
 from django.http import JsonResponse, QueryDict
 from django.shortcuts import get_object_or_404, redirect, render
@@ -621,9 +622,11 @@ def todo_edit(request, uid=None):
                 # 0 none .. 5 emergency (ACTIVITY-MODEL §5)
                 "priority": min(max(int(p["priority"]), 0), A.PRIORITY_MAX) if p.get("priority") else 0,
             }
-            if todo and to != todo.owner:
-                ops.assign(user, todo, to)
-            saved = ops.save_todo(user, todo.uid if todo else None, fields, owner=to)
+            with transaction.atomic():
+                # a save that fails leaves the to-do with its owner
+                if todo and to != todo.owner:
+                    ops.assign(user, todo, to)
+                saved = ops.save_todo(user, todo.uid if todo else None, fields, owner=to)
             if not todo and to != user:
                 ops.assign(user, Entry.objects.get(uid=saved), to)
             messages.success(request, _("Voce salvata.") if to == user else _("Voce assegnata a %(name)s.") % {"name": to.get_full_name() or to.username})

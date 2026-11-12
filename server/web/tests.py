@@ -1114,6 +1114,24 @@ class ReviewFixTests(WorkTests):
             self.assertEqual(seg.kind, "ABSENCE")
 
 
+    def test_a_failed_reassignment_leaves_the_todo_where_it_was(self):
+        from records.models import ActivityAssignment, Entry
+        from sync import engine
+
+        # the manager's personal client: the assignee cannot see it, so saving it onto the assignee's to-do fails
+        engine.apply(self.boss, {"type": "client", "uid": "33333333-3333-4333-8333-333333333333",
+                                 "fields": {"name": "Privato", "companyUid": str(self.acme.uid)}})
+        self.client.force_login(self.boss)
+        self.client.post("/dafare/nuova/", {"title": "Mia", "client": "33333333-3333-4333-8333-333333333333"})
+        t = Entry.objects.get(activity="Mia")
+        self.assertEqual(t.owner, self.boss)
+        r = self.client.post(f"/dafare/{t.uid}/", {"title": "Mia", "owner": str(self.alice.pk), "client": "33333333-3333-4333-8333-333333333333"})
+        self.assertEqual(r.status_code, 200)
+        t.refresh_from_db()
+        self.assertEqual(t.owner, self.boss)
+        self.assertFalse(ActivityAssignment.objects.filter(entry=t).exists())
+
+
 class ManagerCompaniesTests(WorkTests):
     """A manager reads every entry done for the companies they are responsible for, an admin's too."""
 
