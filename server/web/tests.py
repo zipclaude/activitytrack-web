@@ -1091,6 +1091,29 @@ class ReviewFixTests(WorkTests):
         self.assertEqual((theirs.owner, mine.owner), (self.boss, self.alice))
 
 
+    def test_no_real_segments_on_a_todo_or_an_absence(self):
+        from datetime import date
+
+        from records.models import Segment
+        from web import ops
+
+        todo = ops.save_todo(self.alice, None, {"activity": "Da fare"})
+        absence = ops.save_absence(self.alice, None, first=date(2026, 10, 28), last=date(2026, 10, 28))
+        for uid in (todo, absence):
+            before = Segment.objects.filter(entry_id=uid).count()
+            for kind in ("WORK", "TRAVEL", "PAUSE"):
+                r = self.client.post(f"/attivita/{uid}/", {"action": "add_segment", "kind": kind,
+                                                           "start": "2026-10-28T09:00", "end": "2026-10-28T10:00"})
+                self.assertRedirects(r, f"/attivita/{uid}/", fetch_redirect_response=False)
+            self.assertEqual(Segment.objects.filter(entry_id=uid).count(), before)
+        seg = Segment.objects.filter(entry_id=absence, deleted=False).first()
+        if seg:
+            self.client.post(f"/attivita/{absence}/", {"action": "segment", "segment": str(seg.uid), "kind": "WORK",
+                                                       "start": "2026-10-28T09:00", "end": "2026-10-28T10:00"})
+            seg.refresh_from_db()
+            self.assertEqual(seg.kind, "ABSENCE")
+
+
 class ManagerCompaniesTests(WorkTests):
     """A manager reads every entry done for the companies they are responsible for, an admin's too."""
 

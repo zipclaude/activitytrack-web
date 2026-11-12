@@ -366,6 +366,9 @@ def entry(request, uid):
             # with the times locked the owner only adds forgotten travel and pauses, as on the phone
             raise PermissionDenied
         try:
+            if action in ("segment", "add_segment") and (e.kind != ActivityKind.ACTIVITY or e.status == EntryStatus.TODO):
+                # a to-do has planned segments only and an absence its own (ACTIVITY-MODEL §1.2): no real ones here
+                raise ops.OpError(_("azione non consentita in questo stato"))
             if action == "save":
                 client = _pick(user, Client, p.get("client"))
                 company = client.company if client and client.company_id else _pick(user, Company, p.get("company"))
