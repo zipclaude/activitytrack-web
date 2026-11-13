@@ -60,11 +60,22 @@ class DisplayTests(SimpleTestCase):
         self.assertEqual([(d.day, b - a) for d, _, a, b in timed], [(28, timedelta(minutes=90))])
         every = A.absence_segments(date(2026, 10, 27), date(2026, 10, 27), tz, 900, None, with_times_every_day=True)
         self.assertEqual([(d.day, a == b) for d, _, a, b in every], [(27, True)])
+        # Sunday 2026-03-29, spring forward at 02:00: 02:00-03:00 and 02:30-03:00 are empty or inverted on the
+        # real clock and give no segment, n counts the kept ones (python3-activitytrack#22)
+        for gap in (120, 150):
+            out = A.absence_segments(date(2026, 3, 29), date(2026, 3, 29), tz, schedule=[(7, 60, 300)],
+                                     lunch=[(7, 90, gap), (7, 180, 240)])
+            self.assertEqual([(n, a.strftime("%H:%M"), b.strftime("%H:%M")) for _, n, a, b in out],
+                             [(0, "01:00", "01:30"), (1, "04:00", "05:00")])
 
     def test_priority_and_labels(self):
         self.assertEqual([A.priority_from_legacy(p) for p in (None, 1, 2, 3, 4, 5, 7, 0, -1)], [0, 5, 4, 3, 2, 1, 1, 0, 0])
         self.assertEqual([A.absence_kind_of(t) for t in (" ferie ", "SICK LEAVE", "Urlaub", "Permiso", "Dentista", "", None)],
                          ["HOLIDAY", "SICK", "HOLIDAY", "LEAVE", None, None, None])
+        # the app's trim() and lowercase(): no-break spaces trimmed, U+0085 kept, no case folding (#22)
+        self.assertEqual([A.absence_kind_of(t) for t in ("\u00a0Ferie\u3000", "Ferie\x85", "\u017fick leave", "A\u00dfenza")],
+                         ["HOLIDAY", None, None, None])
+        self.assertEqual(set(A._WS), {c for c in map(chr, range(0x110000)) if c.isspace()} - {"\x85"})
 
 
 # ---- the migration cases: the app's tables (DB 21) to the server's rows and back to the cases' normal form ----

@@ -6,7 +6,8 @@ database. The to-do is a state of the activity (an Entry), not an entity.
 - display(): the displayed state and its "since" (§2.2-2.4), the same table
   as the app and the Python library (cases: tests/data/activity-states.json);
 - absence_segments(): the segments of an absence (§3.1);
-- priority_from_legacy(), absence_kind_of(): the conversions of §5 and §6.
+- priority_from_legacy(), absence_kind_of(): the conversions of §5 and §6;
+- trim(): the app's String.trim(), for the texts the migration compares.
 
 Activities and segments are read by attribute, so model instances and plain
 namespaces both work: an activity has kind, status, deleted_utc, closed_utc,
@@ -30,6 +31,16 @@ PRIORITY_MAX = 5
 # displayed states (§2.2), in the order of the rules
 DELETED, LATE, PLANNED, DONE, INCOMPLETE, SUSPENDED = "DELETED", "LATE", "PLANNED", "DONE", "INCOMPLETE", "SUSPENDED"
 STATES = (DELETED, ABSENCE, LATE, PLANNED, TODO, WORK, TRAVEL, PAUSE, SUSPENDED, DONE, INCOMPLETE)
+
+
+# Kotlin's trim() and isBlank(): str.isspace() but for U+0085 (NEXT LINE), which Kotlin keeps
+_WS = ("\t\n\v\f\r\x1c\x1d\x1e\x1f \u00a0\u1680\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a"
+       "\u2028\u2029\u202f\u205f\u3000")
+
+
+def trim(text):
+    """The app's String.trim(): leading and trailing whitespace off, the no-break spaces included."""
+    return text.strip(_WS)
 
 
 def _zone(zone):
@@ -138,7 +149,9 @@ def absence_segments(first, last, zone, start_min=None, duration_min=None, sched
       [with_times_every_day] (the migration's permessi, one day long) does not.
     - Without: one a working day covering that weekday's schedule, its windows
       merged where they overlap or touch, cut by the lunch breaks; days without
-      a schedule and days off are skipped.
+      a schedule and days off are skipped, and so is a window that is empty or
+      inverted on the real clock (in the spring-forward gap): n counts the kept
+      ones.
     schedule, lunch: (day_of_week 1 = Monday, start_min, end_min); days_off: dates.
     """
     out = []
@@ -151,8 +164,10 @@ def absence_segments(first, last, zone, start_min=None, duration_min=None, sched
                 start = at_minute(day, start_min, zone)
                 out.append((day, 0, start, plus_minutes(start, duration_min or 0)))
         else:
-            for n, (a, b) in enumerate(windows):
-                out.append((day, n, at_minute(day, a, zone), at_minute(day, b, zone)))
+            spans = [(at_minute(day, a, zone), at_minute(day, b, zone)) for a, b in windows]
+            # compared as instants: aware datetimes of one zone compare by their wall clock
+            for n, (a, b) in enumerate((a, b) for a, b in spans if b.timestamp() > a.timestamp()):
+                out.append((day, n, a, b))
         day += timedelta(days=1)
     return out
 
@@ -189,18 +204,19 @@ def priority_from_legacy(p):
     return 6 - p
 
 
-# the four labels in the app's languages (it, en, de, es), compared case-insensitively;
-# the same list as the app's migration reference (scripts/activity_migration.py)
+# the four labels in the app's languages (it, en, de, es), compared in lower case (not case
+# folded: the app's lowercase() keeps U+017F and U+00DF); the same list as the app's migration
+# reference (scripts/activity_migration.py)
 ABSENCE_LABELS = {
     ABSENCE: ("Assenza", "Absence", "Abwesenheit", "Ausencia"),
     "HOLIDAY": ("Ferie", "Holiday", "Urlaub", "Vacaciones"),
     "LEAVE": ("Permesso", "Leave", "Freistellung", "Permiso"),
     "SICK": ("Malattia", "Sick leave", "Krankheit", "Enfermedad"),
 }
-_BY_LABEL = {label.casefold(): kind for kind, labels in ABSENCE_LABELS.items() for label in labels}
+_BY_LABEL = {label.lower(): kind for kind, labels in ABSENCE_LABELS.items() for label in labels}
 
 
 def absence_kind_of(title):
     """§6 step 2: the kind a title names when it is one of the labels, else None."""
-    return _BY_LABEL.get((title or "").strip().casefold())
+    return _BY_LABEL.get(trim(title or "").lower())
 

@@ -62,7 +62,7 @@ def uid_for(base, suffix):
 
 def classify_ref(value):
     """ExternalRefClassifier.kt: URL, UUID, TICKET or OTHER."""
-    v = value.strip()
+    v = A.trim(value)
     if re.fullmatch(r"[a-zA-Z][a-zA-Z0-9+.-]*://\S+", v):
         return "URL"
     if re.fullmatch(r"\{?[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\}?", v):
@@ -85,7 +85,7 @@ def _live(rows):
 
 
 def _blank(s):
-    return s is None or not str(s).strip()
+    return s is None or not A.trim(str(s))
 
 
 def _merge(todo_fields, entry_fields):
@@ -97,10 +97,11 @@ def _merge(todo_fields, entry_fields):
 
 
 def _ref_values(t):
-    """The to-do's references: one a non-blank line, trimmed, duplicates dropped."""
+    """The to-do's references: one a non-blank line, trimmed, duplicates dropped. Lines end at LF, CRLF
+    or CR only, as the app's lines() (str.splitlines() also breaks on \\v, \\f, U+0085, U+2028 and others)."""
     out = []
-    for line in (t.get("refs") or "").splitlines():
-        v = line.strip()
+    for line in re.split(r"\r\n|\r|\n", t.get("refs") or ""):
+        v = A.trim(line)
         if v and v not in out:
             out.append(v)
     return out
@@ -120,17 +121,18 @@ def migrate(data, zone):
 
     def add_ref(entry_uid, ref_uid, kind, value):
         """One reference unless the entry has the same value already."""
-        value = value.strip()
-        if any(r["value"].strip() == value for r in refs_by_entry.get(entry_uid, [])):
+        value = A.trim(value)
+        if any(A.trim(r["value"]) == value for r in refs_by_entry.get(entry_uid, [])):
             return
         row = {"uid": ref_uid, "entry": entry_uid, "kind": kind, "value": value}
         refs_by_entry.setdefault(entry_uid, []).append(row)
         out_refs.append(row)
 
-    # 1. entries: the new statuses; mode follows the open segment (the invariant of §1.1)
+    # 1. entries: the new statuses; mode follows the open segment (the invariant of §1.1), the latest
+    # started, then the greatest key (the app's id, here the uid)
     for e in entries.values():
         own = segs_by_entry.get(e["uid"], [])
-        opened = sorted((s for s in own if s.get("end_utc_ms") is None), key=lambda s: s["start_utc_ms"])
+        opened = sorted((s for s in own if s.get("end_utc_ms") is None), key=lambda s: (s["start_utc_ms"], s["uid"]))
         f = {"kind": A.ACTIVITY, "priority": 0, "mode": opened[-1]["kind"] if opened else None}
         if e["status"] in RUNNING_OLD:
             f["status"] = A.RUNNING
@@ -211,10 +213,11 @@ def migrate(data, zone):
         mine = sorted(linked.get(t["uid"], []), key=lambda e: (first_start(e), e["created_utc_ms"], e["uid"]))
         done = bool(t.get("done"))
         if not mine or not (done or any(e["status"] in RUNNING_OLD for e in mine)):
-            # none linked: the to-do itself; all closed and the to-do open: it stays its own TODO
+            # none linked: the to-do itself; all closed and the to-do open: it stays its own TODO.
+            # done_utc_ms = 0 is a time: only a missing one falls back to the last update
+            done_at = t["updated_utc_ms"] if t.get("done_utc_ms") is None else t["done_utc_ms"]
             out_entries[t["uid"]] = new_activity(
-                t, status=A.CLOSED if done else A.TODO,
-                closed_utc_ms=(t.get("done_utc_ms") or t["updated_utc_ms"]) if done else None,
+                t, status=A.CLOSED if done else A.TODO, closed_utc_ms=done_at if done else None,
                 deleted_utc_ms=t.get("ignored_utc_ms"), plugin_fields=_merge(t.get("plugin_fields"), None),
                 **todo_fields(t),
             )
@@ -229,7 +232,8 @@ def migrate(data, zone):
         f.update(todo_fields(t))
         f["plugin_fields"] = _merge(t.get("plugin_fields"), head.get("plugin_fields"))
         if _blank(head.get("activity")):
-            f["activity"] = t.get("title")
+            # a blank title is no description, as in new_activity()
+            f["activity"] = None if _blank(t.get("title")) else t["title"]
         if _blank(head.get("notes")):
             f["notes"] = t.get("notes")
         for name in ("company", "client"):
