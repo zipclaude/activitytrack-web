@@ -1120,6 +1120,39 @@ class ReviewFixTests(WorkTests):
         self.assertEqual(seg.kind, "ABSENCE")
 
 
+    def test_a_forged_post_breaking_the_model_is_an_error_message(self):
+        from django.contrib.messages import get_messages
+
+        from records.models import Segment
+
+        # issue #55: an ABSENCE segment on a work activity, open or closed
+        self.client.post("/attivita/nuova/", {"when": "now", "client": "22222222-2222-4222-8222-222222222222", "activity": "Intervento"})
+        e = self.entry()
+        seg = Segment.objects.get(entry=e, deleted=False)
+        r = self.client.post(f"/attivita/{e.uid}/", {"action": "add_segment", "kind": "ABSENCE",
+                                                    "start": "2026-10-28T09:00", "end": "2026-10-28T10:00"})
+        self.assertRedirects(r, f"/attivita/{e.uid}/", fetch_redirect_response=False)
+        self.assertIn("invalid: segment_kind", [str(m) for m in get_messages(r.wsgi_request)])
+        r = self.client.post(f"/attivita/{e.uid}/", {"action": "segment", "segment": str(seg.uid), "kind": "ABSENCE",
+                                                    "start": "2026-10-28T09:00", "end": "2026-10-28T10:00"})
+        self.assertRedirects(r, f"/attivita/{e.uid}/", fetch_redirect_response=False)
+        self.assertIn("invalid: segment_kind", [str(m) for m in get_messages(r.wsgi_request)])
+        seg.refresh_from_db()
+        self.assertEqual((seg.kind, seg.end_utc, Segment.objects.filter(entry=e, deleted=False).count()), ("WORK", None, 1))
+
+    def test_editing_the_open_segment_keeps_the_mode(self):
+        from records.models import Segment
+
+        # the mode is the open segment's kind (issue #55): it follows an edit of that segment
+        self.client.post("/attivita/nuova/", {"when": "now", "client": "22222222-2222-4222-8222-222222222222", "activity": "Intervento"})
+        e = self.entry()
+        seg = Segment.objects.get(entry=e, deleted=False)
+        start = seg.start_utc.astimezone().strftime("%Y-%m-%dT%H:%M")
+        self.client.post(f"/attivita/{e.uid}/", {"action": "segment", "segment": str(seg.uid), "kind": "TRAVEL", "start": start, "end": ""})
+        e.refresh_from_db()
+        seg.refresh_from_db()
+        self.assertEqual((seg.kind, e.mode), ("TRAVEL", "TRAVEL"))
+
     def test_a_failed_reassignment_leaves_the_todo_where_it_was(self):
         from records.models import ActivityAssignment, Entry
         from sync import engine

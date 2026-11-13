@@ -64,6 +64,30 @@ never counted). Who assigned a `TODO` activity (`ActivityAssignment`) stays
 on the server; assigning it moves it and its children to the new owner and
 the old owner's phones get them as `gone`.
 
+The server refuses a change that would break the model (issue #55): the
+answer is `error: "invalid"` with one of these `detail`s, the rule broken.
+
+| `detail` | Rule | Checked |
+|---|---|---|
+| `kind_changed` | an activity's `kind` never changes | on the change |
+| `absence_not_closed` | an `ABSENCE` activity is `CLOSED` | on the change |
+| `segment_kind` | `ABSENCE` segments in `ABSENCE` activities only, and only those there | on the change |
+| `planned_not_todo` | planned segments belong to a `TODO` activity | a planned segment: on the change; an activity leaving `TODO` with its plan: at the end of the push |
+| `open_segments` | at most one open segment in an activity | at the end of the push |
+| `mode_mismatch` | `mode` is the kind of the open segment, null when none is open | at the end of the push |
+
+A command is several changes (a switch closes a segment, opens one and sets
+`mode`; a start also deletes the plan), in the order the phone logged them,
+so the rules across an activity and its segments are judged once on what the
+whole push leaves: the push runs in one transaction and, when an activity
+breaks one of them anew, it is applied again without that activity's entry
+and segment changes, which are all answered with that rule (the rest of the
+push is applied). The phone keeps them in its log and sends them again, as
+any refused change. Data already stored that breaks a rule (migrated) is
+not refused for that: a change is refused only for a violation it adds, and
+reading and pulling never check. The web's commands follow the same rules,
+each as one push.
+
 Field names follow the app's Kotlin properties: references end in `Uid`,
 instants in `UtcMs` (epoch milliseconds UTC), local dates are
 `yyyy-mm-dd` strings (`dueDate`, `planDate`, `date`), times of day are
@@ -124,7 +148,7 @@ At most 500 changes per call, in the order of `sync_change` (parents
 before children). The answer lists, per change, the record as the server
 now has it (`applied`, or `conflict` with the server's values when a
 field was refused) or an `error` (unknown type, reference to a record the
-phone cannot see, permission). The phone writes the answered records into
+phone cannot see, permission, a rule of the activity model, §1.1). The phone writes the answered records into
 its tables and shadow, deletes the pushed `sync_change` rows, and leaves
 errors in a list shown under Settings → Sync.
 

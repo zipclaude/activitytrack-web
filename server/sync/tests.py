@@ -26,7 +26,8 @@ def uid():
 def entry_fields(**over):
     fields = {
         "status": "RUNNING",
-        "mode": "WORK",
+        # no open segment (suspended): mode follows the open segment (issue #55)
+        "mode": None,
         "zoneId": "Europe/Rome",
         "activity": "Patching",
         "createdUtcMs": T0,
@@ -140,7 +141,7 @@ class PushPullTests(SyncTestCase):
         phone, tablet = self.pair(self.alice, "phone"), self.pair(self.alice, "tablet")
         e, s = uid(), uid()
         res = self.push(phone, [
-            self.upsert("entry", e, entry_fields(), T0),
+            self.upsert("entry", e, entry_fields(mode="WORK"), T0),
             self.upsert("segment", s, {"entryUid": e, "kind": "WORK", "startUtcMs": T0, "zoneId": "Europe/Rome"}, T0),
         ])
         self.assertEqual([r["status"] for r in res], ["applied", "applied"])
@@ -189,7 +190,7 @@ class PushPullTests(SyncTestCase):
         phone = self.pair(self.alice)
         e, s = uid(), uid()
         self.push(phone, [
-            self.upsert("entry", e, entry_fields(), T0),
+            self.upsert("entry", e, entry_fields(mode="WORK"), T0),
             self.upsert("segment", s, {"entryUid": e, "kind": "WORK", "startUtcMs": T0, "zoneId": "Europe/Rome"}, T0),
         ])
         self.push(phone, [{"type": "entry", "uid": e, "op": "delete", "time": T0 + 1}])
@@ -728,3 +729,259 @@ class ActivityWireTests(SyncTestCase):
                                 self.upsert("entry", uid(), entry_fields(todoUid=uid()), T0)])
         # an unknown field is ignored, as for a newer app
         self.assertEqual([r.get("error") for r in res], ["unknown_type", "unknown_type", None])
+
+
+H = 3600000
+
+
+class ActivityInvariantTests(SyncTestCase):
+    """
+    Issue #55: a push may not leave an activity breaking the model (the app's
+    docs/ACTIVITY-MODEL.md §1–3); the commands' own sequences pass in any order.
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.phone = self.pair(self.alice)
+
+    def seg(self, e, kind="WORK", start=T0, end=None, planned=False, t=T0):
+        fields = {"entryUid": e, "kind": kind, "startUtcMs": start, "zoneId": "Europe/Rome", "planned": planned}
+        if end is not None:
+            fields["endUtcMs"] = end
+        return fields
+
+    def entry(self, t=T0, **fields):
+        return self.upsert("entry", self.e, fields, t)
+
+    def segment(self, s, fields, t=T0):
+        return self.upsert("segment", s, fields, t)
+
+    def delete(self, type_, uid_, t):
+        return {"type": type_, "uid": uid_, "op": "delete", "time": t}
+
+    def errors(self, res):
+        return [(r.get("error"), r.get("detail")) if r["status"] == "error" else r["status"] for r in res]
+
+    def ok(self, changes):
+        res = self.push(self.phone, changes)
+        self.assertEqual({r["status"] for r in res}, {"applied"}, res)
+        return res
+
+    def running(self, mode="WORK"):
+        """A running activity with one open segment of [mode]; returns its segment's uid."""
+        self.e, s = uid(), uid()
+        self.ok([self.entry(**entry_fields(mode=mode)), self.segment(s, self.seg(self.e, mode))])
+        return s
+
+    def todo_with_plan(self):
+        self.e, p1, p2 = uid(), uid(), uid()
+        self.ok([self.entry(**entry_fields(status="TODO", mode=None)),
+                 self.segment(p1, self.seg(self.e, start=T0 + 24 * H, end=T0 + 25 * H, planned=True)),
+                 self.segment(p2, self.seg(self.e, start=T0 + 26 * H, end=T0 + 27 * H, planned=True))])
+        return p1, p2
+
+    def stored(self):
+        e = Entry.objects.get(uid=self.e)
+        segs = Segment.objects.filter(entry=e, deleted=False)
+        return e.status, e.mode, sorted((s.kind, s.end_utc is None, s.planned) for s in segs)
+
+    # ---- a: the kind never changes
+
+    def test_a_kind_never_changes(self):
+        self.e = uid()
+        self.ok([self.entry(**entry_fields(status="CLOSED"))])
+        res = self.push(self.phone, [self.entry(T0 + 1, kind="ABSENCE", absenceKind="SICK", mode=None)])
+        self.assertEqual(self.errors(res), [("invalid", "kind_changed")])
+        self.assertEqual(Entry.objects.get(uid=self.e).kind, "ACTIVITY")
+        # nor back
+        self.e = uid()
+        self.ok([self.entry(**entry_fields(kind="ABSENCE", status="CLOSED", absenceKind="HOLIDAY"))])
+        res = self.push(self.phone, [self.entry(T0 + 1, kind="ACTIVITY", absenceKind=None)])
+        self.assertEqual(self.errors(res), [("invalid", "kind_changed")])
+        # the same kind again is no change
+        self.ok([self.entry(T0 + 2, kind="ABSENCE", notes="ferie")])
+
+    # ---- b: ABSENCE segments in absences only
+
+    def test_segment_kinds_follow_the_activity(self):
+        self.e = uid()
+        self.ok([self.entry(**entry_fields(status="CLOSED"))])
+        absence = uid()
+        self.ok([self.upsert("entry", absence, entry_fields(kind="ABSENCE", status="CLOSED", absenceKind="LEAVE"), T0)])
+        work = uid()
+        res = self.push(self.phone, [
+            self.segment(uid(), self.seg(self.e, "ABSENCE", end=T0 + H)),
+            self.segment(uid(), self.seg(absence, "WORK", end=T0 + H)),
+            self.segment(uid(), self.seg(absence, "PAUSE", end=T0 + H)),
+            self.segment(work, self.seg(self.e, "WORK", end=T0 + H)),
+        ])
+        self.assertEqual(self.errors(res), [("invalid", "segment_kind")] * 3 + ["applied"])
+        # nor edited or moved into the other kind of activity
+        res = self.push(self.phone, [self.segment(work, {"kind": "ABSENCE"}, T0 + 1)])
+        self.assertEqual(self.errors(res), [("invalid", "segment_kind")])
+        res = self.push(self.phone, [self.segment(work, {"entryUid": absence}, T0 + 1)])
+        self.assertEqual(self.errors(res), [("invalid", "segment_kind")])
+        self.assertEqual(Segment.objects.get(uid=work).entry_id, uuid.UUID(self.e))
+
+    # ---- c: a plan only on a TODO activity
+
+    def test_a_plan_only_on_a_todo(self):
+        self.e = uid()
+        self.ok([self.entry(**entry_fields(status="CLOSED"))])
+        res = self.push(self.phone, [self.segment(uid(), self.seg(self.e, end=T0 + H, planned=True))])
+        self.assertEqual(self.errors(res), [("invalid", "planned_not_todo")])
+        # a real segment made planned
+        s = uid()
+        self.ok([self.segment(s, self.seg(self.e, end=T0 + H))])
+        res = self.push(self.phone, [self.segment(s, {"planned": True}, T0 + 1)])
+        self.assertEqual(self.errors(res), [("invalid", "planned_not_todo")])
+
+    def test_leaving_todo_with_the_plan_left_is_refused(self):
+        self.todo_with_plan()
+        open_ = uid()
+        # started, but the planned segments not deleted: the start's changes are refused together
+        res = self.push(self.phone, [self.entry(T0 + 1, status="RUNNING", mode="WORK"), self.segment(open_, self.seg(self.e, start=T0 + 1))])
+        self.assertEqual(self.errors(res), [("invalid", "planned_not_todo")] * 2)
+        self.assertEqual(self.stored(), ("TODO", None, [("WORK", False, True), ("WORK", False, True)]))
+        self.assertFalse(Segment.objects.filter(uid=open_).exists())
+        res = self.push(self.phone, [self.entry(T0 + 1, status="CLOSED", closedUtcMs=T0 + 1)])
+        self.assertEqual(self.errors(res), [("invalid", "planned_not_todo")])
+
+    # ---- d: an absence is always CLOSED
+
+    def test_an_absence_is_always_closed(self):
+        self.e = uid()
+        res = self.push(self.phone, [self.entry(**entry_fields(kind="ABSENCE", status=status, absenceKind="SICK")) for status in ("TODO", "RUNNING")])
+        self.assertEqual(self.errors(res), [("invalid", "absence_not_closed")] * 2)
+        self.ok([self.entry(**entry_fields(kind="ABSENCE", status="CLOSED", absenceKind="SICK"))])
+        res = self.push(self.phone, [self.entry(T0 + 1, status="TODO")])
+        self.assertEqual(self.errors(res), [("invalid", "absence_not_closed")])
+        self.assertEqual(Entry.objects.get(uid=self.e).status, "CLOSED")
+
+    # ---- e: mode is the open segment's kind; at most one open segment
+
+    def test_mode_follows_the_open_segment(self):
+        self.e = uid()
+        res = self.push(self.phone, [self.entry(**entry_fields(mode="WORK"))])
+        self.assertEqual(self.errors(res), [("invalid", "mode_mismatch")])
+        self.assertFalse(Entry.objects.filter(uid=self.e).exists())
+        # an open segment and no mode
+        res = self.push(self.phone, [self.entry(**entry_fields(mode=None)), self.segment(uid(), self.seg(self.e))])
+        self.assertEqual(self.errors(res), [("invalid", "mode_mismatch")] * 2)
+        s = self.running()
+        res = self.push(self.phone, [self.entry(T0 + 1, mode="TRAVEL")])
+        self.assertEqual(self.errors(res), [("invalid", "mode_mismatch")])
+        # the open segment closed, the mode left
+        res = self.push(self.phone, [self.segment(s, {"endUtcMs": T0 + H}, T0 + 1)])
+        self.assertEqual(self.errors(res), [("invalid", "mode_mismatch")])
+        res = self.push(self.phone, [self.delete("segment", s, T0 + 1)])
+        self.assertEqual(self.errors(res), [("invalid", "mode_mismatch")])
+        self.assertEqual(self.stored(), ("RUNNING", "WORK", [("WORK", True, False)]))
+
+    def test_one_open_segment_at_most(self):
+        self.running()
+        res = self.push(self.phone, [self.segment(uid(), self.seg(self.e, "WORK", start=T0 + H))])
+        self.assertEqual(self.errors(res), [("invalid", "open_segments")])
+
+    def test_only_the_offending_activity_is_refused(self):
+        other = uid()
+        self.e = uid()
+        res = self.push(self.phone, [
+            self.entry(**entry_fields(mode="PAUSE")),
+            self.upsert("entry", other, entry_fields(status="CLOSED"), T0),
+            self.segment(uid(), self.seg(other, end=T0 + H)),
+            self.upsert("expense", uid(), {"entryUid": other, "amountCents": 100, "description": "x", "createdUtcMs": T0}, T0),
+        ])
+        self.assertEqual(self.errors(res), [("invalid", "mode_mismatch"), "applied", "applied", "applied"])
+
+    # ---- the commands' sequences, in any order
+
+    def test_start_with_a_plan_in_either_order(self):
+        for entry_first in (True, False):
+            p1, p2 = self.todo_with_plan()
+            s = uid()
+            start = [self.entry(T0 + 1, status="RUNNING", mode="WORK")]
+            rest = [self.delete("segment", p1, T0 + 1), self.delete("segment", p2, T0 + 1), self.segment(s, self.seg(self.e, start=T0 + 1), T0 + 1)]
+            self.ok(start + rest if entry_first else rest + start)
+            self.assertEqual(self.stored(), ("RUNNING", "WORK", [("WORK", True, False)]))
+        # the opened segment first, then the entry, then the plan's deletes
+        p1, p2 = self.todo_with_plan()
+        self.ok([self.segment(uid(), self.seg(self.e, "TRAVEL", start=T0 + 1), T0 + 1), self.entry(T0 + 1, status="RUNNING", mode="TRAVEL"),
+                 self.delete("segment", p1, T0 + 1), self.delete("segment", p2, T0 + 1)])
+        self.assertEqual(self.stored(), ("RUNNING", "TRAVEL", [("TRAVEL", True, False)]))
+
+    def test_switch_in_any_order(self):
+        import itertools
+
+        for order in itertools.permutations(range(3)):
+            s = self.running()
+            pause = uid()
+            changes = [self.segment(s, {"endUtcMs": T0 + H}, T0 + 1), self.segment(pause, self.seg(self.e, "PAUSE", start=T0 + H), T0 + 1),
+                       self.entry(T0 + 1, mode="PAUSE")]
+            self.ok([changes[i] for i in order])
+            self.assertEqual(self.stored(), ("RUNNING", "PAUSE", [("PAUSE", True, False), ("WORK", False, False)]))
+
+    def test_stop_suspend_and_resume(self):
+        for entry_first in (True, False):
+            s = self.running()
+            stop = [self.entry(T0 + 1, status="CLOSED", mode=None, closedUtcMs=T0 + H), self.segment(s, {"endUtcMs": T0 + H}, T0 + 1)]
+            self.ok(stop if entry_first else stop[::-1])
+            self.assertEqual(self.stored(), ("CLOSED", None, [("WORK", False, False)]))
+        # suspended, then resumed travelling
+        s = self.running()
+        self.ok([self.entry(T0 + 1, mode=None), self.segment(s, {"endUtcMs": T0 + H}, T0 + 1)])
+        self.ok([self.segment(uid(), self.seg(self.e, "TRAVEL", start=T0 + 2 * H), T0 + 2), self.entry(T0 + 2, mode="TRAVEL")])
+        self.assertEqual(self.stored(), ("RUNNING", "TRAVEL", [("TRAVEL", True, False), ("WORK", False, False)]))
+
+    def test_tick_in_either_order(self):
+        for entry_first in (True, False):
+            p1, p2 = self.todo_with_plan()
+            tick = [self.entry(T0 + 1, status="CLOSED", closedUtcMs=T0 + 1)]
+            deletes = [self.delete("segment", p1, T0 + 1), self.delete("segment", p2, T0 + 1)]
+            self.ok(tick + deletes if entry_first else deletes + tick)
+            self.assertEqual(self.stored(), ("CLOSED", None, []))
+
+    def test_an_absence_is_created(self):
+        self.e = uid()
+        self.ok([self.entry(**entry_fields(kind="ABSENCE", status="CLOSED", absenceKind="HOLIDAY")),
+                 self.segment(uid(), self.seg(self.e, "ABSENCE", start=T0, end=T0 + 4 * H)),
+                 self.segment(uid(), self.seg(self.e, "ABSENCE", start=T0 + 5 * H, end=T0 + 9 * H))])
+        self.assertEqual(self.stored(), ("CLOSED", None, [("ABSENCE", False, False)] * 2))
+
+    def test_a_running_activity_goes_to_the_bin_as_it_is(self):
+        self.running()
+        self.ok([self.entry(T0 + 1, deletedUtcMs=T0 + 1)])
+        self.assertEqual(self.stored(), ("RUNNING", "WORK", [("WORK", True, False)]))
+        self.ok([self.entry(T0 + 2, deletedUtcMs=None)])
+
+    def test_a_todo_is_unticked_and_planned_again(self):
+        self.e = uid()
+        self.ok([self.entry(**entry_fields(status="CLOSED", closedUtcMs=T0))])
+        self.ok([self.entry(T0 + 1, status="TODO", closedUtcMs=None), self.segment(uid(), self.seg(self.e, end=T0 + H, planned=True), T0 + 1)])
+        self.assertEqual(self.stored(), ("TODO", None, [("WORK", False, True)]))
+
+    # ---- data stored before the rules (migrated)
+
+    def test_an_old_violation_does_not_block_other_changes(self):
+        self.e = uid()
+        self.ok([self.entry(**entry_fields(status="CLOSED"))])
+        e = Entry.objects.get(uid=self.e)
+        planned = Segment.objects.create(org=self.org, owner=self.alice, entry=e, kind="WORK", start_utc=e.created_utc,
+                                         end_utc=e.created_utc + timedelta(hours=1), zone_id="Europe/Rome", planned=True)
+        Entry.objects.filter(uid=self.e).update(mode="WORK")
+        # untouched by the change: notes, the planned segment's note
+        self.ok([self.entry(T0 + 1, notes="n"), self.segment(str(planned.uid), {"note": "x"}, T0 + 1)])
+        # a change that adds another violation is refused
+        res = self.push(self.phone, [self.segment(uid(), self.seg(self.e, start=T0 + 2 * H), T0 + 1),
+                                     self.segment(uid(), self.seg(self.e, start=T0 + 3 * H), T0 + 1)])
+        self.assertEqual(self.errors(res), [("invalid", "open_segments")] * 2)
+        # the repair passes, step by step
+        self.ok([self.entry(T0 + 2, mode=None)])
+        self.ok([self.delete("segment", str(planned.uid), T0 + 2)])
+        self.assertEqual(self.stored(), ("CLOSED", None, []))
+        # an absence stored RUNNING may still be edited, and closed
+        a = uid()
+        Entry.objects.create(org=self.org, owner=self.alice, uid=a, kind="ABSENCE", absence_kind="SICK", status="RUNNING", zone_id="Europe/Rome",
+                             created_utc=e.created_utc, updated_utc=e.created_utc)
+        self.assertEqual(self.push(self.phone, [self.upsert("entry", a, {"notes": "n"}, T0 + 1)])[0]["status"], "applied")
+        self.assertEqual(self.push(self.phone, [self.upsert("entry", a, {"status": "CLOSED"}, T0 + 1)])[0]["status"], "applied")

@@ -7,6 +7,7 @@ model's (the app's docs/ACTIVITY-MODEL.md §3): TODO, RUNNING (with at most
 one open segment), CLOSED; deleting puts it in the bin (deleted_utc).
 """
 
+import functools
 import uuid
 from datetime import datetime
 from zoneinfo import ZoneInfo
@@ -26,6 +27,24 @@ TODO, RUNNING, CLOSED = EntryStatus.TODO, EntryStatus.RUNNING, EntryStatus.CLOSE
 
 class OpError(Exception):
     pass
+
+
+def command(fn):
+    """
+    One command of the browser: its changes are one transaction and the
+    activity model's cross-record rules are judged when it ends, as for a
+    phone's push (sync.engine.group): a switch passes through states that
+    break them for a moment, a forged request that leaves one broken is an
+    OpError and changes nothing.
+    """
+    @functools.wraps(fn)
+    def wrapped(*args, **kwargs):
+        try:
+            with engine.group():
+                return fn(*args, **kwargs)
+        except engine.ChangeError as e:
+            raise OpError(f"{e.code}: {e.detail}") from None
+    return wrapped
 
 
 def ms(dt):
@@ -132,6 +151,7 @@ def _alone(user, entry, at):
         suspend(user, other, at)
 
 
+@command
 def start(user, *, company=None, client=None, role=None, activity="", todo=None, mode=WORK, at=None):
     """A new running activity, or [todo] (a TODO activity) started: TODO -> RUNNING."""
     at = at or datetime.now().astimezone()
@@ -149,6 +169,7 @@ def start(user, *, company=None, client=None, role=None, activity="", todo=None,
     return entry
 
 
+@command
 def record_past(user, *, start_at, end_at, company=None, client=None, role=None, activity="", todo=None):
     """A closed activity with the work done (the app's Lavoro · Passata), or [todo] closed with it."""
     if end_at <= start_at:
@@ -173,6 +194,7 @@ def _running(entry):
         raise OpError("not running")
 
 
+@command
 def switch(user, entry, mode, at=None):
     """Pause, travel or back to work (resume when none is open): the open segment closes, one of [mode] opens."""
     at = at or datetime.now().astimezone()
@@ -184,6 +206,7 @@ def switch(user, entry, mode, at=None):
     _touch(user, entry, {"mode": mode})
 
 
+@command
 def suspend(user, entry, at=None):
     """The open segment closes, the activity stays running (no button in the app: another one started)."""
     at = at or datetime.now().astimezone()
@@ -192,6 +215,7 @@ def suspend(user, entry, at=None):
     _touch(user, entry, {"mode": None})
 
 
+@command
 def stop(user, entry, at=None):
     at = at or datetime.now().astimezone()
     _running(entry)
@@ -199,6 +223,7 @@ def stop(user, entry, at=None):
     _touch(user, entry, {"status": CLOSED, "mode": None, "closedUtcMs": engine.now_ms()})
 
 
+@command
 def reopen(user, entry, mode=WORK, at=None):
     """CLOSED -> RUNNING with [mode] open; the gap since the end stays a gap."""
     at = at or datetime.now().astimezone()
@@ -209,6 +234,7 @@ def reopen(user, entry, mode=WORK, at=None):
     _touch(user, entry, {"status": RUNNING, "mode": mode, "closedUtcMs": None})
 
 
+@command
 def tick(user, entry):
     """A to-do done without work: TODO -> CLOSED, the plan's segments gone."""
     if entry.status != TODO:
@@ -217,15 +243,18 @@ def tick(user, entry):
     _touch(user, entry, {"status": CLOSED, "closedUtcMs": engine.now_ms()})
 
 
+@command
 def to_bin(user, entry):
     """Into the bin ("eliminata"): restorable, hidden everywhere else."""
     _touch(user, entry, {"deletedUtcMs": engine.now_ms()})
 
 
+@command
 def restore(user, entry):
     _touch(user, entry, {"deletedUtcMs": None})
 
 
+@command
 def edit_entry(user, entry, fields):
     return _touch(user, entry, fields)
 
@@ -237,11 +266,19 @@ def overlapping(entry):
 
 
 def _review(user, entry):
-    """The "to review" mark follows the segments, as the phones' (SYNC.md §11)."""
+    """
+    The "to review" mark follows the segments, as the phones' (SYNC.md §11);
+    so does the mode, the open segment's kind (an edited kind, a closed or removed open segment).
+    """
     entry.refresh_from_db()
-    _touch(user, entry, {"needsReview": overlapping(entry)} if entry.needs_review or overlapping(entry) else {})
+    fields = {"needsReview": overlapping(entry)} if entry.needs_review or overlapping(entry) else {}
+    opened = list(Segment.objects.filter(entry=entry, deleted=False, planned=False, end_utc__isnull=True).values_list("kind", flat=True)[:2])
+    if len(opened) < 2 and entry.mode != (opened[0] if opened else None):
+        fields["mode"] = opened[0] if opened else None
+    _touch(user, entry, fields)
 
 
+@command
 def edit_segment(user, segment, *, start_at, end_at, kind):
     if end_at is not None and end_at <= start_at:
         raise OpError("end before start")
@@ -249,11 +286,13 @@ def edit_segment(user, segment, *, start_at, end_at, kind):
     _review(user, segment.entry)
 
 
+@command
 def remove_segment(user, segment):
     delete(user, "segment", segment.uid)
     _review(user, segment.entry)
 
 
+@command
 def add_segment(user, entry, *, start_at, end_at, kind):
     if end_at <= start_at:
         raise OpError("end before start")
@@ -265,6 +304,7 @@ def add_segment(user, entry, *, start_at, end_at, kind):
     _review(user, entry)
 
 
+@command
 def add_expense(user, entry, *, cents, description):
     if cents <= 0 or not description.strip():
         raise OpError("amount and description")
@@ -274,6 +314,7 @@ def add_expense(user, entry, *, cents, description):
 
 # ---- to-dos: TODO activities ----
 
+@command
 def save_todo(user, uid, fields, owner=None):
     """Creates or changes a TODO activity; a manager writes a team member's as theirs ([owner])."""
     user = owner or user
@@ -286,6 +327,7 @@ def save_todo(user, uid, fields, owner=None):
     return uid
 
 
+@command
 def untick(user, entry):
     """CLOSED without real segments -> TODO: a task ticked off by mistake (§3 untick)."""
     if entry.status != CLOSED or entry.kind != ActivityKind.ACTIVITY or real_segments(entry):
@@ -293,6 +335,7 @@ def untick(user, entry):
     _touch(user, entry, {"status": TODO, "closedUtcMs": None})
 
 
+@command
 def purge(user, entry):
     """Deleted for good: only an activity already in the bin (the web's bin page)."""
     if entry.deleted_utc is None:
@@ -311,6 +354,7 @@ def previous_kind(entry):
     return before[-1].kind if before else None
 
 
+@command
 def travel_from_work(user, entry, completed, at=None):
     """
     The question of §3: "Hai completato l'attività lavorativa?" Yes: the activity
@@ -342,6 +386,7 @@ def outbound(entry):
     return [s for s in segs[:first_work] if s.kind == TRAVEL][-1]
 
 
+@command
 def stop_with_return(user, entry, at=None):
     """
     §3.2 choice 3: close the open segment at [at], add a TRAVEL segment as long
@@ -368,6 +413,7 @@ def stop_with_return(user, entry, at=None):
         _touch(user, entry, {"status": CLOSED, "mode": None, "closedUtcMs": engine.now_ms()})
 
 
+@command
 def save_absence(user, uid, *, first, last, start_min=None, duration_min=None, absence_kind=A.ABSENCE, company=None, activity=None, notes=None,
                  owner=None):
     """

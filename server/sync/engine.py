@@ -5,6 +5,8 @@ the same apply(), so a field edited on the web and on a phone is settled by
 the same rule: the later change wins, field by field.
 """
 
+import contextlib
+import contextvars
 import time
 import uuid
 
@@ -12,9 +14,9 @@ from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
 from django.db.models import F, Q
 
-from records.models import BY_TYPE, SYNCED_MODELS, Scope
+from records.models import BY_TYPE, SYNCED_MODELS, Entry, Scope, Segment
 
-from . import wire
+from . import invariants, wire
 from .models import Counter, ScopeExit
 
 MAX_CHANGES = 500
@@ -25,6 +27,64 @@ class ChangeError(Exception):
         super().__init__(code, detail)
         self.code = code
         self.detail = detail
+
+
+class _Group:
+    """
+    The changes of one push, or of one web command, judged together on the
+    cross-record rules (invariants.broken): which activities each change
+    touched, and the rules each of them broke before the first one.
+    """
+
+    def __init__(self):
+        self.index = None
+        self.was = {}
+        self.touched = {}
+
+    def snapshot(self, entry_id):
+        """Before a change writes the activity [entry_id] or one of its segments."""
+        if entry_id is not None and entry_id not in self.was:
+            self.was[entry_id] = invariants.broken(entry_id)
+
+    def touch(self, entry_id):
+        """After it wrote."""
+        if entry_id is not None:
+            self.touched.setdefault(entry_id, set()).add(self.index)
+
+    def offending(self):
+        """Activity uid -> the rule it breaks now and did not before the group (old violations stay)."""
+        out = {}
+        for entry_id in self.touched:
+            new = invariants.broken(entry_id) - self.was.get(entry_id, frozenset())
+            if new:
+                out[entry_id] = invariants.first(new)
+        return out
+
+
+_group = contextvars.ContextVar("sync_group", default=None)
+
+
+@contextlib.contextmanager
+def group():
+    """
+    Applies every change made inside as one: one transaction, the
+    cross-record rules checked at the end; a violation raises ChangeError and
+    nothing stays. Inside another group it joins that one. The web's commands
+    run in one (web/ops.py); a lone apply() is a group of its own.
+    """
+    if _group.get() is not None:
+        yield
+        return
+    with transaction.atomic():
+        g = _Group()
+        token = _group.set(g)
+        try:
+            yield
+        finally:
+            _group.reset(token)
+        bad = g.offending()
+        if bad:
+            raise ChangeError("invalid", invariants.first(bad.values()))
 
 
 def now_ms():
@@ -99,6 +159,14 @@ def apply(user, change, offset_ms=0, now=None, central=False):
     raises ChangeError for a change that cannot be applied at all. A new
     master record is personal, central only when asked (the web's forms).
     """
+    if _group.get() is None:
+        with group():
+            return _apply(user, change, offset_ms, now, central)
+    return _apply(user, change, offset_ms, now, central)
+
+
+def _apply(user, change, offset_ms, now, central):
+    g = _group.get()
     now = now_ms() if now is None else now
     org = user.org
     model = BY_TYPE.get(change.get("type"))
@@ -119,7 +187,11 @@ def apply(user, change, offset_ms=0, now=None, central=False):
             if not can_write(user, rec):
                 raise ChangeError("forbidden")
             if not rec.deleted:
+                if model is Segment:
+                    g.snapshot(rec.entry_id)
                 _tombstone(rec, org)
+                if model is Segment:
+                    g.touch(rec.entry_id)
             return {"uid": str(uid), "status": "applied", "record": wire.record(rec)}
         if op != "upsert":
             raise ChangeError("invalid", f"op {op!r}")
@@ -135,6 +207,7 @@ def apply(user, change, offset_ms=0, now=None, central=False):
         known = wire.fields_of(model)
         refused = []
         old_parent = getattr(rec, model.PARENT + "_id") if model.PARENT and not new else None
+        old = invariants.before(rec, new)
         for name, value in fields.items():
             wf = known.get(name)
             if wf is None:
@@ -169,6 +242,13 @@ def apply(user, change, offset_ms=0, now=None, central=False):
             rec.full_clean(exclude=["org", "owner", "uid"], validate_unique=False)
         except ValidationError as e:
             raise ChangeError("invalid", "; ".join(f"{k}: {' '.join(v)}" for k, v in e.message_dict.items())) from None
+        rule = invariants.record_rule(rec, old)
+        if rule:
+            raise ChangeError("invalid", rule)
+        # the activities whose cross-record rules this change may break (a segment moved: both)
+        activities = [rec.uid] if model is Entry else [old_parent, rec.entry_id] if model is Segment else []
+        for a in activities:
+            g.snapshot(a)
         rec.rev = rev
         try:
             with transaction.atomic():
@@ -176,6 +256,8 @@ def apply(user, change, offset_ms=0, now=None, central=False):
         except IntegrityError:
             # a natural key taken by another record (a tag's name): the phone adopts that one at its pull
             raise ChangeError("invalid", "duplicate") from None
+        for a in activities:
+            g.touch(a)
         return {"uid": str(uid), "status": "conflict" if refused else "applied", "record": wire.record(rec), **({"refused": refused} if refused else {})}
 
 
@@ -186,16 +268,56 @@ def push(device, body, now=None):
         raise ChangeError("invalid", f"changes: a list of at most {MAX_CHANGES}")
     device_time = body.get("deviceTime")
     offset = now - device_time if isinstance(device_time, int) and not isinstance(device_time, bool) else 0
-    results = []
-    for change in changes:
-        if not isinstance(change, dict):
-            results.append({"status": "error", "error": "invalid"})
-            continue
+    # changes refused by the cross-record rules: index -> rule
+    refused = {}
+    while True:
         try:
-            results.append(apply(device.user, change, offset, now))
-        except ChangeError as e:
-            results.append({"uid": str(change.get("uid")), "status": "error", "error": e.code, "detail": e.detail})
-    return {"serverTime": now_ms(), "results": results}
+            results = _push_once(device.user, changes, offset, now, refused)
+        except _Again:
+            continue
+        return {"serverTime": now_ms(), "results": results}
+
+
+class _Again(Exception):
+    pass
+
+
+def _push_once(user, changes, offset, now, refused):
+    """
+    The push in one transaction. Commands pass through states that break the
+    cross-record rules (a switch: one segment closed, one opened, the mode;
+    in any order), so those rules are judged on the activities as the whole
+    push leaves them. When one is broken anew the push is rolled back and
+    applied again without the changes that touched that activity: they are
+    answered `invalid` with the rule, the rest goes through.
+    """
+    with transaction.atomic():
+        g = _Group()
+        token = _group.set(g)
+        try:
+            results = []
+            for i, change in enumerate(changes):
+                if not isinstance(change, dict):
+                    results.append({"status": "error", "error": "invalid"})
+                    continue
+                if i in refused:
+                    results.append({"uid": str(change.get("uid")), "status": "error", "error": "invalid", "detail": refused[i]})
+                    continue
+                g.index = i
+                try:
+                    results.append(apply(user, change, offset, now))
+                except ChangeError as e:
+                    results.append({"uid": str(change.get("uid")), "status": "error", "error": e.code, "detail": e.detail})
+            bad = g.offending()
+        finally:
+            _group.reset(token)
+        if bad:
+            # each round refuses at least one more change: it ends
+            for entry_id, rule in bad.items():
+                for i in g.touched[entry_id]:
+                    refused.setdefault(i, rule)
+            raise _Again
+    return results
 
 
 def pull(user, cursor, limit=500):
