@@ -6,7 +6,7 @@ security fixes, each under "Security" with its reference.
 
 ## 1.0.0 (in pre-release)
 
-Pre-releases so far: 1.0.0-alfa-1, 1.0.0-alfa-2. The list is cumulative until the
+Pre-releases so far: 1.0.0-alfa-1, 1.0.0-alfa-2, 1.0.0-beta-1. The list is cumulative until the
 release. The activity model of 1.0 is the app's `docs/ACTIVITY-MODEL.md`; the breaks
 with 0.9 are in its `CHANGELOG.md`.
 
