@@ -8,7 +8,7 @@ security fixes, each under "Security" with its reference.
 
 Pre-releases so far: 1.0.0-alfa-1, 1.0.0-alfa-2. The list is cumulative until the
 release. The activity model of 1.0 is the app's `docs/ACTIVITY-MODEL.md`; the breaks
-with 0.9 are its `SPEC.md` §11.
+with 0.9 are in its `CHANGELOG.md`.
 
 ### Compatibility
 
@@ -16,8 +16,10 @@ with 0.9 are its `SPEC.md` §11.
   only, and apps and PC interfaces of 0.9 get `426 upgrade_required` ("Aggiorna l'app
   per sincronizzare"). `sync/head` and the mirrored packages still answer them, so they
   learn of the new version. The server and every device must be on 1.0.
-- After its own migration each device's first sync is a full realignment: the server's
-  version of every migrated record wins, local changes not yet synced are pushed.
+- After its own migration each device's first sync is a full realignment. Where the
+  device and the server migrated a to-do differently, the phone's version wins, unless a
+  server-signed policy is in force on it (then the server's does); a PC interface never
+  wins. Local changes not yet synced are pushed (the app's `docs/ACTIVITY-MODEL.md` §6).
 - The data migrations `records` 0007–0010 are one-way: `migrate` refuses to go back to
   0.9. The way back is the backup taken before the upgrade (`docs/INSTALL.md`).
 - The to-do stops being a record: wire types `todo` and `absence` are gone (an older
