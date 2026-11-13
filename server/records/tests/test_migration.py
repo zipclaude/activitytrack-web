@@ -107,6 +107,41 @@ class ActivityMigrationTests(TransactionTestCase):
         finally:
             self.migrate(self.leaves())
 
+    def test_refused_going_back_loses_nothing(self):
+        """The refusal comes at 0008, after 0010 and 0009 are undone: migrating forward again restores 1.0 as it was."""
+        from django.db.migrations.exceptions import IrreversibleError
+
+        from accounts.models import Organization, User
+        from records.models import ActivityAssignment, Entry, Segment
+
+        self.migrate(self.leaves())
+        org = Organization.objects.create(name="Infra")
+        alice = User.objects.create(username="alice", org=org)
+        boss = User.objects.create(username="boss", org=org, profile="manager")
+        t0 = at("2026-11-02T08:00:00")
+        e = Entry.objects.create(org=org, owner=alice, kind="ACTIVITY", status="TODO", activity="Rinnovo", external_key="K1",
+                                 zone_id="Europe/Rome", created_utc=t0, updated_utc=t0, rev=1)
+        Segment.objects.create(org=org, owner=alice, entry=e, kind="WORK", start_utc=t0, end_utc=at("2026-11-02T09:00:00"),
+                               zone_id="Europe/Rome", rev=2)
+        ActivityAssignment.objects.create(entry=e, by=boss)
+
+        def snapshot():
+            return (list(Entry.objects.order_by("uid").values()), list(Segment.objects.order_by("uid").values()),
+                    list(ActivityAssignment.objects.values_list("entry_id", "by_id")))
+
+        before = snapshot()
+        try:
+            with self.assertRaises(IrreversibleError):
+                self.migrate(BEFORE)
+            applied = {name for app, name in MigrationExecutor(connection).loader.applied_migrations if app == "records"}
+            self.assertIn("0008_activity_data", applied)
+            self.assertNotIn("0009_drop_todo", applied)
+            self.assertNotIn("0010_drop_stale_scope_exits", applied)
+            self.assertEqual(snapshot(), before)  # the half-way state keeps every row
+        finally:
+            self.migrate(self.leaves())
+        self.assertEqual(snapshot(), before)  # and so does the way forward
+
     def leaves(self):
         executor = MigrationExecutor(connection)
         return executor.loader.graph.leaf_nodes()

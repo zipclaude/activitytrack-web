@@ -81,6 +81,9 @@ automatically by `migrate`. The sync wire schema is now 3: **the server and ever
 apps are told to update before they can sync, and backups made by older versions can still be restored.
 The data migration cannot be undone (`migrate` refuses to go back to 0.9): the way back is the backup taken before the
 upgrade, so make one first.
+Asking for it anyway (`migrate records 0006`) undoes `records` 0010 and 0009 (the old, empty to-do and absence
+tables come back) and then stops with `IrreversibleError` at 0008; no record is lost, but the database is left
+half-way. Run `activitytrack-web-manage migrate` again to restore the 1.0 state.
 
 Updating to 0.9.9: nothing to do besides what the package does (no migration). A request body
 above 16 MB is now answered with 413 (`too_large`) instead of 400.
