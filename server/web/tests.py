@@ -1098,8 +1098,10 @@ class ReviewFixTests(WorkTests):
         from web import ops
 
         todo = ops.save_todo(self.alice, None, {"activity": "Da fare"})
-        absence = ops.save_absence(self.alice, None, first=date(2026, 10, 28), last=date(2026, 10, 28))
+        # with times: one ABSENCE segment that day, whatever the work schedule
+        absence = ops.save_absence(self.alice, None, first=date(2026, 10, 28), last=date(2026, 10, 28), start_min=9 * 60, duration_min=60)
         before = Segment.objects.filter(entry_id=absence).count()
+        self.assertEqual(Segment.objects.filter(entry_id=absence, deleted=False, kind="ABSENCE").count(), 1)
         for uid in (todo, absence):
             for kind in ("WORK", "TRAVEL", "PAUSE"):
                 r = self.client.post(f"/attivita/{uid}/", {"action": "add_segment", "kind": kind,
@@ -1109,12 +1111,13 @@ class ReviewFixTests(WorkTests):
         # the segments of a to-do are its plan (owner, 2026-11-13): stored, all planned
         self.assertEqual(Segment.objects.filter(entry_id=todo, deleted=False, planned=True).count(), 3)
         self.assertFalse(Segment.objects.filter(entry_id=todo, deleted=False, planned=False).exists())
-        seg = Segment.objects.filter(entry_id=absence, deleted=False).first()
-        if seg:
-            self.client.post(f"/attivita/{absence}/", {"action": "segment", "segment": str(seg.uid), "kind": "WORK",
+        # nor is an absence segment edited into work
+        seg = Segment.objects.get(entry_id=absence, deleted=False)
+        r = self.client.post(f"/attivita/{absence}/", {"action": "segment", "segment": str(seg.uid), "kind": "WORK",
                                                        "start": "2026-10-28T09:00", "end": "2026-10-28T10:00"})
-            seg.refresh_from_db()
-            self.assertEqual(seg.kind, "ABSENCE")
+        self.assertRedirects(r, f"/attivita/{absence}/", fetch_redirect_response=False)
+        seg.refresh_from_db()
+        self.assertEqual(seg.kind, "ABSENCE")
 
 
     def test_a_failed_reassignment_leaves_the_todo_where_it_was(self):
