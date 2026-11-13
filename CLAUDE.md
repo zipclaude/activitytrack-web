@@ -22,6 +22,10 @@ The whole workflow is in
   the changelog adds the revision). Needs the unit tests and the local Wine jobs, not the paid Windows pipeline.
 - Security patch: `security/<name>` cut from `main`, version `X.Y.Z.1`, released at once with
   the security report, then merged into `next`.
+- Every release, beta and pre-release updates `CHANGELOG.md` (shipped in the Debian package as
+  the upstream changelog): changes in behaviour, compatibility and features under
+  "Compatibility", "Features", "Behaviour"; bug fixes only as one line "Various bug fixes."
+  per release, except security fixes, each under "Security" with its issue.
 - Test locally first. Pipelines on GitLab's shared runners start only when the owner says so;
   jobs with `tags: [local]` run on the owner's runner (see `agents/local-ci.md` in the
   documentation repository).
@@ -94,6 +98,7 @@ token), point `/static/` to the dev server and render them with
 docs/ARCHITECTURE.md   requirements R1–R12, stack, profiles, central/personal master data
 docs/SYNC.md           protocol v1: records, triggers on the phone, clocks, revisions, endpoints, pairing
 docs/ROADMAP.md        phases and estimates
+CHANGELOG.md           changes per release (behaviour, compatibility, features, security)
 docs/INSTALL.md        installation on trixie, nginx or Apache
 deploy/                settings.ini.example, systemd service + socket, nginx and Apache sites
 server/atweb/          settings (from settings.ini), urls
