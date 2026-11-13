@@ -1099,13 +1099,16 @@ class ReviewFixTests(WorkTests):
 
         todo = ops.save_todo(self.alice, None, {"activity": "Da fare"})
         absence = ops.save_absence(self.alice, None, first=date(2026, 10, 28), last=date(2026, 10, 28))
+        before = Segment.objects.filter(entry_id=absence).count()
         for uid in (todo, absence):
-            before = Segment.objects.filter(entry_id=uid).count()
             for kind in ("WORK", "TRAVEL", "PAUSE"):
                 r = self.client.post(f"/attivita/{uid}/", {"action": "add_segment", "kind": kind,
                                                            "start": "2026-10-28T09:00", "end": "2026-10-28T10:00"})
                 self.assertRedirects(r, f"/attivita/{uid}/", fetch_redirect_response=False)
-            self.assertEqual(Segment.objects.filter(entry_id=uid).count(), before)
+        self.assertEqual(Segment.objects.filter(entry_id=absence).count(), before)
+        # the segments of a to-do are its plan (owner, 2026-11-13): stored, all planned
+        self.assertEqual(Segment.objects.filter(entry_id=todo, deleted=False, planned=True).count(), 3)
+        self.assertFalse(Segment.objects.filter(entry_id=todo, deleted=False, planned=False).exists())
         seg = Segment.objects.filter(entry_id=absence, deleted=False).first()
         if seg:
             self.client.post(f"/attivita/{absence}/", {"action": "segment", "segment": str(seg.uid), "kind": "WORK",

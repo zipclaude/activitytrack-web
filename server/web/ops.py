@@ -257,7 +257,11 @@ def remove_segment(user, segment):
 def add_segment(user, entry, *, start_at, end_at, kind):
     if end_at <= start_at:
         raise OpError("end before start")
-    put(user, "segment", new_uid(), {"entryUid": str(entry.uid), "kind": kind, "startUtcMs": ms(start_at), "endUtcMs": ms(end_at), "zoneId": entry.zone_id, "source": "MANUAL"})
+    fields = {"entryUid": str(entry.uid), "kind": kind, "startUtcMs": ms(start_at), "endUtcMs": ms(end_at), "zoneId": entry.zone_id, "source": "MANUAL"}
+    if entry.status == EntryStatus.TODO:
+        # the segments of a to-do are its plan (ACTIVITY-MODEL §1.2): confirmed or changed when it starts
+        fields["planned"] = True
+    put(user, "segment", new_uid(), fields)
     _review(user, entry)
 
 
