@@ -23,9 +23,12 @@ SEGMENT_KIND = "segment_kind"
 PLANNED_NOT_TODO = "planned_not_todo"
 MODE_MISMATCH = "mode_mismatch"
 OPEN_SEGMENTS = "open_segments"
+CLOSED_OPEN_SEGMENT = "closed_open_segment"
+TODO_REAL_SEGMENTS = "todo_real_segments"
 
 # the order a refusal names the first of several rules broken
-ORDER = [KIND_CHANGED, ABSENCE_NOT_CLOSED, SEGMENT_KIND, PLANNED_NOT_TODO, OPEN_SEGMENTS, MODE_MISMATCH]
+ORDER = [KIND_CHANGED, ABSENCE_NOT_CLOSED, SEGMENT_KIND, PLANNED_NOT_TODO, OPEN_SEGMENTS, CLOSED_OPEN_SEGMENT, TODO_REAL_SEGMENTS,
+         MODE_MISMATCH]
 
 
 def before(rec, new):
@@ -73,6 +76,12 @@ def broken(entry_id):
         # 1.2: the start or tick that leaves TODO deletes the plan
         out.add(PLANNED_NOT_TODO)
     open_kinds = [kind for kind, end, planned in segs if end is None and not planned]
+    if e["status"] == EntryStatus.CLOSED and open_kinds:
+        # 3: stop closes the open segment (an ABSENCE one is never open); reopen opens one with RUNNING
+        out.add(CLOSED_OPEN_SEGMENT)
+    if e["status"] == EntryStatus.TODO and any(not planned for _, _, planned in segs):
+        # 1.2, 2: a TODO has planned segments only; start makes it RUNNING, untick needs no real segment
+        out.add(TODO_REAL_SEGMENTS)
     if len(open_kinds) > 1:
         # 3: at most one open segment
         out.add(OPEN_SEGMENTS)

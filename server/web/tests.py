@@ -1140,6 +1140,24 @@ class ReviewFixTests(WorkTests):
         seg.refresh_from_db()
         self.assertEqual((seg.kind, seg.end_utc, Segment.objects.filter(entry=e, deleted=False).count()), ("WORK", None, 1))
 
+    def test_a_forged_post_opening_a_closed_activitys_segment_is_an_error_message(self):
+        from django.contrib.messages import get_messages
+
+        from records.models import Segment
+
+        # issue #55: a CLOSED activity has no open segment; the end of its segment cleared (the field is not required)
+        self.client.post("/attivita/nuova/", {"when": "now", "client": "22222222-2222-4222-8222-222222222222", "activity": "Intervento"})
+        e = self.entry()
+        self.client.post(f"/attivita/{e.uid}/", {"action": "stop"})
+        seg = Segment.objects.get(entry=e, deleted=False)
+        start = seg.start_utc.astimezone().strftime("%Y-%m-%dT%H:%M")
+        r = self.client.post(f"/attivita/{e.uid}/", {"action": "segment", "segment": str(seg.uid), "kind": "WORK", "start": start, "end": ""})
+        self.assertRedirects(r, f"/attivita/{e.uid}/", fetch_redirect_response=False)
+        self.assertIn("invalid: closed_open_segment", [str(m) for m in get_messages(r.wsgi_request)])
+        e.refresh_from_db()
+        seg.refresh_from_db()
+        self.assertEqual((e.status, e.mode, seg.end_utc is None), ("CLOSED", None, False))
+
     def test_editing_the_open_segment_keeps_the_mode(self):
         from records.models import Segment
 

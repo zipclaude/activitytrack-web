@@ -79,12 +79,13 @@ with 0.9 are in its `CHANGELOG.md`.
 - The server refuses records that break the activity model (issue #55): a changed
   `kind`, an absence not `CLOSED`, `ABSENCE` segments outside absences (or other kinds
   inside them), planned segments on an activity that is not `TODO`, more than one open
-  segment, a `mode` that is not the open segment's kind. The push answers `invalid` with
-  the rule as `detail` (`kind_changed`, `absence_not_closed`, `segment_kind`,
-  `planned_not_todo`, `open_segments`, `mode_mismatch`; `docs/SYNC.md` §1.1). A push is
-  one transaction and the rules across an activity and its segments are judged on what
-  the whole push leaves; data stored before is not refused for an old violation. The
-  web's commands follow the same rules.
+  segment, a `mode` that is not the open segment's kind, an open segment in a `CLOSED`
+  activity, a real segment in a `TODO` one. The push answers `invalid` with the rule as
+  `detail` (`kind_changed`, `absence_not_closed`, `segment_kind`, `planned_not_todo`,
+  `open_segments`, `closed_open_segment`, `todo_real_segments`, `mode_mismatch`;
+  `docs/SYNC.md` §1.1). A push is one transaction and the rules across an activity and
+  its segments are judged on what the whole push leaves; data stored before is not
+  refused for an old violation. The web's commands follow the same rules.
 
 Various bug fixes.
 

@@ -960,6 +960,159 @@ class ActivityInvariantTests(SyncTestCase):
         self.ok([self.entry(T0 + 1, status="TODO", closedUtcMs=None), self.segment(uid(), self.seg(self.e, end=T0 + H, planned=True), T0 + 1)])
         self.assertEqual(self.stored(), ("TODO", None, [("WORK", False, True)]))
 
+    # ---- f: a CLOSED activity has no open segment; g: a TODO activity has no real segment
+
+    def closed(self):
+        """A closed activity with one closed WORK segment; returns its segment's uid."""
+        self.e, s = uid(), uid()
+        self.ok([self.entry(**entry_fields(status="CLOSED", closedUtcMs=T0 + H)), self.segment(s, self.seg(self.e, end=T0 + H))])
+        return s
+
+    def test_a_closed_activity_has_no_open_segment(self):
+        s = self.closed()
+        # a segment opened, the mode following it (or mode_mismatch would be named first)
+        res = self.push(self.phone, [self.entry(T0 + 1, mode="WORK"), self.segment(uid(), self.seg(self.e, start=T0 + 2 * H), T0 + 1)])
+        self.assertEqual(self.errors(res), [("invalid", "closed_open_segment")] * 2)
+        # its segment's end removed
+        res = self.push(self.phone, [self.segment(s, {"endUtcMs": None}, T0 + 1), self.entry(T0 + 1, mode="WORK")])
+        self.assertEqual(self.errors(res), [("invalid", "closed_open_segment")] * 2)
+        self.assertEqual(self.stored(), ("CLOSED", None, [("WORK", False, False)]))
+        # a stop that leaves the segment open
+        self.running()
+        res = self.push(self.phone, [self.entry(T0 + 1, status="CLOSED", closedUtcMs=T0 + H)])
+        self.assertEqual(self.errors(res), [("invalid", "closed_open_segment")])
+        self.assertEqual(self.stored(), ("RUNNING", "WORK", [("WORK", True, False)]))
+
+    def test_a_todo_has_no_real_segment(self):
+        p1, p2 = self.todo_with_plan()
+        # a real segment added, closed or open
+        res = self.push(self.phone, [self.segment(uid(), self.seg(self.e, start=T0 - 2 * H, end=T0 - H))])
+        self.assertEqual(self.errors(res), [("invalid", "todo_real_segments")])
+        res = self.push(self.phone, [self.entry(T0 + 1, mode="WORK"), self.segment(uid(), self.seg(self.e, start=T0))])
+        self.assertEqual(self.errors(res), [("invalid", "todo_real_segments")] * 2)
+        # a planned segment made real
+        res = self.push(self.phone, [self.segment(p1, {"planned": False}, T0 + 1)])
+        self.assertEqual(self.errors(res), [("invalid", "todo_real_segments")])
+        # a start that leaves it TODO: the plan deleted, a segment opened, the mode set, the status not
+        res = self.push(self.phone, [self.delete("segment", p1, T0 + 1), self.delete("segment", p2, T0 + 1),
+                                     self.segment(uid(), self.seg(self.e, start=T0 + 1), T0 + 1), self.entry(T0 + 1, mode="WORK")])
+        self.assertEqual(self.errors(res), [("invalid", "todo_real_segments")] * 4)
+        self.assertEqual(self.stored(), ("TODO", None, [("WORK", False, True), ("WORK", False, True)]))
+        # unticked with its work
+        self.closed()
+        res = self.push(self.phone, [self.entry(T0 + 1, status="TODO", closedUtcMs=None)])
+        self.assertEqual(self.errors(res), [("invalid", "todo_real_segments")])
+        self.assertEqual(self.stored(), ("CLOSED", None, [("WORK", False, False)]))
+
+    def test_reopen_in_either_order(self):
+        for entry_first in (True, False):
+            self.closed()
+            reopen = [self.entry(T0 + 1, status="RUNNING", mode="TRAVEL", closedUtcMs=None)]
+            opened = [self.segment(uid(), self.seg(self.e, "TRAVEL", start=T0 + 2 * H), T0 + 1)]
+            self.ok(reopen + opened if entry_first else opened + reopen)
+            self.assertEqual(self.stored(), ("RUNNING", "TRAVEL", [("TRAVEL", True, False), ("WORK", False, False)]))
+
+    def test_untick_in_either_order(self):
+        # a task ticked off
+        self.e = uid()
+        self.ok([self.entry(**entry_fields(status="CLOSED", closedUtcMs=T0))])
+        self.ok([self.entry(T0 + 1, status="TODO", closedUtcMs=None)])
+        self.assertEqual(self.stored(), ("TODO", None, []))
+        # its only segment removed, then unticked (the library's remove_segment and untick, one push)
+        for entry_first in (True, False):
+            s = self.closed()
+            untick = [self.entry(T0 + 1, status="TODO", closedUtcMs=None)]
+            gone = [self.delete("segment", s, T0 + 1)]
+            self.ok(untick + gone if entry_first else gone + untick)
+            self.assertEqual(self.stored(), ("TODO", None, []))
+
+    def test_a_past_activity_is_recorded(self):
+        # "Lavoro · Passata": created CLOSED with closed segments (the entry first: a child names a known parent)
+        for order in ((0, 1), (1, 0)):
+            self.e = uid()
+            segs = [self.segment(uid(), self.seg(self.e, "TRAVEL", start=T0, end=T0 + H)), self.segment(uid(), self.seg(self.e, start=T0 + H, end=T0 + 3 * H))]
+            self.ok([self.entry(**entry_fields(status="CLOSED", closedUtcMs=T0 + 3 * H))] + [segs[i] for i in order])
+            self.assertEqual(self.stored(), ("CLOSED", None, [("TRAVEL", False, False), ("WORK", False, False)]))
+        # a to-do done in the past (the web's record_past, the app's start with an end gone by): no plan, a closed segment, CLOSED
+        for entry_first in (True, False):
+            p1, p2 = self.todo_with_plan()
+            close = [self.entry(T0 + 1, status="CLOSED", closedUtcMs=T0 + 1)]
+            rest = [self.delete("segment", p1, T0 + 1), self.segment(uid(), self.seg(self.e, start=T0 - 2 * H, end=T0 - H), T0 + 1),
+                    self.delete("segment", p2, T0 + 1)]
+            self.ok(close + rest if entry_first else rest + close)
+            self.assertEqual(self.stored(), ("CLOSED", None, [("WORK", False, False)]))
+
+    def test_stop_with_the_return_trip_in_any_order(self):
+        import itertools
+
+        # §3.2 choice 3: the open segment closed, a closed TRAVEL added whose end lies ahead, the activity closed
+        now = engine.now_ms()
+        for order in itertools.permutations(range(3)):
+            self.e, work = uid(), uid()
+            self.ok([self.entry(**entry_fields(mode="WORK")), self.segment(uid(), self.seg(self.e, "TRAVEL", start=now - 3 * H, end=now - 2 * H)),
+                     self.segment(work, self.seg(self.e, start=now - 2 * H))])
+            changes = [self.segment(work, {"endUtcMs": now}, T0 + 1), self.segment(uid(), self.seg(self.e, "TRAVEL", start=now, end=now + H), T0 + 1),
+                       self.entry(T0 + 1, status="CLOSED", mode=None, closedUtcMs=now)]
+            self.ok([changes[i] for i in order])
+            self.assertEqual(self.stored(), ("CLOSED", None, [("TRAVEL", False, False), ("TRAVEL", False, False), ("WORK", False, False)]))
+
+    def test_a_mistaken_start_is_discarded_in_either_order(self):
+        # the app's "Scarta" on a started to-do (EntryRepository.discard): its real segments go and it is TODO again,
+        # in one transaction, so in one push; the plan deleted by the start stays deleted
+        for entry_first in (True, False):
+            p1, p2 = self.todo_with_plan()
+            s = uid()
+            self.ok([self.entry(T0 + 1, status="RUNNING", mode="WORK"), self.delete("segment", p1, T0 + 1), self.delete("segment", p2, T0 + 1),
+                     self.segment(s, self.seg(self.e, start=T0 + 1), T0 + 1)])
+            back = [self.entry(T0 + 2, status="TODO", mode=None)]
+            gone = [self.delete("segment", s, T0 + 2)]
+            self.ok(back + gone if entry_first else gone + back)
+            self.assertEqual(self.stored(), ("TODO", None, []))
+
+    def test_binning_in_the_apps_way_in_either_order(self):
+        # the app closes the open segment before binning (EntryRepository.delete); it stays RUNNING, suspended
+        for entry_first in (True, False):
+            s = self.running()
+            binned = [self.entry(T0 + 1, mode=None, deletedUtcMs=T0 + H)]
+            closed = [self.segment(s, {"endUtcMs": T0 + H}, T0 + 1)]
+            self.ok(binned + closed if entry_first else closed + binned)
+            self.assertEqual(self.stored(), ("RUNNING", None, [("WORK", False, False)]))
+
+    def test_the_webs_commands_keep_the_rules(self):
+        from datetime import datetime
+
+        from web import ops
+
+        def at(ms):
+            return datetime.fromtimestamp(ms / 1000).astimezone()
+
+        # a segment added to a to-do on the web is its plan (ops.add_segment)
+        self.todo_with_plan()
+        e = Entry.objects.get(uid=self.e)
+        ops.add_segment(self.alice, e, start_at=at(T0 + 30 * H), end_at=at(T0 + 31 * H), kind="WORK")
+        self.assertEqual(self.stored(), ("TODO", None, [("WORK", False, True)] * 3))
+        # started, stopped, reopened, stopped with the return trip
+        e = ops.start(self.alice, todo=e, at=at(T0 + 2 * H))
+        self.assertEqual(self.stored(), ("RUNNING", "WORK", [("WORK", True, False)]))
+        ops.stop(self.alice, e, at=at(T0 + 3 * H))
+        e.refresh_from_db()
+        ops.reopen(self.alice, e, ops.TRAVEL, at=at(T0 + 4 * H))
+        e.refresh_from_db()
+        ops.switch(self.alice, e, ops.WORK, at=at(T0 + 5 * H))
+        e.refresh_from_db()
+        ops.stop_with_return(self.alice, e, at=at(T0 + 6 * H))
+        self.assertEqual(self.stored(), ("CLOSED", None, [("TRAVEL", False, False)] * 2 + [("WORK", False, False)] * 2))
+        # a task ticked off and unticked, one done in the past
+        self.todo_with_plan()
+        e = Entry.objects.get(uid=self.e)
+        ops.tick(self.alice, e)
+        e.refresh_from_db()
+        ops.untick(self.alice, e)
+        self.assertEqual(self.stored(), ("TODO", None, []))
+        e.refresh_from_db()
+        ops.record_past(self.alice, start_at=at(T0 - 2 * H), end_at=at(T0 - H), todo=e)
+        self.assertEqual(self.stored(), ("CLOSED", None, [("WORK", False, False)]))
+
     # ---- data stored before the rules (migrated)
 
     def test_an_old_violation_does_not_block_other_changes(self):
@@ -985,3 +1138,26 @@ class ActivityInvariantTests(SyncTestCase):
                              created_utc=e.created_utc, updated_utc=e.created_utc)
         self.assertEqual(self.push(self.phone, [self.upsert("entry", a, {"notes": "n"}, T0 + 1)])[0]["status"], "applied")
         self.assertEqual(self.push(self.phone, [self.upsert("entry", a, {"status": "CLOSED"}, T0 + 1)])[0]["status"], "applied")
+
+    def test_an_old_open_segment_or_real_segment_is_left_alone(self):
+        # a CLOSED activity with an open segment, a TODO one with a real segment, stored before the rules
+        self.e = uid()
+        self.ok([self.entry(**entry_fields(status="CLOSED"))])
+        e = Entry.objects.get(uid=self.e)
+        open_ = Segment.objects.create(org=self.org, owner=self.alice, entry=e, kind="WORK", start_utc=e.created_utc, zone_id="Europe/Rome")
+        self.ok([self.entry(T0 + 1, notes="n"), self.segment(str(open_.uid), {"note": "x"}, T0 + 1),
+                 self.segment(uid(), self.seg(self.e, start=T0 - 2 * H, end=T0 - H), T0 + 1)])
+        # the repair passes
+        self.ok([self.segment(str(open_.uid), {"endUtcMs": T0 + H}, T0 + 2)])
+        self.assertEqual(self.stored(), ("CLOSED", None, [("WORK", False, False)] * 2))
+        todo = self.e = uid()
+        self.ok([self.entry(**entry_fields(status="TODO"))])
+        e = Entry.objects.get(uid=todo)
+        Segment.objects.create(org=self.org, owner=self.alice, entry=e, kind="WORK", start_utc=e.created_utc,
+                               end_utc=e.created_utc + timedelta(hours=1), zone_id="Europe/Rome")
+        p = uid()
+        self.ok([self.entry(T0 + 1, notes="n"), self.segment(p, self.seg(todo, start=T0 + 24 * H, end=T0 + 25 * H, planned=True), T0 + 1)])
+        # and started as any to-do
+        self.ok([self.delete("segment", p, T0 + 2), self.segment(uid(), self.seg(todo, start=T0 + 2 * H), T0 + 2),
+                 self.entry(T0 + 2, status="RUNNING", mode="WORK")])
+        self.assertEqual(self.stored(), ("RUNNING", "WORK", [("WORK", False, False), ("WORK", True, False)]))

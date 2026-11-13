@@ -74,11 +74,13 @@ answer is `error: "invalid"` with one of these `detail`s, the rule broken.
 | `segment_kind` | `ABSENCE` segments in `ABSENCE` activities only, and only those there | on the change |
 | `planned_not_todo` | planned segments belong to a `TODO` activity | a planned segment: on the change; an activity leaving `TODO` with its plan: at the end of the push |
 | `open_segments` | at most one open segment in an activity | at the end of the push |
+| `closed_open_segment` | a `CLOSED` activity has no open segment (`stop` closes it, `reopen` opens one with `RUNNING`) | at the end of the push |
+| `todo_real_segments` | a `TODO` activity has planned segments only (`start` makes it `RUNNING`, `untick` needs no real segment) | at the end of the push |
 | `mode_mismatch` | `mode` is the kind of the open segment, null when none is open | at the end of the push |
 
 A command is several changes (a switch closes a segment, opens one and sets
-`mode`; a start also deletes the plan), in the order the phone logged them,
-so the rules across an activity and its segments are judged once on what the
+`mode`; a start also deletes the plan; a reopen opens a segment and leaves
+`CLOSED`), in the order the phone logged them, so the rules across an activity and its segments are judged once on what the
 whole push leaves: the push runs in one transaction and, when an activity
 breaks one of them anew, it is applied again without that activity's entry
 and segment changes, which are all answered with that rule (the rest of the
