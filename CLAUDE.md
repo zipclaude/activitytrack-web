@@ -109,3 +109,9 @@ End commit messages with:
 ```
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 ```
+
+## 6. GitHub backup
+
+GitHub (`zipclaude/activitytrack-web`) is a backup of the GitLab project: the workflow in `.github/workflows/ci.yml`
+mirrors `.gitlab-ci.yml`; keep them in step. It starts by hand only ("Run workflow", or a push to a branch `ghtest/*`),
+never on pushes, tags or pull requests. GitLab-only: the job `testvm` and the merge request pipelines.
