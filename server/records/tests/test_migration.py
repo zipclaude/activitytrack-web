@@ -4,7 +4,7 @@
 import uuid
 from datetime import date, datetime, timezone
 
-from django.db import connection
+from django.db import connection, transaction
 from django.db.migrations.executor import MigrationExecutor
 from django.test import TransactionTestCase
 
@@ -128,7 +128,9 @@ class StaleScopeExitTests(TransactionTestCase):
         alice = User.objects.create_user("alice", password="x", org=org)
         for rev, type_ in enumerate(("todo", "absence", "entry", "segment"), start=1):
             ScopeExit.objects.create(org=org, user=alice, type=type_, uid=uuid.uuid4(), rev=rev)
-        engine.next_rev(org), engine.next_rev(org), engine.next_rev(org), engine.next_rev(org)
+        with transaction.atomic():  # select_for_update (next_rev) needs a transaction, as in the sync views
+            for _ in range(4):
+                engine.next_rev(org)
         self.assertEqual({g["type"] for g in engine.pull(alice, 0)["gone"]}, {"todo", "absence", "entry", "segment"})
         import_module("records.migrations.0010_drop_stale_scope_exits").forward(apps, None)
         self.assertEqual({g["type"] for g in engine.pull(alice, 0)["gone"]}, {"entry", "segment"})
