@@ -1,10 +1,11 @@
 # Activity model 1.0, second step: the data (the app's docs/ACTIVITY-MODEL.md §6).
 # The rows go through records.activity_migration.migrate, the same pure function
 # the tests run against the shared cases. Every record it touches gets a new
-# revision and its fields a clock of now: the phones, realigned after their own
-# migration, take the server's version. Not reversible (no reverse code, so
-# migrating back raises IrreversibleError): going back would leave the TODO
-# status, drop the to-dos and the absences' kind.
+# revision and every field it writes a clock of now, so that changes pushed after
+# this migration (a phone's realignment included) carry a later time and win over
+# them; who wins a realignment is decided by the app's rule, not here. Not
+# reversible (no reverse code, so migrating back raises IrreversibleError):
+# going back would leave the TODO status, drop the to-dos and the absences' kind.
 
 import time
 import uuid

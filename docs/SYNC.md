@@ -372,8 +372,11 @@ of the new version (§12.4). The server's data migration
 (`records/migrations/0007`–`0009`) runs the same function as the app's
 (`records/activity_migration.py`, the cases of the app's
 `docs/samples/activity-migration.json`, with deterministic uids); after its
-own migration a phone's first sync is a full realignment and the server's
-version of every migrated record wins.
+own migration a phone's first sync is a full realignment. Where the phone and the
+server migrated a to-do differently, the phone's version wins, unless a policy
+signed by the server is in force on it (then the server's does); a PC interface
+never wins. Local changes not yet synced are pushed. The rule and its cases are
+in the app's `docs/ACTIVITY-MODEL.md` §6.
 
 The server speaks its schema and the `WINDOW` before it (`sync/compat.py`:
 `SCHEMA`, `WINDOW`; two by rule 1, none right after a reset like schema 3).
