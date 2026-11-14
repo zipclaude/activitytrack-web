@@ -293,6 +293,8 @@ class Entry(Synced):
     priority = models.IntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(5)])
     # set iff kind is ABSENCE
     absence_kind = models.CharField(max_length=16, choices=AbsenceKind.choices, null=True, blank=True)
+    # declared complete ("Completa": an activity of travel only, app issue #189); CLOSED activities only
+    completed_utc = models.DateTimeField(null=True, blank=True)
 
     class Meta(Synced.Meta):
         verbose_name_plural = "entries"
@@ -362,6 +364,8 @@ class Attachment(Synced):
     size = models.BigIntegerField(null=True, blank=True)
     # the file arrived (docs/SYNC.md §5 Files)
     has_file = models.BooleanField(default=False)
+    # what the photo, voice note or file is, typed on the phone (app issue #185)
+    description = models.TextField(null=True, blank=True)
 
 
 class Expense(Synced):

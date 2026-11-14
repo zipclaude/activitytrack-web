@@ -25,10 +25,11 @@ MODE_MISMATCH = "mode_mismatch"
 OPEN_SEGMENTS = "open_segments"
 CLOSED_OPEN_SEGMENT = "closed_open_segment"
 TODO_REAL_SEGMENTS = "todo_real_segments"
+COMPLETED_NOT_CLOSED = "completed_not_closed"
 
 # the order a refusal names the first of several rules broken
-ORDER = [KIND_CHANGED, ABSENCE_NOT_CLOSED, SEGMENT_KIND, PLANNED_NOT_TODO, OPEN_SEGMENTS, CLOSED_OPEN_SEGMENT, TODO_REAL_SEGMENTS,
-         MODE_MISMATCH]
+ORDER = [KIND_CHANGED, ABSENCE_NOT_CLOSED, COMPLETED_NOT_CLOSED, SEGMENT_KIND, PLANNED_NOT_TODO, OPEN_SEGMENTS, CLOSED_OPEN_SEGMENT,
+         TODO_REAL_SEGMENTS, MODE_MISMATCH]
 
 
 def before(rec, new):
@@ -36,7 +37,7 @@ def before(rec, new):
     if new:
         return None
     if isinstance(rec, Entry):
-        return {"kind": rec.kind, "status": rec.status}
+        return {"kind": rec.kind, "status": rec.status, "completed": rec.completed_utc}
     if isinstance(rec, Segment):
         return {"kind": rec.kind, "entry_id": rec.entry_id, "planned": rec.planned}
     return None
@@ -51,6 +52,12 @@ def record_rule(rec, old):
         if rec.kind == ActivityKind.ABSENCE and rec.status != EntryStatus.CLOSED and (old is None or rec.status != old["status"]):
             # 2.1: an absence is always CLOSED
             return ABSENCE_NOT_CLOSED
+        if (rec.completed_utc is not None and (rec.status != EntryStatus.CLOSED or rec.kind != ActivityKind.ACTIVITY)
+                and (old is None or old["completed"] is None or rec.status != old["status"])):
+            # 2.4, 3 (app issue #189): only a CLOSED activity is declared complete; the commands that leave
+            # CLOSED (reopen, untick) clear it in the same change. Refused when the change sets it on
+            # another status or leaves CLOSED keeping it, not for a record already stored so.
+            return COMPLETED_NOT_CLOSED
     elif isinstance(rec, Segment):
         moved = old is None or rec.entry_id != old["entry_id"]
         if moved or rec.kind != old["kind"]:

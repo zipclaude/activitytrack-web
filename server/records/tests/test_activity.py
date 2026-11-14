@@ -34,6 +34,7 @@ class DisplayTests(SimpleTestCase):
             plan, due = a.get("plan") or {}, a.get("due") or {}
             activity = SimpleNamespace(
                 kind=a["kind"], status=a["status"], deleted_utc=_dt(a.get("deletedAt")), closed_utc=_dt(a.get("closedAt")),
+                completed_utc=_dt(a.get("completedAt")),
                 client_id="c" if a.get("client") else None,
                 plan_date=date.fromisoformat(plan["day"]) if plan else None, plan_start_min=plan.get("startMin"),
                 duration_min=plan.get("durationMin"),

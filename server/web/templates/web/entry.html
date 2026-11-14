@@ -57,7 +57,7 @@
 </section>
 
 <section class="card"><h2>{% translate "Allegati" %}</h2>
-{% for a in attachments %}<div class="line">{% if a.has_file %}<a href="{% url 'attachment' a.uid %}">{{ a.kind|lower }} · {{ a.mime }}</a>{% else %}{{ a.kind|lower }} · {% translate "file in arrivo" %}{% endif %}{% if a.size %} · {{ a.size|filesizeformat }}{% endif %}</div>
+{% for a in attachments %}<div class="line">{% if a.has_file %}<a href="{% url 'attachment' a.uid %}">{{ a.kind|lower }} · {{ a.mime }}</a>{% else %}{{ a.kind|lower }} · {% translate "file in arrivo" %}{% endif %}{% if a.size %} · {{ a.size|filesizeformat }}{% endif %}{% if a.description %} · {{ a.description }}{% endif %}</div>
 {% empty %}<p class="muted">{% translate "Si aggiungono dall'app." %}</p>{% endfor %}
 </section>
 

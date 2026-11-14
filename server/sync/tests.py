@@ -445,8 +445,8 @@ class CompatTests(SyncTestCase):
 
         phone = self.pair(self.alice)
         head = self.get(phone, "/api/v1/sync/head").json()
-        self.assertEqual((head["schema"], head["minSchema"], head["server"]), (3, 3, __version__))
-        self.get(phone, "/api/v1/sync/head", schema=3, app="1.0.0")
+        self.assertEqual((head["schema"], head["minSchema"], head["server"]), (4, 4, __version__))
+        self.get(phone, "/api/v1/sync/head", schema=4, app="1.0.0")
         self.assertEqual(Device.objects.get(user=self.alice).app_version, "1.0.0")
         too_new = self.get(phone, "/api/v1/sync/head", schema=compat.SCHEMA + 1)
         self.assertEqual((too_new.status_code, too_new.json()["error"]), (426, "server_too_old"))
@@ -461,10 +461,14 @@ class CompatTests(SyncTestCase):
         r = self.client.post("/api/v1/pair", json.dumps({"code": code, "appVersion": "1.0.0"}), content_type="application/json")
         self.assertEqual((r.status_code, r.json()["schema"]), (200, compat.SCHEMA))
 
-    def test_schema_3_accepts_no_older_app(self):
-        """Activity model 1.0: no step reaches back across the to-do's removal (ACTIVITY-MODEL §6)."""
+    def test_schema_4_accepts_no_older_app(self):
+        """
+        Activity model 1.0: no step reaches back across the to-do's removal (ACTIVITY-MODEL §6); schema 4
+        (the declared completion, the attachment's description) reset the window again: a beta-1 app of
+        schema 3 is told to upgrade too.
+        """
         phone = self.pair(self.alice)
-        for schema in (None, 1, 2):
+        for schema in (None, 1, 2, 3):
             for path in ("/api/v1/sync/pull?cursor=0", "/api/v1/policy", "/api/v1/maps"):
                 headers = {"HTTP_AUTHORIZATION": f"Bearer {phone}"}
                 if schema is not None:
@@ -475,48 +479,48 @@ class CompatTests(SyncTestCase):
                 r = self.client.get(path, **headers)
                 self.assertEqual(r.status_code, 426, (schema, path))
                 body = r.json()
-                self.assertEqual((body["error"], body["schema"], body["minSchema"]), ("upgrade_required", 3, 3))
+                self.assertEqual((body["error"], body["schema"], body["minSchema"]), ("upgrade_required", 4, 4))
                 self.assertIn("update the app", body["detail"])
             r = self.client.post("/api/v1/sync/push", json.dumps({"changes": []}), content_type="application/json",
                                  HTTP_AUTHORIZATION=f"Bearer {phone}", **({"HTTP_X_ACTIVITYTRACK_SCHEMA": str(schema)} if schema else {}))
             self.assertEqual((r.status_code, r.json()["error"]), (426, "upgrade_required"))
             # the update offer still reaches it: that is how it learns to update
             r = self.client.get("/api/v1/sync/head", HTTP_AUTHORIZATION=f"Bearer {phone}", **({"HTTP_X_ACTIVITYTRACK_SCHEMA": str(schema)} if schema else {}))
-            self.assertEqual((r.status_code, r.json()["minSchema"]), (200, 3))
-        self.assertEqual(Device.objects.get(user=self.alice).schema, 2)
+            self.assertEqual((r.status_code, r.json()["minSchema"]), (200, 4))
+        self.assertEqual(Device.objects.get(user=self.alice).schema, 3)
 
     def test_an_older_schema_is_translated_both_ways(self):
         from unittest import mock
 
-        # a later schema 4 that renamed the entry's "activity" to "description", speaking schema 3 too
+        # a later schema 5 that renamed the entry's "activity" to "summary", speaking schema 4 too
         def up(change):
             f = dict(change.get("fields") or {})
             if change.get("type") == "entry" and "activity" in f:
-                f["description"] = f.pop("activity")
-                change = {**change, "fields": f, "times": {("description" if k == "activity" else k): v for k, v in (change.get("times") or {}).items()}}
+                f["summary"] = f.pop("activity")
+                change = {**change, "fields": f, "times": {("summary" if k == "activity" else k): v for k, v in (change.get("times") or {}).items()}}
             return change
 
         def down(record):
             f = dict(record.get("fields") or {})
-            if record.get("type") == "entry" and "description" in f:
-                f["activity"] = f.pop("description")
+            if record.get("type") == "entry" and "summary" in f:
+                f["activity"] = f.pop("summary")
                 record = {**record, "fields": f}
             return record
 
-        with mock.patch.object(compat, "SCHEMA", 4), mock.patch.object(compat, "WINDOW", 1), \
-                mock.patch.dict(compat.STEPS, {3: compat.Step(up=up, down=down)}):
+        with mock.patch.object(compat, "SCHEMA", 5), mock.patch.object(compat, "WINDOW", 1), \
+                mock.patch.dict(compat.STEPS, {4: compat.Step(up=up, down=down)}):
             phone = self.pair(self.alice)
             e = uid()
-            # the schema 3 app writes "activity": the server, in schema 4, reads "description"
+            # the schema 4 app writes "activity": the server, in schema 5, reads "summary"
             with mock.patch("sync.engine.apply", wraps=__import__("sync.engine", fromlist=["apply"]).apply) as apply:
                 self.push(phone, [self.upsert("entry", e, {**entry_fields(), "activity": "Riunione"}, T0)])
-                self.assertIn("description", apply.call_args[0][1]["fields"])
-            # a record for a schema 3 app comes back with "activity"
-            records = self.get(phone, "/api/v1/sync/pull?cursor=0", schema=3).json()["records"]
+                self.assertIn("summary", apply.call_args[0][1]["fields"])
+            # a record for a schema 4 app comes back with "activity"
+            records = self.get(phone, "/api/v1/sync/pull?cursor=0", schema=4).json()["records"]
             entry = next(r for r in records if r["uid"] == e)
-            self.assertNotIn("description", entry["fields"])
-            # schema 2 is outside the window of a schema 4 server (4 and the one before)
-            self.assertEqual(self.get(phone, "/api/v1/sync/pull?cursor=0", schema=2).status_code, 426)
+            self.assertNotIn("summary", entry["fields"])
+            # schema 3 is outside the window of a schema 5 server (5 and the one before)
+            self.assertEqual(self.get(phone, "/api/v1/sync/pull?cursor=0", schema=3).status_code, 426)
 
     def test_version_order(self):
         from sync.compat import version_key
@@ -637,10 +641,13 @@ class JsonShapeTests(SyncTestCase):
 
 
 class ActivityWireTests(SyncTestCase):
-    """Wire schema 3 (the app's docs/ACTIVITY-MODEL.md §6.2): the to-do is a state of the entry."""
+    """
+    Wire schema 3 (the app's docs/ACTIVITY-MODEL.md §6.2): the to-do is a state of the entry; schema 4 adds
+    the declared completion (completedUtcMs, app issue #189) and the attachment's description (#185).
+    """
 
     ENTRY_NEW = ["kind", "deletedUtcMs", "closedUtcMs", "externalKey", "dueDate", "dueTimeMin", "planDate", "planStartMin",
-                 "durationMin", "priority", "absenceKind"]
+                 "durationMin", "priority", "absenceKind", "completedUtcMs"]
 
     def test_the_schema(self):
         types = {t["type"]: t for t in wire.schema()}
@@ -652,6 +659,21 @@ class ActivityWireTests(SyncTestCase):
         self.assertEqual((kinds["priority"], kinds["kind"], kinds["dueDate"], kinds["closedUtcMs"]),
                          (("int", False), ("text", False), ("date", True), ("instant", True)))
         self.assertIn({"name": "planned", "kind": "bool", "null": False}, types["segment"]["fields"])
+        self.assertEqual(kinds["completedUtcMs"], ("instant", True))
+        self.assertIn({"name": "description", "kind": "text", "null": True}, types["attachment"]["fields"])
+
+    def test_completion_and_attachment_description_reach_the_other_phone(self):
+        phone, tablet = self.pair(self.alice, "phone"), self.pair(self.alice, "tablet")
+        e, s, a = uid(), uid(), uid()
+        res = self.push(phone, [
+            self.upsert("entry", e, entry_fields(status="CLOSED", closedUtcMs=T0 + H, completedUtcMs=T0 + 2 * H), T0),
+            self.upsert("segment", s, {"entryUid": e, "kind": "TRAVEL", "startUtcMs": T0, "endUtcMs": T0 + H, "zoneId": "Europe/Rome"}, T0),
+            self.upsert("attachment", a, {"entryUid": e, "kind": "PHOTO", "mime": "image/jpeg", "createdUtcMs": T0, "sha256": "",
+                                          "description": "Quadro elettrico"}, T0),
+        ])
+        self.assertEqual([r["status"] for r in res], ["applied"] * 3)
+        got = {r["uid"]: r["fields"] for r in self.pull(tablet)["records"]}
+        self.assertEqual((got[e]["completedUtcMs"], got[a]["description"]), (T0 + 2 * H, "Quadro elettrico"))
 
     def test_sync_schema_command(self):
         from io import StringIO
@@ -857,6 +879,34 @@ class ActivityInvariantTests(SyncTestCase):
         res = self.push(self.phone, [self.entry(T0 + 1, status="TODO")])
         self.assertEqual(self.errors(res), [("invalid", "absence_not_closed")])
         self.assertEqual(Entry.objects.get(uid=self.e).status, "CLOSED")
+
+    # ---- d2: a declared completion only on a CLOSED activity (app issue #189)
+
+    def test_a_completion_only_on_a_closed_activity(self):
+        self.e = uid()
+        res = self.push(self.phone, [self.entry(**entry_fields(completedUtcMs=T0))])
+        self.assertEqual(self.errors(res), [("invalid", "completed_not_closed")])
+        res = self.push(self.phone, [self.entry(**entry_fields(kind="ABSENCE", status="CLOSED", absenceKind="SICK", completedUtcMs=T0))])
+        self.assertEqual(self.errors(res), [("invalid", "completed_not_closed")])
+        # complete, uncomplete, complete again on a closed one
+        self.ok([self.entry(**entry_fields(status="CLOSED", closedUtcMs=T0))])
+        self.ok([self.entry(T0 + 1, completedUtcMs=T0 + 1)])
+        self.ok([self.entry(T0 + 2, completedUtcMs=None)])
+        self.ok([self.entry(T0 + 3, completedUtcMs=T0 + 3)])
+        # a reopen keeping it is refused; the reopen that clears it in the same change passes
+        open_ = uid()
+        res = self.push(self.phone, [self.entry(T0 + 4, status="RUNNING", mode="WORK", closedUtcMs=None), self.segment(open_, self.seg(self.e, start=T0 + 4))])
+        self.assertEqual(self.errors(res)[0], ("invalid", "completed_not_closed"))
+        self.assertEqual(Entry.objects.get(uid=self.e).status, "CLOSED")
+        self.ok([self.entry(T0 + 5, status="RUNNING", mode="WORK", closedUtcMs=None, completedUtcMs=None),
+                 self.segment(open_, self.seg(self.e, start=T0 + 5))])
+        self.assertIsNone(Entry.objects.get(uid=self.e).completed_utc)
+
+    def test_a_completion_stored_before_is_not_refused_for_other_changes(self):
+        self.e = uid()
+        self.ok([self.entry(**entry_fields())])
+        Entry.objects.filter(uid=self.e).update(completed_utc=Entry.objects.get(uid=self.e).created_utc)
+        self.ok([self.entry(T0 + 1, notes="later")])
 
     # ---- e: mode is the open segment's kind; at most one open segment
 

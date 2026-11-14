@@ -57,6 +57,10 @@ earlier ones (without `todoUid`):
 | `planDate`, `planStartMin`, `durationMin` | plan |
 | `priority` | 0 none … 5 emergency, not null |
 | `absenceKind` | `ABSENCE`, `HOLIDAY`, `LEAVE`, `SICK`; set if and only if `kind` is `ABSENCE` |
+| `completedUtcMs` | schema 4: when a `CLOSED` activity (of travel only) was declared complete ("Completa", the app's ACTIVITY-MODEL.md §2.4, issue #189); null otherwise |
+
+An `attachment` has, since schema 4, `description` (text or null): what the photo,
+voice note or file is, typed on the phone (app issue #185).
 
 A `segment` has `kind` `WORK`, `TRAVEL`, `PAUSE` or `ABSENCE` (absences
 only, never planned, never open) and `planned` (default false; never open,
@@ -71,6 +75,7 @@ answer is `error: "invalid"` with one of these `detail`s, the rule broken.
 |---|---|---|
 | `kind_changed` | an activity's `kind` never changes | on the change |
 | `absence_not_closed` | an `ABSENCE` activity is `CLOSED` | on the change |
+| `completed_not_closed` | `completedUtcMs` only on a `CLOSED` activity of kind `ACTIVITY`; `reopen` and `untick` clear it in the same change | on the change (that sets it, or changes the status keeping it) |
 | `segment_kind` | `ABSENCE` segments in `ABSENCE` activities only, and only those there | on the change |
 | `planned_not_todo` | planned segments belong to a `TODO` activity | a planned segment: on the change; an activity leaving `TODO` with its plan: at the end of the push |
 | `open_segments` | at most one open segment in an activity | at the end of the push |
@@ -95,7 +100,7 @@ instants in `UtcMs` (epoch milliseconds UTC), local dates are
 `yyyy-mm-dd` strings (`dueDate`, `planDate`, `date`), times of day are
 minutes (`…Min`), amounts cents (`…Cents`). `manage.py sync_schema` prints
 every type with its fields, kinds and nullability, and the wire schema it
-describes (`{"version": 1, "schema": 3, "types": […]}`): the app's mapping is
+describes (`{"version": 1, "schema": 4, "types": […]}`): the app's mapping is
 checked against it (its `docs/samples/sync-schema.json`).
 
 ## 2. Changes on the phone
@@ -356,8 +361,9 @@ Rules (owner, 2026-10-31), from release 1.0 on:
 
 An integer, independent of the version numbers: it grows only when what
 travels changes (a type, a field, its meaning, a rule of the engine). A
-release that does not touch the sync keeps it. Today: **schema 3** (since
-1.0.0; schema 2 since 0.9.6, schema 1 since 0.9.0).
+release that does not touch the sync keeps it. Today: **schema 4** (since
+the pre-release after 1.0.0-beta-1; schema 3 in 1.0.0-alfa-1 to beta-1,
+schema 2 since 0.9.6, schema 1 since 0.9.0).
 
 Schema 2 (planned absences, issue #158) gave a `todo` `kind`, `color` and
 `planEndDate`; schema 1 apps got them through a step.
@@ -378,8 +384,18 @@ signed by the server is in force on it (then the server's does); a PC interface
 never wins. Local changes not yet synced are pushed. The rule and its cases are
 in the app's `docs/ACTIVITY-MODEL.md` §6.
 
+Schema 4 (app issues #189, #185): `entry` gains `completedUtcMs`, `attachment`
+gains `description`, and the rule `completed_not_closed` (§1.1). A schema 3
+node loses neither field itself (the server and the app ignore a field they do
+not know, the PC library keeps the whole record), but a schema 3 server would
+drop them when a newer app pushes them, and a schema 3 node reopening an
+activity would keep its completion, which the rule refuses. Pre-releases need
+not stay compatible (owner's rule), so the window was reset again
+(`WINDOW = 0`): a schema 3 app gets `upgrade_required`, a schema 4 app a
+schema 3 server's `server_too_old`.
+
 The server speaks its schema and the `WINDOW` before it (`sync/compat.py`:
-`SCHEMA`, `WINDOW`; two by rule 1, none right after a reset like schema 3).
+`SCHEMA`, `WINDOW`; two by rule 1, none right after a reset like schemas 3 and 4).
 Between schema *n* and *n + 1* a `Step` translates both ways:
 `up` brings a change of an older app to the current schema, `down` brings
 a record to the app's schema (pull, push answers, file uploads). CI tests
@@ -391,7 +407,7 @@ Every request of the app names its version and schema:
 
 ```
 X-ActivityTrack-App: 1.0.0
-X-ActivityTrack-Schema: 3
+X-ActivityTrack-Schema: 4
 ```
 
 An app without them (0.9.x) speaks schema 1. The server records the app's

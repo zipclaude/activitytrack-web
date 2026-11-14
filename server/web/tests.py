@@ -720,6 +720,9 @@ class HomeListTests(WorkTests):
         self.assertNotIn("untick", states.allowed("DONE", has_real_segments=True))
         self.assertEqual(states.allowed("DELETED"), ["restore", "purge"])
         self.assertEqual(states.allowed("PAUSE", previous="TRAVEL")[:2], ["resume", "work"])
+        self.assertEqual(states.allowed("INCOMPLETE", completable=True)[0], "complete")
+        self.assertEqual(states.allowed("DONE", completed=True)[0], "uncomplete")
+        self.assertFalse({"complete", "uncomplete"} & set(states.allowed("INCOMPLETE")))
 
     def _running(self, mode="WORK"):
         from web import ops
@@ -860,6 +863,59 @@ class HomeListTests(WorkTests):
         e = self._running()
         self.client.post(f"/attivita/{e.uid}/", {"action": "stop"})
         self.assertNotIn('value="untick"', self.client.get(f"/attivita/{e.uid}/").content.decode())
+
+    def test_a_trip_alone_is_completed_and_the_completion_undone(self):
+        """App issue #189: "Completa" for a closed activity of travel only, "Annulla completamento", reopen clears it."""
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        from records.models import Entry
+        from web import ops
+
+        e = ops.start(self.alice, mode=ops.TRAVEL, at=timezone.now() - timedelta(hours=1))
+        ops.stop(self.alice, Entry.objects.get(uid=e.uid))
+        page = self.client.get(f"/attivita/{e.uid}/").content.decode()
+        self.assertIn("Incompleta", page)
+        self.assertIn('value="complete"', page)
+        self.assertNotIn('value="uncomplete"', page)
+        self.client.post(f"/attivita/{e.uid}/", {"action": "complete"})
+        e.refresh_from_db()
+        self.assertIsNotNone(e.completed_utc)
+        page = self.client.get(f"/attivita/{e.uid}/").content.decode()
+        self.assertIn('value="uncomplete"', page)
+        self.assertNotIn('value="complete"', page)
+        self.assertIn("Fatta", page)
+        # twice is refused (a stale page): nothing changes
+        before = e.completed_utc
+        self.client.post(f"/attivita/{e.uid}/", {"action": "complete"})
+        e.refresh_from_db()
+        self.assertEqual(e.completed_utc, before)
+        self.client.post(f"/attivita/{e.uid}/", {"action": "uncomplete"})
+        e.refresh_from_db()
+        self.assertIsNone(e.completed_utc)
+        # reopen clears it
+        self.client.post(f"/attivita/{e.uid}/", {"action": "complete"})
+        self.client.post(f"/attivita/{e.uid}/", {"action": "reopen_travel"})
+        e.refresh_from_db()
+        self.assertEqual((e.status, e.completed_utc), ("RUNNING", None))
+        # an activity with work is never completed this way
+        w = self._running()
+        self.client.post(f"/attivita/{w.uid}/", {"action": "stop"})
+        self.assertNotIn('value="complete"', self.client.get(f"/attivita/{w.uid}/").content.decode())
+        with self.assertRaises(ops.OpError):
+            ops.complete(self.alice, Entry.objects.get(uid=w.uid))
+
+    def test_an_attachment_shows_its_description(self):
+        """App issue #185: the description typed on the phone shows on the activity page."""
+        from django.utils import timezone
+
+        from records.models import Attachment
+
+        e = self._running()
+        Attachment.objects.create(org=self.alice.org, owner=self.alice, entry=e, kind="PHOTO", mime="image/jpeg",
+                                  created_utc=timezone.now(), description="Quadro elettrico")
+        self.assertContains(self.client.get(f"/attivita/{e.uid}/"), "Quadro elettrico")
 
     def test_absences_are_counted_apart_in_the_report(self):
         from datetime import date

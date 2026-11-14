@@ -71,6 +71,13 @@ def _rows(entries):
     return out
 
 
+def _allowed(e):
+    """The commands of the activity page for [e] (annotated): states.allowed with what its segments say."""
+    segs = ops.real_segments(e)
+    return states.allowed(e.shown, bool(segs), ops.previous_kind(e), completable=A.can_complete(e, segs),
+                          completed=A.can_uncomplete(e))
+
+
 def _is_incomplete(e):
     """A closed activity that is not complete (ACTIVITY-MODEL §2.4), the "details missing"."""
     states.annotate([e])
@@ -117,7 +124,7 @@ def home(request):
         since = now - timedelta(hours=window if window > 0 else 36)
         # the incomplete ones whatever their age (§2.4: some work, and no client or no work segment)
         real = Segment.objects.filter(entry=OuterRef("pk"), deleted=False, planned=False)
-        incomplete_q = Exists(real) & (Q(client__isnull=True) | ~Exists(real.filter(kind=ops.WORK)))
+        incomplete_q = Exists(real) & (Q(client__isnull=True) | ~Exists(real.filter(kind=ops.WORK))) & Q(completed_utc__isnull=True)
         stopped_q = stopped_q.filter(incomplete_q | Q(updated_utc__gte=since))
     rows = {r["e"].uid: r for r in _rows(list(stopped_q.order_by("-updated_utc")[:300]))}
     stopped = [(r["e"], r["end"] or r["e"].closed_utc or r["e"].updated_utc) for r in rows.values()]
@@ -292,7 +299,7 @@ ASKED = {"travel_yes": "travel", "travel_no": "travel", "finish": "stop", "stop_
          "reopen": "reopen_work"}
 # what _command runs
 COMMANDS_RUN = set(SWITCH) | set(ASKED) | {
-    "resume", "start_work", "start_travel", "stop", "reopen_work", "reopen_travel", "tick", "untick", "delete"}
+    "resume", "start_work", "start_travel", "stop", "reopen_work", "reopen_travel", "tick", "untick", "delete", "complete", "uncomplete"}
 
 
 def _command(request, e, action, actor=None):
@@ -306,7 +313,7 @@ def _command(request, e, action, actor=None):
     # only what the state allows (§3), as the buttons: a stale page or a forged post runs nothing else
     if action in COMMANDS_RUN:
         states.annotate([e])
-        if ASKED.get(action, action) not in states.allowed(e.shown, bool(ops.real_segments(e)), ops.previous_kind(e)):
+        if ASKED.get(action, action) not in _allowed(e):
             raise ops.OpError(_("azione non consentita in questo stato"))
     if action == "travel" and e.status == EntryStatus.RUNNING and e.mode == ops.WORK:
         return here + "?ask=travel"
@@ -342,6 +349,10 @@ def _command(request, e, action, actor=None):
         ops.tick(user, e)
     elif action == "untick":
         ops.untick(user, e)
+    elif action == "complete":
+        ops.complete(user, e)
+    elif action == "uncomplete":
+        ops.uncomplete(user, e)
     elif action == "delete":
         ops.to_bin(user, e)
         messages.success(request, _("Attività eliminata: è nel cestino."))
@@ -415,8 +426,7 @@ def entry(request, uid):
     return render(request, "web/entry.html", {
         "ask": ask if ask in ("travel", "stop") else None,
         "return_trip": ask == "stop" and not data.owner_times_fixed(e),
-        "actions": states.buttons(
-            states.allowed(e.shown, bool(ops.real_segments(e)), ops.previous_kind(e))),
+        "actions": states.buttons(_allowed(e)),
         "form_url": "",
         "e": e, "can": can, "fix": fix, "segments": segs, "tags_free": _tags_free(e.owner), "tag_names": [t.name for t in data.tags(e.owner)], "d": {k: data.hm(v) for k, v in data.durations(segs).items()},
         "expenses": Expense.objects.filter(entry=e, deleted=False).order_by("created_utc"),

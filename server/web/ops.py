@@ -231,7 +231,24 @@ def reopen(user, entry, mode=WORK, at=None):
         raise OpError("not closed")
     _alone(user, entry, at)
     _open(user, entry, mode, at)
-    _touch(user, entry, {"status": RUNNING, "mode": mode, "closedUtcMs": None})
+    # leaving CLOSED clears a declared completion (ACTIVITY-MODEL §2.4)
+    _touch(user, entry, {"status": RUNNING, "mode": mode, "closedUtcMs": None, "completedUtcMs": None})
+
+
+@command
+def complete(user, entry):
+    """§3 complete() (app issue #189): an activity of travel only, closed and incomplete, declared complete now."""
+    if not A.can_complete(entry, Segment.objects.filter(entry=entry, deleted=False)):
+        raise OpError("not completable")
+    _touch(user, entry, {"completedUtcMs": engine.now_ms()})
+
+
+@command
+def uncomplete(user, entry):
+    """§3 uncomplete(): the declared completion goes; the activity is judged by §2.4 again."""
+    if not A.can_uncomplete(entry):
+        raise OpError("not completed")
+    _touch(user, entry, {"completedUtcMs": None})
 
 
 @command
@@ -332,7 +349,7 @@ def untick(user, entry):
     """CLOSED without real segments -> TODO: a task ticked off by mistake (§3 untick)."""
     if entry.status != CLOSED or entry.kind != ActivityKind.ACTIVITY or real_segments(entry):
         raise OpError("not ticked")
-    _touch(user, entry, {"status": TODO, "closedUtcMs": None})
+    _touch(user, entry, {"status": TODO, "closedUtcMs": None, "completedUtcMs": None})
 
 
 @command

@@ -90,6 +90,9 @@ COMMANDS = {
     "reopen_work": (_("Riapri · Lavoro"), "play", ""),
     "reopen_travel": (_("Riapri · Viaggio"), "travel", ""),
     "untick": (_("Rimetti da fare"), "restore", ""),
+    # an activity of travel only declared complete (ACTIVITY-MODEL §2.4, app issue #189)
+    "complete": (_("Completa"), "done", ""),
+    "uncomplete": (_("Annulla completamento"), "restore", ""),
     "delete": (_("Elimina"), "bin", "danger"),
     "restore": (_("Ripristina"), "restore", ""),
     "purge": (_("Elimina definitivamente"), "clear", "danger"),
@@ -102,11 +105,13 @@ CONFIRM = {
 }
 
 
-def allowed(state, has_real_segments=True, previous=None):
+def allowed(state, has_real_segments=True, previous=None, completable=False, completed=False):
     """
     The commands ACTIVITY-MODEL §3 allows in a displayed state, in the
     order of the buttons. There is no "suspend" button; [previous] is the
-    kind before a pause (Riprendi goes back to it).
+    kind before a pause (Riprendi goes back to it). [completable]: a closed
+    activity may be declared complete (records.activity.can_complete),
+    [completed]: it was (can_uncomplete).
     """
     if state == A.DELETED:
         return ["restore", "purge"]
@@ -123,7 +128,7 @@ def allowed(state, has_real_segments=True, previous=None):
         return ["resume", other, "stop", "delete"] if previous in (A.WORK, A.TRAVEL) else ["work", "travel", "stop", "delete"]
     if state == A.SUSPENDED:
         return ["work", "travel", "stop", "delete"]
-    out = ["reopen_work", "reopen_travel"]
+    out = (["complete"] if completable else []) + (["uncomplete"] if completed else []) + ["reopen_work", "reopen_travel"]
     return out + (["untick"] if not has_real_segments else []) + ["delete"]
 
 

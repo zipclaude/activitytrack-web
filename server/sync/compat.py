@@ -13,6 +13,12 @@ Schema 3 (activity model 1.0, the app's docs/ACTIVITY-MODEL.md §6) reset the
 window: the to-do became a state of the activity, which no step translates,
 so an app of schema 1 or 2 is told to upgrade ("upgrade_required").
 
+Schema 4 (app issues #189, #185) adds `completedUtcMs` to `entry` and
+`description` to `attachment`. A schema 3 node would ignore them and keep
+the old rule (a reopen that leaves the completion set), so the window was
+reset again: only schema 4 is spoken (pre-releases need not stay compatible,
+owner's rule; app, server and library move together).
+
 The app names its version and schema in two headers on every request; an
 app without them (0.9.x before the rule) speaks schema 1.
 """
@@ -21,7 +27,7 @@ from dataclasses import dataclass
 from typing import Callable
 
 # the current wire schema; raise it with a Step for the previous one
-SCHEMA = 3
+SCHEMA = 4
 # the earlier schemas the server still speaks
 WINDOW = 0
 

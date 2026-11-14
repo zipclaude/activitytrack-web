@@ -5,13 +5,16 @@ database. The to-do is a state of the activity (an Entry), not an entity.
 
 - display(): the displayed state and its "since" (§2.2-2.4), the same table
   as the app and the Python library (cases: tests/data/activity-states.json);
+- can_complete(), can_uncomplete(): the declared completion of §2.4 and §3
+  (app issue #189);
 - absence_segments(): the segments of an absence (§3.1);
 - priority_from_legacy(), absence_kind_of(): the conversions of §5 and §6;
 - trim(): the app's String.trim(), for the texts the migration compares.
 
 Activities and segments are read by attribute, so model instances and plain
 namespaces both work: an activity has kind, status, deleted_utc, closed_utc,
-client_id, plan_date, plan_start_min, duration_min, due_date, due_time_min;
+completed_utc (optional), client_id, plan_date, plan_start_min, duration_min,
+due_date, due_time_min;
 a segment has kind, start_utc, end_utc, planned (aware datetimes, dates).
 """
 
@@ -103,11 +106,33 @@ def late(a, segments, now, zone):
 
 
 def complete(a, segments, missing_required=False):
-    """§2.4: no real segment at all (a ticked task), or a client, some work and every required field."""
+    """
+    §2.4: no real segment at all (a ticked task), or a client, some work and every required field, or
+    declared complete (completed_utc, app issue #189) with every required field.
+    """
     real = _real(segments)
     if not real:
         return True
+    if getattr(a, "completed_utc", None) is not None and not missing_required:
+        return True
     return a.client_id is not None and any(s.kind == WORK for s in real) and not missing_required
+
+
+def can_complete(a, segments):
+    """
+    §3 complete() (app issue #189): a CLOSED, not deleted ACTIVITY shown INCOMPLETE without any real
+    WORK segment (an activity of travel only), not declared complete yet. One with work and no client
+    is fixed by giving it a client. Required plugin fields do not change the answer: without work it
+    is incomplete anyway.
+    """
+    real = _real(segments)
+    return (a.kind == ACTIVITY and a.status == CLOSED and a.deleted_utc is None and getattr(a, "completed_utc", None) is None
+            and bool(real) and not any(s.kind == WORK for s in real))
+
+
+def can_uncomplete(a):
+    """§3 uncomplete(): offered while the completion is set, the activity not deleted."""
+    return a.kind == ACTIVITY and a.deleted_utc is None and getattr(a, "completed_utc", None) is not None
 
 
 def display(a, segments, now, zone, missing_required=False):

@@ -108,7 +108,7 @@ class ActivityMigrationTests(TransactionTestCase):
             self.migrate(self.leaves())
 
     def test_refused_going_back_loses_nothing(self):
-        """The refusal comes at 0008, after 0010 and 0009 are undone: migrating forward again restores 1.0 as it was."""
+        """The refusal comes at 0008, after 0011, 0010 and 0009 are undone: migrating forward again restores 1.0 as it was."""
         from django.db.migrations.exceptions import IrreversibleError
 
         from accounts.models import Organization, User
@@ -125,8 +125,11 @@ class ActivityMigrationTests(TransactionTestCase):
                                zone_id="Europe/Rome", rev=2)
         ActivityAssignment.objects.create(entry=e, by=boss)
 
+        # the columns of 0011 (completed_utc) are not there half-way: the rows are compared without them
+        older = [f.attname for f in Entry._meta.concrete_fields if f.name != "completed_utc"]
+
         def snapshot():
-            return (list(Entry.objects.order_by("uid").values()), list(Segment.objects.order_by("uid").values()),
+            return (list(Entry.objects.order_by("uid").values(*older)), list(Segment.objects.order_by("uid").values()),
                     list(ActivityAssignment.objects.values_list("entry_id", "by_id")))
 
         before = snapshot()
@@ -137,6 +140,7 @@ class ActivityMigrationTests(TransactionTestCase):
             self.assertIn("0008_activity_data", applied)
             self.assertNotIn("0009_drop_todo", applied)
             self.assertNotIn("0010_drop_stale_scope_exits", applied)
+            self.assertNotIn("0011_completed_and_attachment_description", applied)
             self.assertEqual(snapshot(), before)  # the half-way state keeps every row
         finally:
             self.migrate(self.leaves())

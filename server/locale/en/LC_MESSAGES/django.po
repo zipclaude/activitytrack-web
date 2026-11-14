@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ActivityTrack Web\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-12 13:09+0100\n"
+"POT-Creation-Date: 2026-11-14 19:05+0100\n"
 "PO-Revision-Date: 2026-11-05 22:00+0100\n"
 "Last-Translator: ActivityTrack\n"
 "Language-Team: English\n"
@@ -993,6 +993,12 @@ msgstr "Reopen · Travel"
 
 msgid "Rimetti da fare"
 msgstr "Back to to-do"
+
+msgid "Completa"
+msgstr "Complete"
+
+msgid "Annulla completamento"
+msgstr "Undo completion"
 
 msgid "Ripristina"
 msgstr "Restore"

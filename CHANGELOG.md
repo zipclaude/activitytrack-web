@@ -12,10 +12,12 @@ with 0.9 are in its `CHANGELOG.md`.
 
 ### Compatibility
 
-- Sync wire schema 3, with the compatibility window reset: the server speaks schema 3
-  only, and apps and PC interfaces of 0.9 get `426 upgrade_required` ("Aggiorna l'app
-  per sincronizzare"). `sync/head` and the mirrored packages still answer them, so they
-  learn of the new version. The server and every device must be on 1.0.
+- Sync wire schema 4 (3 in alfa-1, alfa-2 and beta-1), with the compatibility window
+  reset: the server speaks schema 4 only, and apps and PC interfaces of 0.9 or of a 1.0
+  pre-release up to beta-1 get `426 upgrade_required` ("Aggiorna l'app per
+  sincronizzare"); a newer app gets `server_too_old` from a beta-1 server. `sync/head`
+  and the mirrored packages still answer them, so they learn of the new version. The
+  server and every device must be updated together.
 - After its own migration each device's first sync is a full realignment. Where the
   device and the server migrated a to-do differently, the phone's version wins, unless a
   server-signed policy is in force on it (then the server's does); a PC interface never
@@ -25,9 +27,14 @@ with 0.9 are in its `CHANGELOG.md`.
 - The to-do stops being a record: wire types `todo` and `absence` are gone (an older
   app pushing them gets `unknown_type`); `entry` drops `todoUid` and gains `kind`,
   `deletedUtcMs`, `closedUtcMs`, `externalKey`, `dueDate`, `dueTimeMin`, `planDate`,
-  `planStartMin`, `durationMin`, `priority`, `absenceKind`; its `status` is `TODO`,
+  `planStartMin`, `durationMin`, `priority`, `absenceKind` and (schema 4)
+  `completedUtcMs`; its `status` is `TODO`,
   `RUNNING` or `CLOSED` (was ACTIVE, SUSPENDED, TO_COMPLETE, CLOSED); `segment` gains
-  `planned` and the kind `ABSENCE` (`docs/SYNC.md` §1.1, §12.1).
+  `planned` and the kind `ABSENCE`; `attachment` gains (schema 4) `description`
+  (`docs/SYNC.md` §1.1, §12.1).
+- A declared completion is refused on an activity that is not `CLOSED`, and a change
+  leaving `CLOSED` must clear it: `invalid` / `completed_not_closed`.
+- The migration `records` 0011 adds `Entry.completed_utc` and `Attachment.description`.
 - Database: the tables of `Todo`, `Absence` and `TodoAssignment` are gone; who
   assigned a to-do is kept by `ActivityAssignment`, only while the activity is `TODO`.
   Code reading the database directly must follow.
@@ -60,6 +67,10 @@ with 0.9 are in its `CHANGELOG.md`.
   reopen (with confirmation), tick and untick; the travel-from-work question; and the
   stop with a return trip (start the return, stop, or stop and add the return as long as
   the outbound travel).
+- An activity made of travel only can be declared complete ("Completa", undone by
+  "Annulla completamento"); reopening it clears the completion (app issue #189).
+- The activity page shows the description of photos, voice notes and files typed on the
+  phone (app issue #185).
 - Agenda and reports: plans drawn dashed and left out of the totals; absences drawn by
   kind and counted apart from work, travel and pause, by kind (an absence without a
   company counts under any company filter).
