@@ -16,7 +16,9 @@ WINDOWS = (-1, 24, 72, 168, 720, 0)
 TODO, MISSING, DONE = "todo", "missing", "done"
 SHOWS = (TODO, MISSING, DONE)
 DEFAULT_SHOW = (TODO, MISSING)
-SECTIONS = ("overdue", "missing", "today", "next", "earlier", "no_date")
+# the order of the sections on the page: the to-dos without a date sit between the next days and the previous ones,
+# not after the done ones (issue #56)
+SECTIONS = ("overdue", "missing", "today", "next", "no_date", "earlier")
 
 
 def _at(day, minute, tz):

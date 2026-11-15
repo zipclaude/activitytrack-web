@@ -669,6 +669,25 @@ class HomeListTests(WorkTests):
         self.assertNotIn("Scaduta", page)
         self.assertNotIn("Fra un mese", page)
 
+    def test_to_dos_without_a_date_sit_between_next_and_previous_days(self):
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        today = timezone.localdate()
+        self.client.post("/dafare/nuova/", {"title": "Prossima", "plan_date": str(today + timedelta(days=1)), "plan_time": "10:00"})
+        self.client.post("/dafare/nuova/", {"title": "Libera"})
+        start = timezone.localtime() - timedelta(hours=30)
+        self.client.post("/attivita/nuova/", {"when": "past", "client": "22222222-2222-4222-8222-222222222222", "activity": "Di ieri",
+                                              "start": start.strftime("%Y-%m-%dT%H:%M"), "end": (start + timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M")})
+        self.client.post(f"/attivita/{self.entry().uid}/", {"action": "save", "client": "22222222-2222-4222-8222-222222222222", "activity": "Di ieri"})
+        r = self.client.get("/?f=1&period=0&show=todo&show=missing&show=done")
+        names = [name for name, _ in r.context["sections"]]
+        self.assertEqual(names, ["next", "no_date", "earlier"])
+        page = r.content.decode()
+        self.assertLess(page.index("Prossima"), page.index("Libera"))
+        self.assertLess(page.index("Libera"), page.index("Di ieri"))
+
     def test_a_started_todo_leaves_the_list(self):
         from records.models import Entry
 
