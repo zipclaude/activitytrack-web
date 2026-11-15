@@ -72,7 +72,7 @@
 <tr><td><b>entries.source</b><div class="doc">{% translate "da dove partono le attività" %}</div></td><td><select name="entries"><option value="">{% translate "non impostato" %}</option>{% for o in c.entriesSource %}<option {% if v.entries == o %}selected{% endif %}>{{ o }}</option>{% endfor %}</select></td></tr>
 <tr><td><b>masterData.source</b><div class="doc">{% translate "chi crea le anagrafiche: importOnly = solo centrali, import e plugin" %}</div></td><td><select name="masterData"><option value="">{% translate "non impostato" %}</option>{% for o in c.masterDataSource %}<option {% if v.masterData == o %}selected{% endif %}>{{ o }}</option>{% endfor %}</select></td></tr>
 <tr><td><b>export.formats</b><div class="doc">{% translate "nessuno selezionato = tutti" %}</div></td><td>{% for o in c.exportFormats %}<label class="inline"><input type="checkbox" name="export" value="{{ o }}" {% if v.export|has:o %}checked{% endif %}> {{ o }}</label>{% endfor %}</td></tr>
-<tr><td><b>ui.language</b><div class="doc">{% translate "lingua dell'app, imposta" %}</div></td><td><select name="language"><option value="">{% translate "non impostato" %}</option>{% for o in c.languages %}<option {% if v.language == o %}selected{% endif %}>{{ o }}</option>{% endfor %}</select></td></tr>
+<tr><td><b>ui.language</b><div class="doc">{% translate "lingua dell'app, imposta" %}</div>{% if errors.language %}<div class="err">{{ errors.language }}</div>{% endif %}</td><td><select name="language"><option value="">{% translate "non impostato" %}</option>{% for o in c.languages %}<option {% if v.language == o %}selected{% endif %}>{{ o }}</option>{% endfor %}</select></td></tr>
 </table></details>
 
 <p><button class="primary">{% translate "Salva" %}</button>

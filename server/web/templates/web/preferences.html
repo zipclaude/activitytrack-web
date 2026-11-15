@@ -19,7 +19,7 @@
 	<fieldset><legend>{% translate "Lingua" %}</legend>
 		{% get_available_languages as languages %}
 		<div class="actions">{% for code, name in languages %}<button name="language" value="{{ code }}" {% if code == LANGUAGE_CODE %}class="primary" aria-current="true"{% endif %}{% if policy_language %} disabled{% endif %}>{{ name }}</button>{% endfor %}</div>
-		{% if policy_language %}<p class="doc">{% translate "Impostato dalla policy" %}</p>{% endif %}
+		{% if policy_invalid %}<p class="err">{% translate "Lingua forzata sull'inglese da una policy con un valore errato" %}</p>{% elif policy_language %}<p class="doc">{% translate "Impostato dalla policy" %}</p>{% endif %}
 		<p class="doc">{% translate "La scelta vale per questo browser; senza una scelta si segue la lingua del browser, altrimenti l'inglese." %}</p>
 	</fieldset>
 </form>

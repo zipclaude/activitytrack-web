@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 """
-The language of a page, as in the app and the PC interfaces: the policy's ui.language for the logged-in user,
-else the one chosen in Preferences (the cookie), else the browser's, else English. An unknown browser language
-is English, not Italian: Italian is the language of the message ids (settings.LANGUAGE_CODE), which is why it has
-no catalogue of its own, and not the fallback.
+The language of a page, as in the app and the PC interfaces: the policy's ui.language for the logged-in user
+(a bad value forces English), else the one chosen in Preferences (the cookie), else the browser's, else
+English. An unknown browser language is English, not Italian: Italian is the language of the message ids
+(settings.LANGUAGE_CODE), which is why it has no catalogue of its own, and not the fallback.
 """
 
 from django.conf import settings
@@ -23,18 +23,25 @@ def _supported(code):
 
 
 def policy_language(user):
-    """The language the user's policy imposes (policy key ui.language), else None."""
+    """
+    (language, invalid): what the user's policy imposes with its ui.language, and whether the value is bad.
+    Absent key: (None, False). A language of the site: (it, False). Any other value, present all the same
+    (an old or imported policy; the editor refuses to save one): English, forced, with invalid set.
+    """
     if user is None or not user.is_authenticated:
-        return None
+        return None, False
     from policies.effective import merged
 
-    code = merged(user).get("ui", {}).get("language")
-    return code if code in dict(settings.LANGUAGES) else None
+    ui = merged(user).get("ui")
+    if not isinstance(ui, dict) or ui.get("language") is None:
+        return None, False
+    code = ui["language"]
+    return (code, False) if code in dict(settings.LANGUAGES) else (FALLBACK, True)
 
 
 def choose(request):
     """Policy, then the cookie of the Preferences page, then the browser's languages, then English."""
-    code = policy_language(getattr(request, "user", None))
+    code = policy_language(getattr(request, "user", None))[0]
     code = code or _supported(request.COOKIES.get(settings.LANGUAGE_COOKIE_NAME, ""))
     if code:
         return code

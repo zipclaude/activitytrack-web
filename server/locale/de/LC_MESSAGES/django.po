@@ -2094,3 +2094,10 @@ msgstr "Eintrag zugewiesen an %(name)s."
 
 msgid "Impostato dalla policy"
 msgstr "Von der Richtlinie festgelegt"
+
+msgid "Lingua forzata sull'inglese da una policy con un valore errato"
+msgstr "Von einer Richtlinie mit ungültigem Wert auf Englisch festgelegt"
+
+#, python-format
+msgid "lingua non supportata: scegli tra %(l)s"
+msgstr "Sprache nicht unterstützt: wähle unter %(l)s"

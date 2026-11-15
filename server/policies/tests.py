@@ -86,6 +86,22 @@ class PolicyTests(PolicyBase):
         for lang, text in labels.items():
             self.assertIn(f'name="field:client:label:{lang}" value="{text}"', page)
 
+    def test_the_editor_refuses_a_language_the_web_does_not_speak(self):
+        # such a policy would force the pages into English (web.language)
+        self.client.force_login(self.admin)
+        for lang in ("de", "es", "it", "en"):
+            self.assertEqual(self.client.post("/policy/org/", {"language": lang}).status_code, 302, lang)
+        before = Policy.objects.get(org=self.org, profile="", user__isnull=True).revision
+        r = self.client.post("/policy/org/", {"language": "fr"}, HTTP_ACCEPT_LANGUAGE="en")
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.context["errors"]["language"], "language not supported: choose among de, en, es, it")
+        self.assertContains(r, "language not supported")
+        self.assertEqual(Policy.objects.get(org=self.org, profile="", user__isnull=True).revision, before)
+        # the policy just saved says en for everyone, the administrator included
+        Policy.objects.all().delete()
+        r = self.client.post("/policy/org/", {"language": "fr"}, HTTP_ACCEPT_LANGUAGE="it")
+        self.assertEqual(r.context["errors"]["language"], "lingua non supportata: scegli tra de, en, es, it")
+
     def test_editor_saves_a_valid_body_and_refuses_errors(self):
         self.client.force_login(self.admin)
         form = {

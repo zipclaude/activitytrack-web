@@ -167,6 +167,9 @@ def _parse(post):
         data["export"] = {"formats": formats}
     if post.get("language") in c["languages"]:
         data["ui"] = {"language": post["language"]}
+    elif post.get("language"):
+        # a policy that names a language nobody speaks would force the pages into English
+        errors["language"] = _("lingua non supportata: scegli tra %(l)s") % {"l": ", ".join(sorted(c["languages"]))}
     return data, errors
 
 

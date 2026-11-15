@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ActivityTrack Web\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-15 10:46+0100\n"
+"POT-Creation-Date: 2026-11-15 10:55+0100\n"
 "PO-Revision-Date: 2026-11-05 22:00+0100\n"
 "Last-Translator: ActivityTrack\n"
 "Language-Team: English\n"
@@ -558,6 +558,10 @@ msgstr "invalid value"
 
 msgid "numero intero"
 msgstr "whole number"
+
+#, python-format
+msgid "lingua non supportata: scegli tra %(l)s"
+msgstr "language not supported: choose among %(l)s"
 
 #, python-format
 msgid "Policy di «%(s)s» eliminata."
@@ -1552,6 +1556,9 @@ msgstr ""
 
 msgid "Lingua"
 msgstr "Language"
+
+msgid "Lingua forzata sull'inglese da una policy con un valore errato"
+msgstr "Forced to English by a policy with an invalid value"
 
 msgid "Impostato dalla policy"
 msgstr "Set by the policy"

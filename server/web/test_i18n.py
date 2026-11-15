@@ -402,19 +402,46 @@ class PolicyLanguageTest(TestCase):
         self.assertContains(r, '<html lang="de"')
         self.assertContains(self.page("fr"), "Datumsformat")
 
-    def test_the_most_specific_policy_decides_and_a_bad_language_is_ignored(self):
+    def test_the_most_specific_policy_decides(self):
         self.policy("de")
         self.policy("es", user=self.user)
         self.assertContains(self.page("it"), "Formato de fecha")
         self.client.logout()
         # without a login there is no policy
         self.assertContains(self.client.get("/login/", HTTP_ACCEPT_LANGUAGE="it"), "Accedi")
+
+    def test_a_bad_language_in_the_policy_forces_english(self):
         from policies.models import Policy
 
-        Policy.objects.all().delete()
-        self.policy("fr")
-        self.client.force_login(self.user)
-        self.assertContains(self.page("de"), "Datumsformat")
+        for bad in ("fr", "", "xx-YY", 5):
+            Policy.objects.all().delete()
+            Policy.objects.create(org=self.org, data={"ui": {"language": bad}}, revision=1)
+            r = self.page("de", cookie="es")
+            self.assertContains(r, "Date format", msg_prefix=repr(bad))
+            self.assertContains(r, '<html lang="en"')
+            self.assertContains(r, "Forced to English by a policy with an invalid value")
+            self.assertNotContains(r, "Set by the policy")
+            for code in ("it", "en", "de", "es"):
+                self.assertRegex(r.content.decode(), rf'<button name="language" value="{code}"[^>]* disabled>')
+        # a language key that is null or missing is no policy at all
+        for absent in ({"ui": {"language": None}}, {"ui": {}}, {"ui": "it"}, {}):
+            Policy.objects.all().delete()
+            Policy.objects.create(org=self.org, data=absent, revision=1)
+            self.client.cookies[settings.LANGUAGE_COOKIE_NAME] = "es"
+            r = self.client.get("/preferenze/", HTTP_ACCEPT_LANGUAGE="de")
+            self.assertContains(r, "Formato de fecha", msg_prefix=repr(absent))
+            self.assertNotContains(r, " disabled>")
+
+    def test_the_note_of_a_bad_policy_is_translated_in_every_language(self):
+        from django.utils.translation import gettext, override
+
+        text = "Lingua forzata sull'inglese da una policy con un valore errato"
+        notes = {"it": text, "en": "Forced to English by a policy with an invalid value",
+                 "de": "Von einer Richtlinie mit ungültigem Wert auf Englisch festgelegt",
+                 "es": "Forzado a inglés por una política con un valor no válido"}
+        for code, note in notes.items():
+            with override(code):
+                self.assertEqual(gettext(text), note)
 
     def test_the_policy_disables_the_language_buttons(self):
         free = self.page("en").content.decode()

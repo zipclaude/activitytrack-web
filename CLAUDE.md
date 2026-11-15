@@ -57,8 +57,8 @@ The whole workflow is in
   management system). German and Spanish address the user informally (du, tú). The
   language is chosen by `web/language.py`: the policy's `ui.language` for the logged-in user,
   else the one chosen in Preferences (the `django_language` cookie; the buttons are disabled
-  while the policy sets one), else the browser's, else **English** (never Italian: the ids are
-  the source text, `LANGUAGE_CODE = "it"` has no catalogue). The tests' client asks for
+  while the policy sets one), else the browser's, else **English** (a policy `ui.language` that is present but not one of ours forces English,
+  and the editor refuses to save one; never Italian: the ids are the source text, `LANGUAGE_CODE = "it"` has no catalogue). The tests' client asks for
   Italian by default (`atweb/testing.py`); a test of another language sends
   `HTTP_ACCEPT_LANGUAGE`.
 - Indentation: Python follows PEP 8 (4 spaces); everything else tabs (`.editorconfig`).

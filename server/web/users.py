@@ -175,4 +175,6 @@ def preferences(request):
         return redirect("preferences")
     from .language import policy_language
 
-    return render(request, "web/preferences.html", {"choices": choices, "policy_language": policy_language(u)})
+    language, invalid = policy_language(u)
+    return render(request, "web/preferences.html", {
+        "choices": choices, "policy_language": language, "policy_invalid": invalid})

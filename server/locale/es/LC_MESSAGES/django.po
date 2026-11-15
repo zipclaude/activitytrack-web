@@ -2065,3 +2065,10 @@ msgstr "Elemento asignado a %(name)s."
 
 msgid "Impostato dalla policy"
 msgstr "Establecido por la política"
+
+msgid "Lingua forzata sull'inglese da una policy con un valore errato"
+msgstr "Forzado a inglés por una política con un valor no válido"
+
+#, python-format
+msgid "lingua non supportata: scegli tra %(l)s"
+msgstr "idioma no admitido: elige entre %(l)s"

@@ -79,7 +79,8 @@ with 0.9 are in its `CHANGELOG.md`.
   browser's, or the one chosen in Preferences). The policy editor takes the field
   labels in the four languages.
 - The language of a page is the policy's `ui.language` (the Preferences buttons are then
-  disabled), else the one chosen in Preferences, else the browser's, else English: a
+  disabled), else the one chosen in Preferences, else the browser's, else English (a `ui.language` that is not one of the four forces English, with a note on
+  the Preferences page; the policy editor refuses to save one): a
   browser language the server does not have gets English, not Italian, as in the app.
 - The agenda adds an absence or an activity already done (when the policy leaves the
   times editable), besides a to-do.
