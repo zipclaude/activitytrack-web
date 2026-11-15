@@ -49,7 +49,7 @@ class LanguagesTest(SimpleTestCase):
 
 
 class CatalogTest(SimpleTestCase):
-    """Each locale/<language>/LC_MESSAGES/django.po is complete and django.mo, which the server reads, is its compilation."""
+    """Each django.po of locale/ is complete; django.mo, which the server reads, is its compilation."""
 
     def need(self, tool):
         if not shutil.which(tool):
@@ -60,7 +60,8 @@ class CatalogTest(SimpleTestCase):
         tmp = tempfile.mkdtemp()
         self.addCleanup(shutil.rmtree, tmp)
         out = os.path.join(tmp, "django.mo")
-        r = subprocess.run(["msgfmt", "--check", "--statistics", "-o", out, str(po(code))], capture_output=True, text=True)
+        cmd = ["msgfmt", "--check", "--statistics", "-o", out, str(po(code))]
+        r = subprocess.run(cmd, capture_output=True, text=True)
         return r, out
 
     def test_every_message_is_translated(self):
@@ -68,7 +69,8 @@ class CatalogTest(SimpleTestCase):
             with self.subTest(code):
                 r, _ = self.compile(code)
                 self.assertEqual(r.returncode, 0, r.stderr)
-                # "460 translated messages." and, when something is left, ", N untranslated messages" or ", N fuzzy translations"
+                # "460 translated messages." and, when something is left, ", N untranslated messages"
+                # or ", N fuzzy translations"
                 self.assertRegex(r.stderr, r"^\d+ translated messages\.\s*$", r.stderr)
 
     def test_the_compiled_catalog_is_the_current_one(self):
@@ -94,7 +96,8 @@ class CatalogTest(SimpleTestCase):
         self.need("xgettext")
         tmp = Path(tempfile.mkdtemp())
         self.addCleanup(shutil.rmtree, tmp)
-        shutil.copytree(SERVER, tmp / "src", ignore=shutil.ignore_patterns("__pycache__", "locale", "static", "*.ini", "*.sqlite3"))
+        skip = shutil.ignore_patterns("__pycache__", "locale", "static", "*.ini", "*.sqlite3")
+        shutil.copytree(SERVER, tmp / "src", ignore=skip)
         (tmp / "src" / "locale" / "en" / "LC_MESSAGES").mkdir(parents=True)
         cwd = os.getcwd()
         os.chdir(tmp / "src")
@@ -107,12 +110,15 @@ class CatalogTest(SimpleTestCase):
         self.assertTrue(fresh.exists())
 
         def compare(have, want):
-            return subprocess.run(["msgcmp", "--use-untranslated", str(have), str(want)], capture_output=True, text=True).stderr
+            cmd = ["msgcmp", "--use-untranslated", str(have), str(want)]
+            return subprocess.run(cmd, capture_output=True, text=True).stderr
 
         for code in ("en",) + tuple(c for c in CATALOGUED if c != "en"):
             with self.subTest(code):
-                self.assertEqual(compare(po(code), fresh), "", f"{code}: texts of the sources missing from the catalogue (manage.py makemessages)")
-                self.assertEqual(compare(fresh, po(code)), "", f"{code}: stale texts in the catalogue (manage.py makemessages --no-obsolete)")
+                self.assertEqual(compare(po(code), fresh), "",
+                                 f"{code}: texts of the sources missing from the catalogue (manage.py makemessages)")
+                self.assertEqual(compare(fresh, po(code)), "",
+                                 f"{code}: stale texts in the catalogue (manage.py makemessages --no-obsolete)")
 
     def test_the_languages_have_the_same_messages(self):
         reference = set(messages_of("en"))
@@ -127,8 +133,9 @@ class CatalogTest(SimpleTestCase):
                     if not key:
                         continue
                     msgid = key[0] if isinstance(key, tuple) else key
-                    self.assertEqual(sorted(PLACEHOLDERS.findall(text)), sorted(PLACEHOLDERS.findall(msgid)), f"{code}: {msgid!r}")
-                    self.assertEqual(sorted(TAGS.findall(text)), sorted(TAGS.findall(msgid)), f"{code}: {msgid!r}")
+                    for found in (PLACEHOLDERS, TAGS):
+                        self.assertEqual(sorted(found.findall(text)), sorted(found.findall(msgid)),
+                                         f"{code}: {msgid!r}")
 
     def test_no_message_keeps_its_italian_by_accident(self):
         # a catalog entry equal to its msgid is fine for loan words ("Report"), but never for a sentence
@@ -142,7 +149,8 @@ class SourcesTest(SimpleTestCase):
     """What the pages say goes through gettext: no text in the templates or in the operations that skips it."""
 
     # words that are the same in every language: names, formats, technical terms
-    NAMES = {"ActivityTrack", "ActivityTrack Web", "CSV", "km", "· ActivityTrack", "© OpenStreetMap contributors · Protomaps"}
+    NAMES = {"ActivityTrack", "ActivityTrack Web", "CSV", "km", "· ActivityTrack",
+             "© OpenStreetMap contributors · Protomaps"}
 
     def test_the_templates_have_no_text_outside_the_translation_tags(self):
         found = []
@@ -150,8 +158,8 @@ class SourcesTest(SimpleTestCase):
             if "locale" in f.parts:
                 continue
             text = f.read_text(encoding="utf-8")
-            for pattern in (r"\{%\s*blocktranslate.*?endblocktranslate\s*%\}", r"\{#.*?#\}", r"\{%\s*comment.*?endcomment\s*%\}",
-                            r"<script.*?</script>", r"<style.*?</style>"):
+            for pattern in (r"\{%\s*blocktranslate.*?endblocktranslate\s*%\}", r"\{#.*?#\}",
+                            r"\{%\s*comment.*?endcomment\s*%\}", r"<script.*?</script>", r"<style.*?</style>"):
                 text = re.sub(pattern, " ", text, flags=re.S)
             # the visible attributes
             for m in re.finditer(r'\b(?:title|placeholder|aria-label|alt)="([^"{}]*[^\W\d_]{3,}[^"{}]*)"', text):
@@ -160,7 +168,8 @@ class SourcesTest(SimpleTestCase):
             for chunk in TAGS.sub("\x00", text).split("\x00"):
                 chunk = chunk.strip()
                 # the policy editor shows the keys of the catalog, which are not text
-                if re.search(r"[^\W\d_]{2,}", chunk) and chunk not in self.NAMES and not re.fullmatch(r"\w+\.\w+", chunk):
+                words = re.search(r"[^\W\d_]{2,}", chunk) and not re.fullmatch(r"\w+\.\w+", chunk)
+                if words and chunk not in self.NAMES:
                     found.append(f"{f.relative_to(SERVER)}: {chunk[:60]!r}")
         # admin/*.html explain themselves in comments written as text: they show nothing
         found = [x for x in found if "templates/admin/" not in x]
@@ -280,9 +289,11 @@ class GermanAndSpanishPagesTest(TestCase):
     def test_the_menu_and_the_pages_are_translated(self):
         self.client.force_login(self.admin)
         for lang, words in (
-            ("de", {"/": ["Stammdaten", "Geräte", "Benutzer", "Karten", "Richtlinie"], "/preferenze/": ["Datumsformat", "Darstellung", "Sprache"],
+            ("de", {"/": ["Stammdaten", "Geräte", "Benutzer", "Karten", "Richtlinie"],
+                    "/preferenze/": ["Datumsformat", "Darstellung", "Sprache"],
                     "/dafare/": ["Aufgaben", "Neue Abwesenheit"], "/agenda/": ["Schon erledigt", "Abwesenheit"]}),
-            ("es", {"/": ["Datos maestros", "Dispositivos", "Usuarios", "Mapas", "Política"], "/preferenze/": ["Formato de fecha", "Aspecto", "Idioma"],
+            ("es", {"/": ["Datos maestros", "Dispositivos", "Usuarios", "Mapas", "Política"],
+                    "/preferenze/": ["Formato de fecha", "Aspecto", "Idioma"],
                     "/dafare/": ["Pendientes", "Nueva ausencia"], "/agenda/": ["Ya hecha", "Ausencia"]}),
         ):
             for url, expected in words.items():
@@ -297,7 +308,8 @@ class GermanAndSpanishPagesTest(TestCase):
         from records import activity as A
         from web import states
 
-        for lang, state, listing in (("en", "To do", "To-dos"), ("de", "Zu erledigen", "Aufgaben"), ("es", "Por hacer", "Pendientes")):
+        names = (("en", "To do", "To-dos"), ("de", "Zu erledigen", "Aufgaben"), ("es", "Por hacer", "Pendientes"))
+        for lang, state, listing in names:
             with override(lang):
                 self.assertEqual(str(states.UI[A.TODO][1]), state)
                 self.assertEqual(gettext("Da fare"), listing)
@@ -326,7 +338,8 @@ class GermanAndSpanishPagesTest(TestCase):
             self.assertIn(f'name="language" value="{code}"', page)
             self.assertIn(name, page)
         for lang, word in (("de", "Datumsformat"), ("es", "Formato de fecha")):
-            r = self.client.post("/i18n/setlang/", {"language": lang, "next": "/preferenze/"}, HTTP_ACCEPT_LANGUAGE="it")
+            form = {"language": lang, "next": "/preferenze/"}
+            r = self.client.post("/i18n/setlang/", form, HTTP_ACCEPT_LANGUAGE="it")
             self.assertRedirects(r, "/preferenze/", fetch_redirect_response=False)
             self.assertEqual(self.client.cookies[settings.LANGUAGE_COOKIE_NAME].value, lang)
             self.assertContains(self.client.get("/preferenze/", HTTP_ACCEPT_LANGUAGE="en"), word)
@@ -341,5 +354,6 @@ class GermanAndSpanishPagesTest(TestCase):
 
     def test_a_sentence_with_a_link_keeps_its_link(self):
         self.client.force_login(self.admin)
-        self.assertContains(self.client.get("/utenti/", HTTP_ACCEPT_LANGUAGE="de"), '<a href="/admin/">erweiterten Administration</a>')
-        self.assertContains(self.client.get("/utenti/", HTTP_ACCEPT_LANGUAGE="es"), '<a href="/admin/">administración avanzada</a>')
+        for lang, link in (("de", "erweiterten Administration"), ("es", "administración avanzada")):
+            r = self.client.get("/utenti/", HTTP_ACCEPT_LANGUAGE=lang)
+            self.assertContains(r, f'<a href="/admin/">{link}</a>')

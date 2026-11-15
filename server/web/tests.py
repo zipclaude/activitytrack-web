@@ -631,14 +631,16 @@ class AgendaTests(WorkTests):
 
         page = self.client.get("/agenda/?view=day&date=2026-10-27").content.decode()
         self.assertIn("/dafare/nuova/?plan_date=2026-10-27&amp;plan_time=09:00", page)
-        absence = "/dafare/nuova/?kind=ABSENCE&amp;plan_date=2026-10-27&amp;next=/agenda/%3Fview%3Dday%26date%3D2026-10-27"
+        absence = ("/dafare/nuova/?kind=ABSENCE&amp;plan_date=2026-10-27"
+                   "&amp;next=/agenda/%3Fview%3Dday%26date%3D2026-10-27")
         self.assertIn(absence, page)
         done = "/attivita/nuova/?when=past&amp;start=2026-10-27T09%3A00&amp;end=2026-10-27T10%3A00"
         self.assertIn(done, page)
         # the absence form opens on the day and comes back to the agenda
         form = self.client.get("/dafare/nuova/?kind=ABSENCE&plan_date=2026-10-27&next=/agenda/%3Fview%3Dday")
         self.assertContains(form, 'value="2026-10-27"')
-        r = self.client.post("/dafare/nuova/", {"kind": "ABSENCE", "plan_date": "2026-10-27", "next": "/agenda/?view=day"})
+        r = self.client.post("/dafare/nuova/",
+                             {"kind": "ABSENCE", "plan_date": "2026-10-27", "next": "/agenda/?view=day"})
         self.assertRedirects(r, "/agenda/?view=day", fetch_redirect_response=False)
         self.assertEqual(Entry.objects.filter(kind="ABSENCE", owner=self.alice).count(), 1)
         # the activity form opens on "Passata", with the slot
@@ -647,7 +649,8 @@ class AgendaTests(WorkTests):
         self.assertContains(form, 'name="start" value="2026-10-27T09:00"')
         self.assertContains(form, 'name="end" value="2026-10-27T10:00"')
         self.assertNotContains(self.client.get("/attivita/nuova/?when=past&start=x"), 'name="start" value="x"')
-        r = self.client.post("/attivita/nuova/", {"when": "past", "client": "22222222-2222-4222-8222-222222222222", "start": "2026-10-27T09:00", "end": "2026-10-27T10:00"})
+        r = self.client.post("/attivita/nuova/", {"when": "past", "client": "22222222-2222-4222-8222-222222222222",
+                                                  "start": "2026-10-27T09:00", "end": "2026-10-27T10:00"})
         self.assertEqual(r.status_code, 302)
         # today: the slot ends in the past
         today = self.client.get("/agenda/").context
@@ -666,11 +669,13 @@ class AgendaTests(WorkTests):
         self.assertIn("when=past", p)
         # times locked: no activity already done, on the form either
         Policy.objects.all().delete()
-        Policy.objects.create(org=self.org, data={"settings": {"editableTimes": {"value": False, "locked": True}}}, revision=1)
+        locked = {"settings": {"editableTimes": {"value": False, "locked": True}}}
+        Policy.objects.create(org=self.org, data=locked, revision=1)
         p = page()
         self.assertNotIn("when=past", p)
         self.assertIn("kind=ABSENCE", p)
-        form = self.client.get("/attivita/nuova/?when=past&start=2026-10-27T09:00&end=2026-10-27T10:00").content.decode()
+        slot = "when=past&start=2026-10-27T09:00&end=2026-10-27T10:00"
+        form = self.client.get(f"/attivita/nuova/?{slot}").content.decode()
         self.assertNotIn('value="past"', form)
         self.assertIn('value="now" checked', form)
         # someone else's agenda: nothing to add
@@ -745,12 +750,16 @@ class HomeListTests(WorkTests):
         from django.utils import timezone
 
         today = timezone.localdate()
-        self.client.post("/dafare/nuova/", {"title": "Prossima", "plan_date": str(today + timedelta(days=1)), "plan_time": "10:00"})
+        tomorrow = str(today + timedelta(days=1))
+        self.client.post("/dafare/nuova/", {"title": "Prossima", "plan_date": tomorrow, "plan_time": "10:00"})
         self.client.post("/dafare/nuova/", {"title": "Libera"})
         start = timezone.localtime() - timedelta(hours=30)
-        self.client.post("/attivita/nuova/", {"when": "past", "client": "22222222-2222-4222-8222-222222222222", "activity": "Di ieri",
-                                              "start": start.strftime("%Y-%m-%dT%H:%M"), "end": (start + timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M")})
-        self.client.post(f"/attivita/{self.entry().uid}/", {"action": "save", "client": "22222222-2222-4222-8222-222222222222", "activity": "Di ieri"})
+        client = "22222222-2222-4222-8222-222222222222"
+        fmt = "%Y-%m-%dT%H:%M"
+        self.client.post("/attivita/nuova/", {"when": "past", "client": client, "activity": "Di ieri",
+                                              "start": start.strftime(fmt),
+                                              "end": (start + timedelta(hours=1)).strftime(fmt)})
+        self.client.post(f"/attivita/{self.entry().uid}/", {"action": "save", "client": client, "activity": "Di ieri"})
         r = self.client.get("/?f=1&period=0&show=todo&show=missing&show=done")
         names = [name for name, _ in r.context["sections"]]
         self.assertEqual(names, ["next", "no_date", "earlier"])

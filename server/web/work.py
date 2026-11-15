@@ -181,8 +181,9 @@ def entry_new(request):
     # opened from the agenda for an activity already done: the form comes on "Passata", with the times of the slot
     when = request.GET.get("when") if request.GET.get("when") in ("started", "past") and not fixed else "now"
     return render(request, "web/entry_new.html", {
-        "companies": data.companies(user), "clients": data.clients(user), "roles": data.roles(user), "todo": todo, "initial": initial,
-        "fixed": fixed, "when": when, "start": _iso_datetime(request.GET.get("start")), "end": _iso_datetime(request.GET.get("end")),
+        "companies": data.companies(user), "clients": data.clients(user), "roles": data.roles(user),
+        "todo": todo, "initial": initial, "fixed": fixed, "when": when,
+        "start": _iso_datetime(request.GET.get("start")), "end": _iso_datetime(request.GET.get("end")),
     })
 
 
