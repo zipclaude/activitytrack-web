@@ -168,7 +168,7 @@ LOGIN_REDIRECT_URL = "home"
 LOGOUT_REDIRECT_URL = "login"
 
 LANGUAGE_CODE = "it"
-LANGUAGES = [("it", "Italiano"), ("en", "English")]
+LANGUAGES = [("it", "Italiano"), ("en", "English"), ("de", "Deutsch"), ("es", "Español")]
 LOCALE_PATHS = [BASE_DIR / "locale"]
 TIME_ZONE = INI.get("server", "time_zone", fallback="Europe/Rome")
 USE_I18N = True

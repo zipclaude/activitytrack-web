@@ -70,7 +70,7 @@ log, the plugins' secrets and their export bookkeeping.
 | API | JSON over HTTPS, bearer device tokens stored hashed; `api/v1/pair`, `sync/push`, `sync/pull`, `sync/head`, `files/<uid>`, `policy` |
 | Attachments | stored under the data folder; sent by Django, or by nginx (`X-Accel-Redirect`) / Apache (`X-Sendfile`) after the permission check |
 | Tenancy | one organisation per installation; every record carries its organisation, ready for several |
-| Languages | Italian first, English |
+| Languages | Italian first, English, German, Spanish |
 | License | GPL-3.0-or-later |
 
 The Android side (schema, triggers, sync engine, pairing, QR reader) lives

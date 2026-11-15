@@ -1,0 +1,2093 @@
+# German translation of ActivityTrack Web.
+msgid ""
+msgstr ""
+"Project-Id-Version: ActivityTrack Web\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-15 09:36+0100\n"
+"PO-Revision-Date: 2026-11-15 12:00+0100\n"
+"Last-Translator: ActivityTrack\n"
+"Language-Team: German\n"
+"Language: de\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Utenti"
+msgstr "Benutzer"
+
+msgid "nome"
+msgstr "Name"
+
+msgid "verifica in due passaggi obbligatoria per"
+msgstr "Zwei-Faktor-Authentifizierung erforderlich für"
+
+msgid "nessuno"
+msgstr "niemanden"
+
+msgid "amministratori"
+msgstr "Administratoren"
+
+msgid "amministratori e responsabili"
+msgstr "Administratoren und Verantwortliche"
+
+msgid "tutti"
+msgstr "alle"
+
+msgid "mappe offline per i telefoni"
+msgstr "Offline-Karten für die Telefone"
+
+msgid "Amministratore"
+msgstr "Administrator"
+
+msgid "Responsabile"
+msgstr "Verantwortlicher"
+
+msgid "Utente"
+msgstr "Benutzer"
+
+msgid "Lettore azienda"
+msgstr "Firmenleser"
+
+msgid "europeo (31/12/2026)"
+msgstr "europäisch (31.12.2026)"
+
+msgid "americano (12/31/2026)"
+msgstr "amerikanisch (12/31/2026)"
+
+msgid "ISO (2026-12-31)"
+msgstr "ISO (2026-12-31)"
+
+msgid "24 ore (18:30)"
+msgstr "24 Stunden (18:30)"
+
+msgid "12 ore (6:30 PM)"
+msgstr "12 Stunden (6:30 PM)"
+
+msgid "come il sistema"
+msgstr "wie das System"
+
+msgid "chiaro"
+msgstr "hell"
+
+msgid "scuro"
+msgstr "dunkel"
+
+msgid "verde"
+msgstr "grün"
+
+msgid "blu"
+msgstr "blau"
+
+msgid "viola"
+msgstr "violett"
+
+msgid "arancione"
+msgstr "orange"
+
+msgid "grigio"
+msgstr "grau"
+
+msgid "profilo"
+msgstr "Profil"
+
+msgid "aziende"
+msgstr "Firmen"
+
+msgid ""
+"Lettore azienda: le attività chiuse di queste aziende. Responsabile: "
+"tutte le attività fatte per queste aziende, oltre a quelle del suo "
+"team."
+msgstr ""
+"Firmenleser: die abgeschlossenen Tätigkeiten dieser Firmen. "
+"Verantwortlicher: alle für diese Firmen erledigten Tätigkeiten, "
+"zusätzlich zu denen seines Teams."
+
+msgid "formato delle date"
+msgstr "Datumsformat"
+
+msgid "formato degli orari"
+msgstr "Zeitformat"
+
+msgid "tema"
+msgstr "Design"
+
+msgid "colore del tema"
+msgstr "Designfarbe"
+
+msgid "telefono"
+msgstr "Telefon"
+
+msgid "PC"
+msgstr "PC"
+
+msgid "modello"
+msgstr "Modell"
+
+msgid "tipo"
+msgstr "Typ"
+
+msgid "versione app"
+msgstr "App-Version"
+
+msgid "schema"
+msgstr "Schema"
+
+msgid "invia ai gestionali"
+msgstr "sendet an die Verwaltungssysteme"
+
+msgid "Mappe offline"
+msgstr "Offline-Karten"
+
+msgid "in coda"
+msgstr "in der Warteschlange"
+
+msgid "in preparazione"
+msgstr "in Vorbereitung"
+
+msgid "pronta"
+msgstr "bereit"
+
+msgid "non riuscita"
+msgstr "fehlgeschlagen"
+
+msgid "latitudine"
+msgstr "Breitengrad"
+
+msgid "longitudine"
+msgstr "Längengrad"
+
+msgid "raggio (km)"
+msgstr "Radius (km)"
+
+msgid "livello di zoom"
+msgstr "Zoomstufe"
+
+msgid "Torino e Piemonte"
+msgstr "Turin und Piemont"
+
+msgid "Aosta e Valle d'Aosta"
+msgstr "Aosta und Aostatal"
+
+msgid "Milano e Lombardia"
+msgstr "Mailand und Lombardei"
+
+msgid "Genova e Liguria"
+msgstr "Genua und Ligurien"
+
+msgid "Trento e Alto Adige"
+msgstr "Trient und Südtirol"
+
+msgid "Venezia e Veneto"
+msgstr "Venedig und Venetien"
+
+msgid "Udine e Friuli"
+msgstr "Udine und Friaul"
+
+msgid "Bologna e Emilia"
+msgstr "Bologna und Emilia"
+
+msgid "Firenze e Toscana"
+msgstr "Florenz und Toskana"
+
+msgid "Ancona e Marche"
+msgstr "Ancona und Marken"
+
+msgid "Perugia e Umbria"
+msgstr "Perugia und Umbrien"
+
+msgid "Roma e Lazio"
+msgstr "Rom und Latium"
+
+msgid "Pescara e Abruzzo"
+msgstr "Pescara und Abruzzen"
+
+msgid "Napoli e Campania"
+msgstr "Neapel und Kampanien"
+
+msgid "Bari e Puglia"
+msgstr "Bari und Apulien"
+
+msgid "Lecce e Salento"
+msgstr "Lecce und Salento"
+
+msgid "Potenza e Basilicata"
+msgstr "Potenza und Basilikata"
+
+msgid "Cosenza e Calabria"
+msgstr "Cosenza und Kalabrien"
+
+msgid "Reggio Calabria e stretto"
+msgstr "Reggio Calabria und Straße von Messina"
+
+msgid "Catania e Sicilia orientale"
+msgstr "Catania und Ostsizilien"
+
+msgid "Palermo e Sicilia occidentale"
+msgstr "Palermo und Westsizilien"
+
+msgid "Cagliari e Sardegna meridionale"
+msgstr "Cagliari und Südsardinien"
+
+msgid "Sassari e Sardegna settentrionale"
+msgstr "Sassari und Nordsardinien"
+
+msgid "Nuova area"
+msgstr "Neues Gebiet"
+
+msgid "Correggi i campi segnati."
+msgstr "Korrigiere die markierten Felder."
+
+msgid "Nome"
+msgstr "Name"
+
+msgid "Latitudine del centro"
+msgstr "Breitengrad des Zentrums"
+
+msgid "Longitudine del centro"
+msgstr "Längengrad des Zentrums"
+
+msgid "Raggio (km)"
+msgstr "Radius (km)"
+
+msgid "Livello di zoom"
+msgstr "Zoomstufe"
+
+msgid ""
+"Più lo zoom è alto, più la mappa è dettagliata e pesa. Il livello 10 "
+"(circa 1:400.000) basta per strade e paesi; il 11 (circa 1:200.000) "
+"aggiunge la ferrovia e più dettaglio."
+msgstr ""
+"Je höher der Zoom, desto detaillierter und größer die Karte. Stufe 10 "
+"(etwa 1:400.000) genügt für Straßen und Orte; Stufe 11 (etwa "
+"1:200.000) fügt die Eisenbahn und mehr Details hinzu."
+
+#, python-format
+msgid "Una mappa non può superare i %(mb)s MB."
+msgstr "Eine Karte darf höchstens %(mb)s MB groß sein."
+
+msgid "Salva"
+msgstr "Speichern"
+
+msgid "Salva e prepara"
+msgstr "Speichern und vorbereiten"
+
+msgid ""
+"Se cambi centro, raggio o zoom, la mappa viene preparata di nuovo; i "
+"telefoni tengono la precedente finché la nuova non è pronta."
+msgstr ""
+"Wenn du Zentrum, Radius oder Zoom änderst, wird die Karte neu "
+"vorbereitet; die Telefone behalten die bisherige, bis die neue bereit "
+"ist."
+
+msgid ""
+"Una mappa basilare (strade, fiumi, laghi, confini, nomi dei luoghi) "
+"delle aree che scegli. I telefoni la scaricano da qui con la "
+"sincronizzazione e la usano per la mappa degli spostamenti quando non "
+"c'è rete o le mappe online sono spente."
+msgstr ""
+"Eine einfache Karte (Straßen, Flüsse, Seen, Grenzen, Ortsnamen) der "
+"Gebiete, die du auswählst. Die Telefone laden sie bei der "
+"Synchronisierung von hier herunter und nutzen sie für die "
+"Bewegungskarte, wenn es kein Netz gibt oder die Online-Karten "
+"ausgeschaltet sind."
+
+msgid "Rendi disponibili le mappe offline ai telefoni"
+msgstr "Offline-Karten für die Telefone bereitstellen"
+
+msgid ""
+"Spento, i telefoni non ricevono nulla e tolgono le mappe che avevano "
+"ricevuto da qui. Le aree restano preparate."
+msgstr ""
+"Ist die Option aus, erhalten die Telefone nichts und entfernen die "
+"Karten, die sie von hier erhalten hatten. Die Gebiete bleiben "
+"vorbereitet."
+
+msgid "Aree"
+msgstr "Gebiete"
+
+msgid "Area"
+msgstr "Gebiet"
+
+msgid "Raggio"
+msgstr "Radius"
+
+msgid "Zoom"
+msgstr "Zoom"
+
+msgid "Stato"
+msgstr "Status"
+
+msgid "Peso"
+msgstr "Größe"
+
+msgid "resta disponibile la versione precedente"
+msgstr "die vorherige Version bleibt verfügbar"
+
+msgid "Aggiorna"
+msgstr "Aktualisieren"
+
+msgid "Prepara"
+msgstr "Vorbereiten"
+
+msgid "Modifica"
+msgstr "Bearbeiten"
+
+msgid ""
+"Eliminare quest'area? I telefoni la tolgono alla prossima "
+"sincronizzazione."
+msgstr ""
+"Dieses Gebiet löschen? Die Telefone entfernen es bei der nächsten "
+"Synchronisierung."
+
+msgid "Elimina"
+msgstr "Löschen"
+
+msgid "Nessuna area. Aggiungine una qui sotto."
+msgstr "Keine Gebiete. Füge unten eines hinzu."
+
+msgid "Aggiungi un'area"
+msgstr "Gebiet hinzufügen"
+
+msgid "Scegli un'area e uno zoom"
+msgstr "Wähle ein Gebiet und einen Zoom"
+
+msgid "Oppure parti da un'area predefinita (100 km intorno a una città)"
+msgstr "Oder beginne mit einem vordefinierten Gebiet (100 km um eine Stadt)"
+
+msgid "Continua"
+msgstr "Weiter"
+
+msgid "Da dove vengono i dati"
+msgstr "Woher die Daten stammen"
+
+#, python-format
+msgid ""
+"I dati sono di OpenStreetMap (ODbL), nel formato di Protomaps; il "
+"server li legge da «%(source)s» (impostazione <code>[maps] "
+"source</code>) senza scaricare l'intero pianeta e ne ritaglia l'area. "
+"Una mappa non può superare i %(mb)s MB."
+msgstr ""
+"Die Daten stammen von OpenStreetMap (ODbL) im Format von Protomaps; "
+"der Server liest sie von «%(source)s» (Einstellung <code>[maps] "
+"source</code>), ohne den ganzen Planeten herunterzuladen, und "
+"schneidet das Gebiet aus. Eine Karte darf höchstens %(mb)s MB groß "
+"sein."
+
+msgid "Il nome è obbligatorio (al massimo 80 caratteri)."
+msgstr "Der Name ist erforderlich (höchstens 80 Zeichen)."
+
+msgid "La latitudine va da -85 a 85."
+msgstr "Der Breitengrad reicht von -85 bis 85."
+
+msgid "La longitudine va da -180 a 180."
+msgstr "Der Längengrad reicht von -180 bis 180."
+
+#, python-format
+msgid "Il raggio va da %(a)s a %(b)s km."
+msgstr "Der Radius reicht von %(a)s bis %(b)s km."
+
+#, python-format
+msgid "Il livello di zoom va da 8 a %(b)s."
+msgstr "Die Zoomstufe reicht von 8 bis %(b)s."
+
+#, python-format
+msgid ""
+"Con questo raggio e questo zoom la mappa supererebbe i %(m)s MB: "
+"abbassa lo zoom o riduci l'area."
+msgstr ""
+"Mit diesem Radius und diesem Zoom würde die Karte %(m)s MB "
+"überschreiten: senke den Zoom oder verkleinere das Gebiet."
+
+msgid "I telefoni ricevono le mappe offline."
+msgstr "Die Telefone erhalten die Offline-Karten."
+
+msgid "I telefoni non ricevono più le mappe offline."
+msgstr "Die Telefone erhalten die Offline-Karten nicht mehr."
+
+msgid "Area salvata: la preparazione è iniziata."
+msgstr "Gebiet gespeichert: die Vorbereitung hat begonnen."
+
+msgid "Area salvata."
+msgstr "Gebiet gespeichert."
+
+msgid "L'area è già in preparazione."
+msgstr "Das Gebiet ist bereits in Vorbereitung."
+
+msgid "La preparazione è iniziata."
+msgstr "Die Vorbereitung hat begonnen."
+
+msgid "Area eliminata: i telefoni la tolgono alla prossima sincronizzazione."
+msgstr ""
+"Gebiet gelöscht: die Telefone entfernen es bei der nächsten "
+"Synchronisierung."
+
+msgid "Policy"
+msgstr "Richtlinie"
+
+msgid ""
+"Ciò che resta «non impostato» segue l'ambito più generale, o l'app "
+"così com'è."
+msgstr ""
+"Was auf «nicht festgelegt» bleibt, folgt dem allgemeineren Bereich "
+"oder der App, wie sie ist."
+
+msgid ""
+"Alcuni telefoni hanno un'app che non conosce queste impostazioni: "
+"rifiutano tutta la policy e restano con la precedente finché non "
+"aggiornano l'app."
+msgstr ""
+"Einige Telefone haben eine App, die diese Einstellungen nicht kennt: "
+"Sie lehnen die ganze Richtlinie ab und behalten die bisherige, bis die "
+"App aktualisiert wird."
+
+#, python-format
+msgid "serve l'app %(since)s"
+msgstr "erfordert die App %(since)s"
+
+msgid "Funzioni"
+msgstr "Funktionen"
+
+msgid "non impostato"
+msgstr "nicht festgelegt"
+
+msgid "attiva"
+msgstr "ein"
+
+msgid "disattivata"
+msgstr "aus"
+
+msgid "Campi"
+msgstr "Felder"
+
+msgid "Visibile"
+msgstr "Sichtbar"
+
+msgid "Modificabile"
+msgstr "Bearbeitbar"
+
+msgid "Obbligatorio"
+msgstr "Pflichtfeld"
+
+msgid "Etichetta per lingua"
+msgstr "Bezeichnung pro Sprache"
+
+msgid "sì"
+msgstr "ja"
+
+msgid "no"
+msgstr "nein"
+
+msgid "Impostazioni"
+msgstr "Einstellungen"
+
+msgid ""
+"Valore iniziale: l'utente lo può cambiare. Bloccato: grigio con il "
+"lucchetto. Nascosto: non compare."
+msgstr ""
+"Anfangswert: Der Benutzer kann ihn ändern. Gesperrt: ausgegraut mit "
+"Schloss. Ausgeblendet: wird nicht angezeigt."
+
+msgid "valore iniziale"
+msgstr "Anfangswert"
+
+msgid "bloccato"
+msgstr "gesperrt"
+
+msgid "nascosto"
+msgstr "ausgeblendet"
+
+msgid "Comportamenti e altro"
+msgstr "Verhalten und mehr"
+
+msgid "da dove partono le attività"
+msgstr "Von wo aus Tätigkeiten beginnen können"
+
+msgid "chi crea le anagrafiche: importOnly = solo centrali, import e plugin"
+msgstr ""
+"wer die Stammdaten anlegt: importOnly = nur zentrale, Importe und "
+"Plugins"
+
+msgid "nessuno selezionato = tutti"
+msgstr "keine Auswahl = alle"
+
+msgid "lingua dell'app, imposta"
+msgstr "Sprache der App, legt sie fest"
+
+msgid "Eliminare la policy di questo ambito?"
+msgstr "Die Richtlinie dieses Bereichs löschen?"
+
+msgid "JSON di questo ambito"
+msgstr "JSON dieses Bereichs"
+
+msgid "Policy delle app"
+msgstr "App-Richtlinien"
+
+msgid ""
+"Ogni telefono e PC riceve la policy dell'organizzazione, poi quella "
+"del profilo dell'utente, poi quella dell'utente: chiave per chiave, la "
+"più specifica vince."
+msgstr ""
+"Jedes Telefon und jeder PC erhält die Richtlinie der Organisation, "
+"dann die des Profils des Benutzers, dann die des Benutzers selbst: "
+"Schlüssel für Schlüssel gewinnt die spezifischste."
+
+msgid "Ambito"
+msgstr "Bereich"
+
+#, python-format
+msgid "revisione %(r)s, %(d)s"
+msgstr "Revision %(r)s, %(d)s"
+
+msgid "Crea"
+msgstr "Erstellen"
+
+msgid "Policy per un utente"
+msgstr "Richtlinie für einen Benutzer"
+
+msgid "Organizzazione"
+msgstr "Organisation"
+
+#, python-format
+msgid "Profilo: %(p)s"
+msgstr "Profil: %(p)s"
+
+#, python-format
+msgid "Utente: %(u)s"
+msgstr "Benutzer: %(u)s"
+
+msgid "essenziale: non si disattiva"
+msgstr "unverzichtbar: lässt sich nicht ausschalten"
+
+msgid "essenziale: resta visibile, attivo e obbligatorio"
+msgstr "unverzichtbar: bleibt sichtbar, aktiv und obligatorisch"
+
+msgid "un campo nascosto o non modificabile non può essere obbligatorio"
+msgstr ""
+"ein ausgeblendetes oder nicht bearbeitbares Feld kann kein Pflichtfeld "
+"sein"
+
+msgid "valore non valido"
+msgstr "ungültiger Wert"
+
+msgid "numero intero"
+msgstr "ganze Zahl"
+
+#, python-format
+msgid "Policy di «%(s)s» eliminata."
+msgstr "Richtlinie von «%(s)s» gelöscht."
+
+#, python-format
+msgid "Policy di «%(s)s» salvata (revisione %(r)d)."
+msgstr "Richtlinie von «%(s)s» gespeichert (Revision %(r)d)."
+
+msgid "Dati"
+msgstr "Daten"
+
+msgid "Sincronizzazione"
+msgstr "Synchronisierung"
+
+msgid "Aggiornamenti"
+msgstr "Aktualisierungen"
+
+msgid "controlla gli aggiornamenti"
+msgstr "nach Updates suchen"
+
+msgid "indirizzo del manifesto"
+msgstr "Adresse des Manifests"
+
+msgid ""
+"Il server cerca le nuove versioni di ActivityTrack in un manifesto "
+"firmato e le segnala ai telefoni e ai PC associati alla prima "
+"sincronizzazione. I dispositivi controllano la firma prima di mostrare "
+"qualsiasi cosa."
+msgstr ""
+"Der Server sucht in einem signierten Manifest nach neuen Versionen von "
+"ActivityTrack und meldet sie den gekoppelten Telefonen und PCs bei der "
+"ersten Synchronisierung. Die Geräte prüfen die Signatur, bevor sie "
+"irgendetwas anzeigen."
+
+#, python-format
+msgid ""
+"È disponibile ActivityTrack Web %(v)s (questo server è alla %(cur)s): "
+"il server non si aggiorna da solo, installa il pacchetto."
+msgstr ""
+"ActivityTrack Web %(v)s ist verfügbar (dieser Server hat %(cur)s): Der "
+"Server aktualisiert sich nicht selbst, installiere das Paket."
+
+msgid "Note di rilascio"
+msgstr "Versionshinweise"
+
+msgid "Dove cercare"
+msgstr "Wo gesucht wird"
+
+msgid "Controlla automaticamente gli aggiornamenti"
+msgstr "Automatisch nach Updates suchen"
+
+msgid "Indirizzo del manifesto (https)"
+msgstr "Adresse des Manifests (https)"
+
+msgid "Canali seguiti"
+msgstr "Verfolgte Kanäle"
+
+msgid "Ogni quante ore (0 = mai da solo)"
+msgstr "Alle wie viele Stunden (0 = nie von selbst)"
+
+msgid ""
+"Conserva i pacchetti su questo server e fai scaricare i dispositivi da "
+"qui"
+msgstr ""
+"Pakete auf diesem Server aufbewahren und die Geräte von hier "
+"herunterladen lassen"
+
+msgid ""
+"Acceso, il server scarica i pacchetti dei canali seguiti, ne controlla "
+"lo SHA-256 e tiene sempre almeno le ultime due versioni. Spento, i "
+"dispositivi scaricano dagli indirizzi del manifesto."
+msgstr ""
+"Eingeschaltet lädt der Server die Pakete der verfolgten Kanäle "
+"herunter, prüft ihren SHA-256 und behält immer mindestens die letzten "
+"zwei Versionen. Ausgeschaltet laden die Geräte von den Adressen im "
+"Manifest herunter."
+
+#, python-format
+msgid "Ora: %(n)s, versioni"
+msgstr "Jetzt: %(n)s, Versionen"
+
+msgid "Controlla ora"
+msgstr "Jetzt prüfen"
+
+msgid ""
+"Dimenticare le versioni già viste? Il prossimo manifesto sarà "
+"accettato anche se è più vecchio o ha versioni più basse."
+msgstr ""
+"Die bereits gesehenen Versionen vergessen? Das nächste Manifest wird "
+"auch akzeptiert, wenn es älter ist oder niedrigere Versionen enthält."
+
+msgid "Azzera le versioni viste"
+msgstr "Gesehene Versionen zurücksetzen"
+
+msgid ""
+"Serve se chi pubblica il manifesto ha ritirato una versione o è "
+"tornato indietro di proposito: il server rifiuta un manifesto più "
+"basso di quello già accettato."
+msgstr ""
+"Nötig, wenn der Herausgeber des Manifests eine Version zurückgezogen "
+"hat oder absichtlich zurückgegangen ist: Der Server lehnt ein Manifest "
+"ab, das niedriger ist als das bereits akzeptierte."
+
+#, python-format
+msgid "Ultimo controllo: %(when)s."
+msgstr "Letzte Prüfung: %(when)s."
+
+msgid "Non ha ancora controllato."
+msgstr "Es wurde noch nicht geprüft."
+
+#, python-format
+msgid "Versione più recente nel manifesto: %(v)s."
+msgstr "Neueste Version im Manifest: %(v)s."
+
+#, python-format
+msgid "Manifesto rifiutato: %(e)s"
+msgstr "Manifest abgelehnt: %(e)s"
+
+msgid "Di chi ci si fida"
+msgstr "Wem vertraut wird"
+
+msgid ""
+"Il server accetta solo manifesti firmati con la chiave dell'app o con "
+"una chiave che accetti qui incollandone l'impronta (SHA-256 del "
+"certificato)."
+msgstr ""
+"Der Server akzeptiert nur Manifeste, die mit dem Schlüssel der App "
+"oder mit einem Schlüssel signiert sind, den du hier akzeptierst, indem "
+"du seinen Fingerabdruck (SHA-256 des Zertifikats) einfügst."
+
+msgid "Chiave"
+msgstr "Schlüssel"
+
+msgid "Impronta SHA-256"
+msgstr "SHA-256-Fingerabdruck"
+
+msgid "Chiave dell'app"
+msgstr "Schlüssel der App"
+
+msgid "Togliere questa chiave? I suoi manifesti non saranno più accettati."
+msgstr ""
+"Diesen Schlüssel entfernen? Seine Manifeste werden nicht mehr "
+"akzeptiert."
+
+msgid "Togli"
+msgstr "Entfernen"
+
+msgid "Impronta da accettare"
+msgstr "Zu akzeptierender Fingerabdruck"
+
+msgid "Nome (facoltativo)"
+msgstr "Name (optional)"
+
+msgid "Accetta questa chiave"
+msgstr "Diesen Schlüssel akzeptieren"
+
+msgid "La chiave di questo server"
+msgstr "Der Schlüssel dieses Servers"
+
+msgid ""
+"Il server firma con questa chiave il manifesto che dà ai dispositivi, "
+"e la sua impronta è nel codice QR dell'associazione: i dispositivi si "
+"fidano solo di questa. Si usa la chiave di [policy] key e cert, se "
+"impostata, altrimenti una generata al primo avvio."
+msgstr ""
+"Der Server signiert mit diesem Schlüssel das Manifest, das er den "
+"Geräten gibt, und sein Fingerabdruck steckt im QR-Code der Kopplung: "
+"Die Geräte vertrauen nur diesem. Verwendet wird der Schlüssel von "
+"[policy] key und cert, falls gesetzt, sonst ein beim ersten Start "
+"erzeugter."
+
+msgid "L'indirizzo del manifesto deve iniziare con https://"
+msgstr "Die Adresse des Manifests muss mit https:// beginnen"
+
+msgid "L'intervallo va da 0 (mai) a 720 ore."
+msgstr "Das Intervall reicht von 0 (nie) bis 720 Stunden."
+
+msgid "Impostazioni salvate."
+msgstr "Einstellungen gespeichert."
+
+msgid ""
+"Fatto: il prossimo manifesto sarà accettato anche se ha versioni più "
+"basse o è più vecchio."
+msgstr ""
+"Erledigt: Das nächste Manifest wird auch akzeptiert, wenn es "
+"niedrigere Versionen hat oder älter ist."
+
+msgid "Controllo avviato: ricarica la pagina fra qualche istante."
+msgstr "Prüfung gestartet: Lade die Seite in einigen Augenblicken neu."
+
+msgid ""
+"L'impronta è un SHA-256: 64 cifre esadecimali (i due punti e gli spazi "
+"non contano)."
+msgstr ""
+"Der Fingerabdruck ist ein SHA-256: 64 Hexadezimalziffern (Doppelpunkte "
+"und Leerzeichen zählen nicht)."
+
+msgid "Questa chiave è già accettata."
+msgstr "Dieser Schlüssel ist bereits akzeptiert."
+
+msgid "Chiave accettata."
+msgstr "Schlüssel akzeptiert."
+
+msgid "Chiave tolta."
+msgstr "Schlüssel entfernt."
+
+msgid "Amministrazione dei dati"
+msgstr "Datenverwaltung"
+
+msgid "Assenza"
+msgstr "Abwesenheit"
+
+msgid "▲ Prima"
+msgstr "▲ Davor"
+
+msgid "Dopo ▼"
+msgstr "Danach ▼"
+
+msgid "Orario esatto"
+msgstr "Genaue Uhrzeit"
+
+msgid "OK"
+msgstr "OK"
+
+msgid "Annulla"
+msgstr "Abbrechen"
+
+msgid "Svuota"
+msgstr "Leeren"
+
+msgid "Oggi"
+msgstr "Heute"
+
+msgid "Adesso"
+msgstr "Jetzt"
+
+msgid "Inizio"
+msgstr "Beginn"
+
+msgid "Fine"
+msgstr "Ende"
+
+msgid "Tocca l'ultima casella"
+msgstr "Tippe auf das letzte Feld"
+
+msgid "Data o ora non valida"
+msgstr "Ungültiges Datum oder ungültige Uhrzeit"
+
+msgid "Data"
+msgstr "Datum"
+
+msgid "Ora"
+msgstr "Uhrzeit"
+
+msgid "gg/mm/aaaa"
+msgstr "tt/mm/jjjj"
+
+msgid "mm/gg/aaaa"
+msgstr "mm/tt/jjjj"
+
+msgid "aaaa-mm-gg"
+msgstr "jjjj-mm-tt"
+
+msgid "hh:mm"
+msgstr "hh:mm"
+
+msgid "h:mm AM"
+msgstr "h:mm AM"
+
+msgid "verde acqua"
+msgstr "petrol"
+
+msgid "lime"
+msgstr "hellgrün"
+
+msgid "giallo"
+msgstr "gelb"
+
+msgid "rosso"
+msgstr "rot"
+
+msgid "magenta"
+msgstr "magenta"
+
+msgid "indaco"
+msgstr "indigo"
+
+msgid "marrone"
+msgstr "braun"
+
+msgid "Aziende"
+msgstr "Firmen"
+
+msgid "Clienti"
+msgstr "Kunden"
+
+msgid "Ruoli"
+msgstr "Rollen"
+
+msgid "Tag"
+msgstr "Tags"
+
+msgid "Scelte rapide"
+msgstr "Schnellauswahl"
+
+msgid "Materiali"
+msgstr "Material"
+
+msgid "Eliminato."
+msgstr "Gelöscht."
+
+msgid "il nome è obbligatorio"
+msgstr "Der Name ist erforderlich"
+
+msgid "Salvato."
+msgstr "Gespeichert."
+
+#, python-format
+msgid "esiste già un tag «%(n)s»"
+msgstr "Es gibt bereits einen Tag «%(n)s»"
+
+msgid "Codice di accesso ActivityTrack"
+msgstr "ActivityTrack-Anmeldecode"
+
+#, python-format
+msgid ""
+"Il codice per accedere ad ActivityTrack è %(code)s. Vale 10 minuti. Se "
+"non stai accedendo tu, avvisa l'amministratore."
+msgstr ""
+"Dein Code für die Anmeldung bei ActivityTrack lautet %(code)s. Er gilt "
+"10 Minuten. Wenn du dich nicht gerade anmeldest, informiere den "
+"Administrator."
+
+#, python-format
+msgid "Puoi chiedere un nuovo codice tra %(seconds)d secondi."
+msgstr "Du kannst in %(seconds)d Sekunden einen neuen Code anfordern."
+
+#, python-format
+msgid "Nuovo codice inviato a %(email)s."
+msgstr "Neuer Code an %(email)s gesendet."
+
+msgid "Troppi codici sbagliati: accedi di nuovo."
+msgstr "Zu viele falsche Codes: Melde dich erneut an."
+
+msgid "Codice non valido."
+msgstr "Ungültiger Code."
+
+msgid ""
+"Serve un indirizzo email nel tuo utente e la posta configurata sul "
+"server."
+msgstr ""
+"Dein Benutzer braucht eine E-Mail-Adresse und der Server einen "
+"konfigurierten Mailversand."
+
+#, python-format
+msgid "Codice inviato a %(email)s."
+msgstr "Code an %(email)s gesendet."
+
+msgid "Verifica in due passaggi attiva."
+msgstr "Zwei-Faktor-Authentifizierung ist aktiv."
+
+msgid "La password non è corretta."
+msgstr "Das Passwort ist nicht korrekt."
+
+msgid ""
+"L'organizzazione chiede la verifica in due passaggi: puoi cambiare "
+"metodo, non toglierla."
+msgstr ""
+"Die Organisation verlangt die Zwei-Faktor-Authentifizierung: Du kannst "
+"die Methode wechseln, aber sie nicht entfernen."
+
+msgid "Verifica in due passaggi disattivata."
+msgstr "Zwei-Faktor-Authentifizierung ist ausgeschaltet."
+
+msgid ""
+"L'organizzazione chiede la verifica in due passaggi: attivala per "
+"continuare."
+msgstr ""
+"Die Organisation verlangt die Zwei-Faktor-Authentifizierung: Aktiviere "
+"sie, um fortzufahren."
+
+msgid "la voce è stata eliminata"
+msgstr "der Eintrag wurde gelöscht"
+
+msgid "la voce non è più da fare"
+msgstr "der Eintrag ist nicht mehr offen"
+
+msgid "la fine deve seguire l'inizio"
+msgstr "das Ende muss nach dem Beginn liegen"
+
+msgid "l'attività non è in corso"
+msgstr "die Tätigkeit läuft nicht"
+
+msgid "l'attività non è chiusa"
+msgstr "die Tätigkeit ist nicht abgeschlossen"
+
+msgid "l'attività non può essere dichiarata completa"
+msgstr "die Tätigkeit kann nicht als vollständig erklärt werden"
+
+msgid "l'attività non è dichiarata completa"
+msgstr "die Tätigkeit ist nicht als vollständig erklärt"
+
+msgid "servono un importo e una descrizione"
+msgstr "ein Betrag und eine Beschreibung sind erforderlich"
+
+msgid "la voce non è stata spuntata"
+msgstr "der Eintrag wurde nicht abgehakt"
+
+msgid "la voce non è nel cestino"
+msgstr "der Eintrag ist nicht im Papierkorb"
+
+msgid "non c'è un viaggio di andata da ripetere al ritorno"
+msgstr ""
+"es gibt keine Hinfahrt, die auf der Rückfahrt wiederholt werden könnte"
+
+msgid "i giorni non sono validi"
+msgstr "die Tage sind ungültig"
+
+msgid "chi la riceve ha già un'attività con la stessa chiave esterna"
+msgstr ""
+"der Empfänger hat bereits eine Tätigkeit mit demselben externen "
+"Schlüssel"
+
+msgid "Eliminata"
+msgstr "Gelöscht"
+
+msgid "In ritardo"
+msgstr "Überfällig"
+
+msgid "Pianificata"
+msgstr "Geplant"
+
+msgctxt "stato"
+msgid "Da fare"
+msgstr "Zu erledigen"
+
+msgid "Lavoro"
+msgstr "Arbeit"
+
+msgid "Viaggio"
+msgstr "Reise"
+
+msgid "Pausa"
+msgstr "Pause"
+
+msgid "Sospesa"
+msgstr "Unterbrochen"
+
+msgid "Fatta"
+msgstr "Erledigt"
+
+msgid "Incompleta"
+msgstr "Unvollständig"
+
+msgid "Ferie"
+msgstr "Urlaub"
+
+msgid "Permesso"
+msgstr "Freistellung"
+
+msgid "Malattia"
+msgstr "Krankheit"
+
+msgid "Nessuna"
+msgstr "Keine"
+
+msgid "Bassa"
+msgstr "Niedrig"
+
+msgid "Media"
+msgstr "Mittel"
+
+msgid "Alta"
+msgstr "Hoch"
+
+msgid "Urgente"
+msgstr "Dringend"
+
+msgid "Emergenza"
+msgstr "Notfall"
+
+msgid "Avvia lavoro"
+msgstr "Arbeit starten"
+
+msgid "Riprendi"
+msgstr "Fortsetzen"
+
+msgid "Stop"
+msgstr "Stopp"
+
+msgid "Riapri · Lavoro"
+msgstr "Wieder öffnen · Arbeit"
+
+msgid "Riapri · Viaggio"
+msgstr "Wieder öffnen · Reise"
+
+msgid "Rimetti da fare"
+msgstr "Wieder auf «Zu erledigen» setzen"
+
+msgid "Completa"
+msgstr "Vervollständigen"
+
+msgid "Annulla completamento"
+msgstr "Abschluss aufheben"
+
+msgid "Ripristina"
+msgstr "Wiederherstellen"
+
+msgid "Elimina definitivamente"
+msgstr "Endgültig löschen"
+
+msgid "Riaprire l'attività?"
+msgstr "Die Tätigkeit wieder öffnen?"
+
+msgid "Eliminare questa attività? Va nel cestino e si può ripristinare."
+msgstr ""
+"Diese Tätigkeit löschen? Sie kommt in den Papierkorb und kann "
+"wiederhergestellt werden."
+
+msgid "Eliminare definitivamente? Non si può annullare."
+msgstr "Endgültig löschen? Das lässt sich nicht rückgängig machen."
+
+msgid "Azienda"
+msgstr "Firma"
+
+msgid "Cliente"
+msgstr "Kunde"
+
+msgid "Ruolo"
+msgstr "Rolle"
+
+msgid "Descrizione"
+msgstr "Beschreibung"
+
+msgid "Senza cliente"
+msgstr "Ohne Kunde"
+
+msgid "senza descrizione"
+msgstr "ohne Beschreibung"
+
+msgid "registrati"
+msgstr "erfasst"
+
+msgid "scad."
+msgstr "fällig"
+
+msgid "Avvia"
+msgstr "Starten"
+
+msgid "Agenda"
+msgstr "Agenda"
+
+msgid "Da fare"
+msgstr "Aufgaben"
+
+msgid "Già svolta"
+msgstr "Schon erledigt"
+
+msgid "Vista"
+msgstr "Ansicht"
+
+msgid "Giorno"
+msgstr "Tag"
+
+msgid "Settimana"
+msgstr "Woche"
+
+msgid "Mese"
+msgstr "Monat"
+
+msgid "Persona"
+msgstr "Person"
+
+msgid "Tutti i tag"
+msgstr "Alle Tags"
+
+msgid "Filtra"
+msgstr "Filtern"
+
+msgid "Precedente"
+msgstr "Zurück"
+
+msgid "Rendicontato nel periodo"
+msgstr "Im Zeitraum erfasst"
+
+msgid "Successivo"
+msgstr "Weiter"
+
+msgid "giorno"
+msgstr "Tag"
+
+msgid "scade"
+msgstr "fällig"
+
+msgid "Riduci"
+msgstr "Verkleinern"
+
+msgid "Ingrandisci"
+msgstr "Vergrößern"
+
+msgid ""
+"Un clic su uno spazio libero pianifica una nuova voce Da fare a "
+"quell'ora."
+msgstr ""
+"Ein Klick auf einen freien Platz plant dort eine neue Aufgabe für "
+"diese Uhrzeit."
+
+msgid "Menu"
+msgstr "Menü"
+
+msgctxt "menu"
+msgid "Home"
+msgstr "Start"
+
+msgid "Report"
+msgstr "Bericht"
+
+msgid "Attività"
+msgstr "Tätigkeiten"
+
+msgid "Cestino"
+msgstr "Papierkorb"
+
+msgid "Anagrafiche"
+msgstr "Stammdaten"
+
+msgid "Dispositivi"
+msgstr "Geräte"
+
+msgid "Mappe"
+msgstr "Karten"
+
+msgid "Sicurezza dell’account"
+msgstr "Kontosicherheit"
+
+msgid "Preferenze"
+msgstr "Einstellungen"
+
+msgid "Esci"
+msgstr "Abmelden"
+
+msgid "Altro"
+msgstr "Mehr"
+
+msgid "Sicurezza dell'account"
+msgstr "Kontosicherheit"
+
+msgid ""
+"Le attività eliminate: si possono ripristinare, o eliminare per sempre "
+"(qui soltanto). Eliminare per sempre vale anche sui dispositivi."
+msgstr ""
+"Gelöschte Tätigkeiten: Du kannst sie wiederherstellen oder endgültig "
+"löschen (nur hier). Das endgültige Löschen gilt auch auf den Geräten."
+
+msgid "eliminata"
+msgstr "gelöscht"
+
+msgid "Il cestino è vuoto."
+msgstr "Der Papierkorb ist leer."
+
+msgid "Nuova"
+msgstr "Neu"
+
+msgid "Dal"
+msgstr "Von"
+
+msgid "Al"
+msgstr "Bis"
+
+msgid "tutte"
+msgstr "alle"
+
+msgid "Nessuna attività nel periodo."
+msgstr "Keine Tätigkeiten im Zeitraum."
+
+msgid ""
+"Da verificare: dopo una sincronizzazione due periodi si sovrappongono. "
+"Correggi gli orari."
+msgstr ""
+"Zu prüfen: Nach einer Synchronisierung überschneiden sich zwei "
+"Zeiträume. Korrigiere die Zeiten."
+
+msgid "Hai completato l'attività lavorativa?"
+msgstr "Hast du die Arbeitstätigkeit abgeschlossen?"
+
+msgid ""
+"Sì: l'attività si chiude e parte un viaggio senza attività. No: il "
+"viaggio continua in questa attività."
+msgstr ""
+"Ja: Die Tätigkeit wird abgeschlossen und eine Reise ohne Tätigkeit "
+"beginnt. Nein: Die Reise läuft in dieser Tätigkeit weiter."
+
+msgid "Sì"
+msgstr "Ja"
+
+msgid "No"
+msgstr "Nein"
+
+msgid "Come termina l'attività?"
+msgstr "Wie endet die Tätigkeit?"
+
+msgid "L'attività ha un viaggio di andata: puoi avviare il ritorno."
+msgstr "Die Tätigkeit hat eine Hinfahrt: Du kannst die Rückfahrt starten."
+
+msgid "Avvia viaggio di ritorno"
+msgstr "Rückfahrt starten"
+
+msgid "Termina l'attività"
+msgstr "Tätigkeit beenden"
+
+msgid "Termina l'attività ed aggiungi il viaggio di ritorno"
+msgstr "Tätigkeit beenden und die Rückfahrt hinzufügen"
+
+msgid "Dettagli"
+msgstr "Details"
+
+msgid "Località"
+msgstr "Ort"
+
+msgid "Note"
+msgstr "Notizen"
+
+msgid "rete urgente"
+msgstr "dringendes Netzwerk"
+
+msgid "Solo i tag dell'anagrafica:"
+msgstr "Nur die Tags der Stammdaten:"
+
+msgid "Orari"
+msgstr "Zeiten"
+
+msgid "Tipo"
+msgstr "Typ"
+
+msgid "in corso"
+msgstr "läuft"
+
+msgid ""
+"La policy blocca gli orari: si possono aggiungere viaggi e pause; li "
+"corregge un amministratore o il responsabile."
+msgstr ""
+"Die Richtlinie sperrt die Zeiten: Reisen und Pausen können hinzugefügt "
+"werden; ein Administrator oder der Verantwortliche korrigiert sie."
+
+msgid "Aggiungi"
+msgstr "Hinzufügen"
+
+msgid "Spese"
+msgstr "Ausgaben"
+
+msgid "Parcheggio"
+msgstr "Parkplatz"
+
+msgid "Allegati"
+msgstr "Anhänge"
+
+msgid "file in arrivo"
+msgstr "Datei unterwegs"
+
+msgid "Si aggiungono dall'app."
+msgstr "Sie werden über die App hinzugefügt."
+
+msgid "Nuova attività"
+msgstr "Neue Tätigkeit"
+
+#, python-format
+msgid "Dalla voce Da fare «%(t)s»."
+msgstr "Aus der Aufgabe «%(t)s»."
+
+msgid "Registra"
+msgstr "Erfassen"
+
+msgid "Già iniziata"
+msgstr "Schon begonnen"
+
+msgid "Passata"
+msgstr "Vergangen"
+
+#, python-format
+msgid "Ciao %(name)s"
+msgstr "Hallo %(name)s"
+
+msgid "Associa il telefono o il PC"
+msgstr "Telefon oder PC koppeln"
+
+msgid ""
+"Collega l'app ActivityTrack a questo server: i dati restano "
+"sincronizzati nei due sensi."
+msgstr ""
+"Verbinde die ActivityTrack-App mit diesem Server: Die Daten bleiben in "
+"beide Richtungen synchronisiert."
+
+msgid "Associa un dispositivo"
+msgstr "Gerät koppeln"
+
+msgid "Nessuna attività in corso."
+msgstr "Keine laufenden Tätigkeiten."
+
+msgid "Periodo"
+msgstr "Zeitraum"
+
+msgid "Tutti"
+msgstr "Alle"
+
+msgid "3 gg"
+msgstr "3 Tage"
+
+msgid "7 gg"
+msgstr "7 Tage"
+
+msgid "30 gg"
+msgstr "30 Tage"
+
+msgid "Dettagli mancanti"
+msgstr "Angaben fehlen"
+
+msgid "Fatte"
+msgstr "Erledigt"
+
+msgid "Solo da fare"
+msgstr "Nur Aufgaben"
+
+msgid "Solo fatte"
+msgstr "Nur erledigt"
+
+msgid "Tutte le aziende"
+msgstr "Alle Firmen"
+
+msgid "Prossimi giorni"
+msgstr "Nächste Tage"
+
+msgid "Giorni precedenti"
+msgstr "Früher"
+
+msgid "Senza data"
+msgstr "Ohne Datum"
+
+msgid "Niente da mostrare con questi filtri."
+msgstr "Mit diesen Filtern gibt es nichts anzuzeigen."
+
+msgid "Tutte le Da fare"
+msgstr "Alle Aufgaben"
+
+msgid "Accesso"
+msgstr "Anmeldung"
+
+msgid "Accedi con l'utente che ti ha dato l'amministratore."
+msgstr ""
+"Melde dich mit dem Benutzer an, den dir der Administrator gegeben hat."
+
+msgid "Troppi tentativi sbagliati: riprova fra qualche minuto."
+msgstr "Zu viele falsche Versuche: Versuche es in einigen Minuten erneut."
+
+msgid "Nome utente o password errati."
+msgstr "Benutzername oder Passwort falsch."
+
+msgid "Nome utente"
+msgstr "Benutzername"
+
+msgid "Password"
+msgstr "Passwort"
+
+msgid "Accedi"
+msgstr "Anmelden"
+
+msgid "Codice di accesso"
+msgstr "Anmeldecode"
+
+msgid "Verifica in due passaggi"
+msgstr "Zwei-Faktor-Authentifizierung"
+
+msgid "Scrivi il codice di 6 cifre dell'app di autenticazione."
+msgstr "Gib den 6-stelligen Code der Authentifizierungs-App ein."
+
+#, python-format
+msgid "Scrivi il codice di 6 cifre inviato a %(email)s."
+msgstr "Gib den 6-stelligen Code ein, der an %(email)s gesendet wurde."
+
+msgid "Codice"
+msgstr "Code"
+
+msgid "Invia un nuovo codice"
+msgstr "Neuen Code senden"
+
+msgid "Senza il telefono o la posta: scrivi uno dei codici di recupero."
+msgstr "Ohne Telefon oder E-Mail: Gib einen der Wiederherstellungscodes ein."
+
+msgid "Torna all'accesso"
+msgstr "Zurück zur Anmeldung"
+
+msgid "nuova"
+msgstr "neu"
+
+msgid "Testo"
+msgstr "Text"
+
+msgid "Codice nel gestionale"
+msgstr "Code im Verwaltungssystem"
+
+msgid "Unità"
+msgstr "Einheit"
+
+msgid "Costo unitario (€)"
+msgstr "Stückpreis (€)"
+
+msgid "Una parola: minuscole, lettere e numeri; gli spazi diventano «-»."
+msgstr ""
+"Ein Wort: Kleinbuchstaben, Buchstaben und Ziffern; Leerzeichen werden "
+"zu «-»."
+
+msgid "Colore"
+msgstr "Farbe"
+
+msgid "nessun colore"
+msgstr "keine Farbe"
+
+msgid "Archiviata"
+msgstr "Archiviert"
+
+msgid ""
+"Centrale: la vedono tutti, la modificano amministratori e responsabili"
+msgstr ""
+"Zentral: Alle sehen sie, Administratoren und Verantwortliche "
+"bearbeiten sie"
+
+msgid "Eliminare? Si elimina anche sui dispositivi."
+msgstr "Löschen? Es wird auch auf den Geräten gelöscht."
+
+msgid "archiviata"
+msgstr "archiviert"
+
+msgid "personale"
+msgstr "persönlich"
+
+msgid "centrale"
+msgstr "zentral"
+
+msgid "Nessun elemento."
+msgstr "Keine Einträge."
+
+msgid "Cambia password"
+msgstr "Passwort ändern"
+
+msgid "Password attuale"
+msgstr "Aktuelles Passwort"
+
+msgid "Nuova password"
+msgstr "Neues Passwort"
+
+msgid "Ripeti la nuova password"
+msgstr "Neues Passwort wiederholen"
+
+msgid ""
+"Telefono: nell'app apri Impostazioni → Sincronizzazione → Associa a un "
+"server e inquadra il codice."
+msgstr ""
+"Telefon: Öffne in der App Einstellungen → Synchronisierung → Mit einem "
+"Server koppeln und scanne den Code."
+
+msgid ""
+"PC: in ActivityTrack Desktop scegli «Associa a un server» e incolla il "
+"collegamento qui sotto."
+msgstr ""
+"PC: Wähle in ActivityTrack Desktop «Mit einem Server koppeln» und füge "
+"den Link unten ein."
+
+#, python-format
+msgid "In attesa del dispositivo… il codice vale fino alle %(time)s."
+msgstr "Warte auf das Gerät … der Code gilt bis %(time)s."
+
+msgid "Dispositivo associato:"
+msgstr "Gerät gekoppelt:"
+
+msgid "Codice scaduto."
+msgstr "Code abgelaufen."
+
+msgid ""
+"Collegamento (per il PC, o se il telefono non riesce a inquadrare il "
+"codice):"
+msgstr "Link (für den PC oder wenn das Telefon den Code nicht scannen kann):"
+
+msgid "Torna ai dispositivi"
+msgstr "Zurück zu den Geräten"
+
+msgid "Modello"
+msgstr "Modell"
+
+msgid "Versione"
+msgstr "Version"
+
+msgid "Ultima sincronizzazione"
+msgstr "Letzte Synchronisierung"
+
+msgid "revocato"
+msgstr "widerrufen"
+
+msgid "Invia ai gestionali"
+msgstr "Sendet an die Verwaltungssysteme"
+
+msgid "Revoca"
+msgstr "Widerrufen"
+
+msgid "Nessun dispositivo associato."
+msgstr "Kein Gerät gekoppelt."
+
+msgid "Date e orari"
+msgstr "Daten und Uhrzeiten"
+
+msgid "Formato delle date"
+msgstr "Datumsformat"
+
+msgid "Formato degli orari"
+msgstr "Zeitformat"
+
+msgid "Aspetto"
+msgstr "Darstellung"
+
+msgid ""
+"Il colore del tema va sulle barre dei menu e sui pulsanti; le pagine "
+"restano bianche e grigie, o nere nel tema scuro."
+msgstr ""
+"Die Designfarbe wird auf den Menüleisten und den Schaltflächen "
+"verwendet; die Seiten bleiben weiß und grau, im dunklen Design "
+"schwarz."
+
+msgid "Lingua"
+msgstr "Sprache"
+
+msgid ""
+"La scelta vale per questo browser; senza una scelta si segue la lingua "
+"del browser."
+msgstr ""
+"Die Auswahl gilt für diesen Browser; ohne Auswahl wird die Sprache des "
+"Browsers verwendet."
+
+msgid "Le attività chiuse delle aziende assegnate a questo account."
+msgstr ""
+"Die abgeschlossenen Tätigkeiten der Firmen, die diesem Konto "
+"zugewiesen sind."
+
+msgid "Pause"
+msgstr "Pausen"
+
+msgid "Totale"
+msgstr "Gesamt"
+
+msgid ""
+"Tempi arrotondati come nel report dell'app, con le regole della policy "
+"di ciascuno (altrimenti quelle predefinite); sotto, in piccolo, i "
+"tempi registrati. Un'attività a cavallo di più giorni conta in "
+"ciascuno."
+msgstr ""
+"Zeiten gerundet wie im Bericht der App, mit den Regeln der Richtlinie "
+"jeder Person (sonst den Standardregeln); darunter, klein, die "
+"erfassten Zeiten. Eine Tätigkeit über mehrere Tage zählt an jedem Tag."
+
+msgid "Assenze"
+msgstr "Abwesenheiten"
+
+msgid "Giorni"
+msgstr "Tage"
+
+msgid "Ore"
+msgstr "Std."
+
+msgid ""
+"Le assenze si contano a parte: non sono lavoro, viaggio né pausa e non "
+"sono arrotondate. Una assenza senza azienda vale per tutte."
+msgstr ""
+"Abwesenheiten werden getrennt gezählt: Sie sind weder Arbeit noch "
+"Reise oder Pause und werden nicht gerundet. Eine Abwesenheit ohne "
+"Firma gilt für alle Firmen."
+
+msgid "Dettaglio"
+msgstr "Detail"
+
+msgid "Codici di recupero"
+msgstr "Wiederherstellungscodes"
+
+msgid ""
+"Conservali in un posto sicuro: ognuno vale una volta, al posto del "
+"codice, se perdi il telefono o la posta. Non si vedranno più."
+msgstr ""
+"Bewahre sie an einem sicheren Ort auf: Jeder gilt einmal anstelle des "
+"Codes, wenn du Telefon oder E-Mail verlierst. Sie werden nicht mehr "
+"angezeigt."
+
+msgid "Li ho salvati"
+msgstr "Ich habe sie gespeichert"
+
+msgid "Attiva: dopo la password chiede il codice dell'app di autenticazione."
+msgstr ""
+"Aktiv: Nach dem Passwort wird der Code der Authentifizierungs-App "
+"abgefragt."
+
+#, python-format
+msgid "Attiva: dopo la password chiede il codice inviato a %(email)s."
+msgstr ""
+"Aktiv: Nach dem Passwort wird der an %(email)s gesendete Code "
+"abgefragt."
+
+#, python-format
+msgid "Resta %(n)s codice di recupero."
+msgid_plural "Restano %(n)s codici di recupero."
+msgstr[0] "Noch %(n)s Wiederherstellungscode übrig."
+msgstr[1] "Noch %(n)s Wiederherstellungscodes übrig."
+
+msgid ""
+"Dopo la password, l'accesso chiede un codice: dall'app di "
+"autenticazione del telefono (per esempio Aegis, FreeOTP, Google "
+"Authenticator) o via email. Chi ha solo la password non entra."
+msgstr ""
+"Nach dem Passwort verlangt die Anmeldung einen Code: aus der "
+"Authentifizierungs-App auf dem Telefon (zum Beispiel Aegis, FreeOTP, "
+"Google Authenticator) oder per E-Mail. Wer nur das Passwort hat, kommt "
+"nicht hinein."
+
+msgid ""
+"L'organizzazione la chiede per il tuo profilo: attivala per "
+"continuare."
+msgstr ""
+"Die Organisation verlangt sie für dein Profil: Aktiviere sie, um "
+"fortzufahren."
+
+msgid "App di autenticazione"
+msgstr "Authentifizierungs-App"
+
+msgid ""
+"Inquadra il codice con l'app, poi scrivi il codice di 6 cifre che "
+"mostra."
+msgstr ""
+"Scanne den Code mit der App und gib dann den 6-stelligen Code ein, den "
+"sie anzeigt."
+
+msgid "Senza fotocamera, inserisci a mano questa chiave:"
+msgstr "Ohne Kamera gib diesen Schlüssel von Hand ein:"
+
+msgid "Codice via email"
+msgstr "Code per E-Mail"
+
+msgid "Conferma"
+msgstr "Bestätigen"
+
+msgid "Nuova app di autenticazione"
+msgstr "Neue Authentifizierungs-App"
+
+msgid "Usa un'app di autenticazione"
+msgstr "Eine Authentifizierungs-App verwenden"
+
+msgid "Manca l’indirizzo email nel tuo utente"
+msgstr "Bei deinem Benutzer fehlt die E-Mail-Adresse"
+
+msgid "Usa un codice via email"
+msgstr "Einen Code per E-Mail verwenden"
+
+msgid ""
+"I codici via email non sono disponibili: sul server non è configurata "
+"la posta."
+msgstr ""
+"Codes per E-Mail sind nicht verfügbar: Auf dem Server ist kein "
+"E-Mail-Versand konfiguriert."
+
+msgid ""
+"Per i codici via email serve un indirizzo nel tuo utente: chiedilo "
+"all'amministratore."
+msgstr ""
+"Für Codes per E-Mail braucht dein Benutzer eine Adresse: Frage den "
+"Administrator."
+
+msgid "Codici di recupero e disattivazione"
+msgstr "Wiederherstellungscodes und Deaktivierung"
+
+msgid "password attuale"
+msgstr "aktuelles Passwort"
+
+msgid "Nuovi codici di recupero"
+msgstr "Neue Wiederherstellungscodes"
+
+msgid "Disattiva la verifica"
+msgstr "Verifizierung deaktivieren"
+
+msgid "Nuova assenza"
+msgstr "Neue Abwesenheit"
+
+msgid "Nuova voce"
+msgstr "Neue Aufgabe"
+
+#, python-format
+msgid "Assegnata da %(name)s."
+msgstr "Zugewiesen von %(name)s."
+
+#, python-format
+msgid "Dal gestionale (%(k)s)."
+msgstr "Aus dem Verwaltungssystem (%(k)s)."
+
+msgid "Assegnata a"
+msgstr "Zugewiesen an"
+
+msgid "io"
+msgstr "ich"
+
+msgid ""
+"Assegnandola a un'altra persona, la voce passa sui suoi dispositivi e "
+"sparisce da quelli di chi l'aveva."
+msgstr ""
+"Wird sie einer anderen Person zugewiesen, wechselt der Eintrag auf "
+"deren Geräte und verschwindet von denen der bisherigen Person."
+
+msgid "Azienda (facoltativa: vuota vale per tutte)"
+msgstr "Firma (optional: leer gilt für alle)"
+
+msgid "Dal giorno"
+msgstr "Vom Tag"
+
+msgid "al giorno"
+msgstr "bis zum Tag"
+
+msgid "dalle (facoltativo)"
+msgstr "von (optional)"
+
+msgid "alle"
+msgstr "bis"
+
+msgid ""
+"Senza orari l'assenza copre l'orario di lavoro di ogni giorno "
+"lavorativo; con gli orari, un periodo al giorno."
+msgstr ""
+"Ohne Uhrzeiten deckt die Abwesenheit die Arbeitszeit jedes Arbeitstags "
+"ab; mit Uhrzeiten einen Zeitraum pro Tag."
+
+msgid "Titolo"
+msgstr "Titel"
+
+msgid "Scadenza"
+msgstr "Fällig am"
+
+msgid "ora"
+msgstr "Uhrzeit"
+
+msgid "Pianificata il"
+msgstr "Geplant am"
+
+msgid "durata (min)"
+msgstr "Dauer (Min.)"
+
+msgid "Priorità"
+msgstr "Priorität"
+
+msgid "Avvia con i dettagli"
+msgstr "Mit den Details starten"
+
+msgid "Le mie"
+msgstr "Meine"
+
+msgid "Tutto il team"
+msgstr "Das ganze Team"
+
+msgid "Aperte"
+msgstr "Offen"
+
+msgid "Tutte"
+msgstr "Alle"
+
+msgid "Nessuna voce."
+msgstr "Keine Einträge."
+
+msgid "Nuovo utente"
+msgstr "Neuer Benutzer"
+
+msgid "Email"
+msgstr "E-Mail"
+
+msgid "Cognome"
+msgstr "Nachname"
+
+msgid "Profilo"
+msgstr "Profil"
+
+msgid "Team di (responsabile)"
+msgstr "Team von (Verantwortlicher)"
+
+msgid "Amministratore: tutto, compresi utenti, dispositivi e policy."
+msgstr ""
+"Administrator: alles, einschließlich Benutzer, Geräte und Richtlinien."
+
+msgid ""
+"Responsabile: anagrafiche centrali; legge e corregge le attività del "
+"suo team, legge quelle delle sue aziende; assegna le Da fare al team."
+msgstr ""
+"Verantwortlicher: zentrale Stammdaten; liest und korrigiert die "
+"Tätigkeiten seines Teams, liest die seiner Firmen; weist dem Team "
+"Aufgaben zu."
+
+msgid "Utente: le sue attività e Da fare, dal telefono e dal web."
+msgstr ""
+"Benutzer: seine eigenen Tätigkeiten und Aufgaben, vom Telefon und vom "
+"Web aus."
+
+msgid ""
+"Lettore azienda: solo il report delle attività chiuse delle sue "
+"aziende. Niente telefono."
+msgstr ""
+"Firmenleser: nur der Bericht der abgeschlossenen Tätigkeiten seiner "
+"Firmen. Kein Telefon."
+
+msgid ""
+"Il responsabile legge tutte le attività fatte per queste aziende, "
+"chiunque le abbia fatte."
+msgstr ""
+"Der Verantwortliche liest alle für diese Firmen erledigten "
+"Tätigkeiten, wer auch immer sie erledigt hat."
+
+msgid "Il lettore vede le attività chiuse di queste aziende."
+msgstr "Der Leser sieht die abgeschlossenen Tätigkeiten dieser Firmen."
+
+msgid "Nessuna azienda centrale."
+msgstr "Keine zentrale Firma."
+
+msgid "Attivo: può accedere e i suoi dispositivi sincronizzano"
+msgstr "Aktiv: kann sich anmelden und seine Geräte synchronisieren"
+
+msgid "Ripeti la password"
+msgstr "Passwort wiederholen"
+
+msgid "ultima sincronizzazione"
+msgstr "letzte Synchronisierung"
+
+msgid "Revocare questo dispositivo? Smette subito di sincronizzare."
+msgstr "Dieses Gerät widerrufen? Es hört sofort auf zu synchronisieren."
+
+msgid "Team"
+msgstr "Team"
+
+msgid ""
+"Oltre a quelle dell'organizzazione e del profilo, questo utente può "
+"avere una policy sua."
+msgstr ""
+"Zusätzlich zu denen der Organisation und des Profils kann dieser "
+"Benutzer eine eigene Richtlinie haben."
+
+msgid "Policy dell'utente"
+msgstr "Richtlinie des Benutzers"
+
+msgid "Attiva, con un'app di autenticazione."
+msgstr "Aktiv, mit einer Authentifizierungs-App."
+
+msgid "Attiva, con un codice via email."
+msgstr "Aktiv, mit einem Code per E-Mail."
+
+msgid ""
+"Azzerare la verifica in due passaggi? Serve se l'utente ha perso il "
+"telefono o la posta."
+msgstr ""
+"Die Zwei-Faktor-Authentifizierung zurücksetzen? Das ist nötig, wenn "
+"der Benutzer Telefon oder E-Mail verloren hat."
+
+msgid "Azzera"
+msgstr "Zurücksetzen"
+
+msgid "Non attiva."
+msgstr "Nicht aktiv."
+
+msgid "L'utente esce dal web; i dispositivi restano associati."
+msgstr "Der Benutzer wird vom Web abgemeldet; die Geräte bleiben gekoppelt."
+
+msgid "Cambia la password"
+msgstr "Passwort ändern"
+
+msgid "Cerca"
+msgstr "Suchen"
+
+msgid "nome, utente, email"
+msgstr "Name, Benutzername, E-Mail"
+
+msgid "attivi"
+msgstr "aktiv"
+
+msgid "disattivati"
+msgstr "deaktiviert"
+
+msgid "team di"
+msgstr "Team von"
+
+msgid "disattivato"
+msgstr "deaktiviert"
+
+msgid "Nessun utente."
+msgstr "Kein Benutzer."
+
+msgid "Verifica in due passaggi obbligatoria per"
+msgstr "Zwei-Faktor-Authentifizierung erforderlich für"
+
+msgid ""
+"Chi è indicato deve attivarla (app di autenticazione o email) al primo "
+"accesso; gli altri possono attivarla da «Sicurezza dell'account». I "
+"dispositivi già associati non cambiano."
+msgstr ""
+"Wer genannt ist, muss sie bei der ersten Anmeldung aktivieren "
+"(Authentifizierungs-App oder E-Mail); die anderen können sie unter "
+"«Kontosicherheit» aktivieren. Bereits gekoppelte Geräte ändern sich "
+"nicht."
+
+#, python-format
+msgid ""
+"L'organizzazione e i dati grezzi restano nell'<a "
+"href=\"%(admin_url)s\">amministrazione avanzata</a>."
+msgstr ""
+"Die Organisation und die Rohdaten bleiben in der <a "
+"href=\"%(admin_url)s\">erweiterten Administration</a>."
+
+msgid "lavoro"
+msgstr "Arbeit"
+
+msgid "viaggio"
+msgstr "Reise"
+
+msgid "pausa"
+msgstr "Pause"
+
+msgid "assenza"
+msgstr "Abwesenheit"
+
+msgid "Le due password sono diverse."
+msgstr "Die beiden Passwörter sind verschieden."
+
+msgid "Regola della verifica in due passaggi salvata."
+msgstr "Regel der Zwei-Faktor-Authentifizierung gespeichert."
+
+msgid "Il nome utente è obbligatorio."
+msgstr "Der Benutzername ist erforderlich."
+
+msgid "Questo nome utente esiste già."
+msgstr "Dieser Benutzername existiert bereits."
+
+msgid "Non puoi toglierti il profilo di amministratore."
+msgstr "Du kannst dir das Administratorprofil nicht selbst entziehen."
+
+msgid "Non puoi disattivare il tuo utente."
+msgstr "Du kannst deinen eigenen Benutzer nicht deaktivieren."
+
+#, python-format
+msgid "Utente «%(name)s» salvato."
+msgstr "Benutzer «%(name)s» gespeichert."
+
+#, python-format
+msgid "Password di «%(name)s» cambiata."
+msgstr "Passwort von «%(name)s» geändert."
+
+#, python-format
+msgid "Verifica in due passaggi di «%(name)s» azzerata."
+msgstr "Zwei-Faktor-Authentifizierung von «%(name)s» zurückgesetzt."
+
+msgid "La password attuale non è corretta."
+msgstr "Das aktuelle Passwort ist nicht korrekt."
+
+msgid "Password cambiata."
+msgstr "Passwort geändert."
+
+msgid "Preferenze salvate."
+msgstr "Einstellungen gespeichert."
+
+#, python-format
+msgid "«%(name)s» invia ora ai gestionali."
+msgstr "«%(name)s» sendet jetzt an die Verwaltungssysteme."
+
+#, python-format
+msgid "Associazione di «%(name)s» revocata."
+msgstr "Kopplung von «%(name)s» widerrufen."
+
+msgid "data e ora non valide"
+msgstr "ungültiges Datum und ungültige Uhrzeit"
+
+msgid "la policy non consente di scegliere gli orari"
+msgstr "die Richtlinie erlaubt nicht, die Zeiten zu wählen"
+
+#, python-format
+msgid "solo i tag dell'anagrafica: %(t)s non c'è"
+msgstr "nur die Tags der Stammdaten: %(t)s gibt es nicht"
+
+msgid "azione non consentita in questo stato"
+msgstr "Aktion in diesem Zustand nicht erlaubt"
+
+msgid "Mancano dei dettagli: completa l'attività."
+msgstr "Es fehlen Details: Vervollständige die Tätigkeit."
+
+msgid "Attività eliminata: è nel cestino."
+msgstr "Tätigkeit gelöscht: Sie ist im Papierkorb."
+
+msgid "Attività salvata."
+msgstr "Tätigkeit gespeichert."
+
+msgid "azione sconosciuta"
+msgstr "unbekannte Aktion"
+
+msgid "Attività ripristinata."
+msgstr "Tätigkeit wiederhergestellt."
+
+msgid "Attività eliminata definitivamente."
+msgstr "Tätigkeit endgültig gelöscht."
+
+msgid "il titolo è obbligatorio"
+msgstr "der Titel ist erforderlich"
+
+msgid "la data è obbligatoria"
+msgstr "das Datum ist erforderlich"
+
+msgid "l'ultimo giorno non è valido"
+msgstr "der letzte Tag ist ungültig"
+
+msgid "l'ora di fine deve seguire quella di inizio"
+msgstr "die Endzeit muss nach der Anfangszeit liegen"
+
+msgid "Voce salvata."
+msgstr "Eintrag gespeichert."
+
+#, python-format
+msgid "Voce assegnata a %(name)s."
+msgstr "Eintrag zugewiesen an %(name)s."

@@ -74,6 +74,12 @@ with 0.9 are in its `CHANGELOG.md`.
 - Agenda and reports: plans drawn dashed and left out of the totals; absences drawn by
   kind and counted apart from work, travel and pause, by kind (an absence without a
   company counts under any company filter).
+- The pages, the messages and the emails come in German and Spanish too, as in the app,
+  the library and the PC interfaces (`locale/de`, `locale/es`; the language is the
+  browser's, or the one chosen in Preferences). The policy editor takes the field
+  labels in the four languages.
+- The agenda adds an absence or an activity already done (when the policy leaves the
+  times editable), besides a to-do.
 
 ### Behaviour
 

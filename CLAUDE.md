@@ -35,21 +35,28 @@ The whole workflow is in
 ## 1. Working rules
 
 - English for code, comments, commits and docs; Italian with the maintainer.
-  The UI is Italian first (Django i18n, English translation): the message ids
-  are the Italian texts, `server/locale/en/LC_MESSAGES/django.po` is the English
-  catalog and `django.mo` its compilation, which is committed (the package and
-  a tarball install need no `msgfmt`). Changing a UI text:
+  The UI is Italian first (Django i18n; English, German and Spanish like the app, the
+  library and the PC interfaces): the message ids are the Italian texts,
+  `server/locale/<en|de|es>/LC_MESSAGES/django.po` are the catalogs and `django.mo` their
+  compilations, which are committed (the package and a tarball install need no
+  `msgfmt`). Changing a UI text:
   ```sh
   cd server
-  python3 manage.py makemessages -l en --no-location --no-obsolete
-  # translate the empty entries of locale/en/LC_MESSAGES/django.po
-  python3 manage.py compilemessages -l en
+  python3 manage.py makemessages -l en -l de -l es --no-location --no-obsolete
+  # translate the empty and the fuzzy entries of the three django.po (and drop "#, fuzzy")
+  python3 manage.py compilemessages
   ```
-  `web/test_i18n.py` fails on an untranslated or fuzzy entry and on a `django.mo`
-  that is not the `django.po` compiled. English is British ("organisation",
-  "colour"); use the app's terms (To-dos, Master data, Quick picks, management
-  system). The language is the browser's, or the one chosen in Preferences
-  (the `django_language` cookie).
+  `web/test_i18n.py` fails on an untranslated or fuzzy entry, on a message the sources
+  have and a catalog lacks (or the other way round: a stale one), on different
+  placeholders or markup, on a text in a template outside the translation tags, on an
+  `OpError` without gettext and on a `django.mo` that is not the `django.po` compiled.
+  Wording: reuse the app's (`values-de`, `values-es`) for the same concept; the state
+  "Da fare" is "To do" / "Zu erledigen" / "Por hacer" (`pgettext` "stato"), the list
+  "Da fare" is "To-dos" / "Aufgaben" / "Pendientes". English is British
+  ("organisation", "colour"); use the app's terms (To-dos, Master data, Quick picks,
+  management system). German and Spanish address the user informally (du, tú). The
+  language is the browser's, or the one chosen in Preferences (the `django_language`
+  cookie).
 - Indentation: Python follows PEP 8 (4 spaces); everything else tabs (`.editorconfig`).
 - **Never use npm**, not even for tools. No CDN, no bundler: plain JS files
   in `server/web/static`.

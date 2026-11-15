@@ -104,7 +104,7 @@ Updating to 0.9.5: nothing to do besides what the package does (the migration
 adds the offline maps' tables). The offline maps stay off until an administrator
 turns them on in the *Mappe* page; preparing them needs the server to reach
 `https://build.protomaps.com/` (`docs/OFFLINE-MAPS.md`). The pages come in
-English too, for browsers that ask for it or when chosen in Preferences.
+English (and, from 1.0, German and Spanish) too, for browsers that ask for it or when chosen in Preferences.
 
 Updating from 0.9.4-beta4 or earlier: the server now checks the shape of
 the JSON fields phones send (tags, contact phone numbers, plugin fields).
