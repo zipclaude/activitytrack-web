@@ -1603,10 +1603,10 @@ msgstr "Sprache"
 
 msgid ""
 "La scelta vale per questo browser; senza una scelta si segue la lingua "
-"del browser."
+"del browser, altrimenti l'inglese."
 msgstr ""
 "Die Auswahl gilt für diesen Browser; ohne Auswahl wird die Sprache des "
-"Browsers verwendet."
+"Browsers verwendet, sonst Englisch."
 
 msgid "Le attività chiuse delle aziende assegnate a questo account."
 msgstr ""
@@ -2091,3 +2091,6 @@ msgstr "Eintrag gespeichert."
 #, python-format
 msgid "Voce assegnata a %(name)s."
 msgstr "Eintrag zugewiesen an %(name)s."
+
+msgid "Impostato dalla policy"
+msgstr "Von der Richtlinie festgelegt"

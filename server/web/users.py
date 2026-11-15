@@ -173,4 +173,6 @@ def preferences(request):
         u.save(update_fields=list(choices))
         messages.success(request, _("Preferenze salvate."))
         return redirect("preferences")
-    return render(request, "web/preferences.html", {"choices": choices})
+    from .language import policy_language
+
+    return render(request, "web/preferences.html", {"choices": choices, "policy_language": policy_language(u)})

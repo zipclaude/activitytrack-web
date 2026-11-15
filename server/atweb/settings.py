@@ -97,6 +97,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "web.language.middleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "web.mfa.enforce",
     "web.formats.middleware",
@@ -167,9 +168,13 @@ LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "home"
 LOGOUT_REDIRECT_URL = "login"
 
+# the language of the message ids (the Italian texts): it has no catalogue. What a page uses is chosen by
+# web.language: the policy's, the Preferences page's, the browser's, else English
 LANGUAGE_CODE = "it"
 LANGUAGES = [("it", "Italiano"), ("en", "English"), ("de", "Deutsch"), ("es", "Español")]
 LOCALE_PATHS = [BASE_DIR / "locale"]
+# the test client asks for Italian, the language of the message ids the tests read
+TEST_RUNNER = "atweb.testing.Runner"
 TIME_ZONE = INI.get("server", "time_zone", fallback="Europe/Rome")
 USE_I18N = True
 USE_TZ = True

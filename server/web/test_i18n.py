@@ -204,8 +204,18 @@ class EnglishPagesTest(TestCase):
         self.assertContains(it, "Nome utente")
         self.assertContains(it, '<html lang="it"')
 
-    def test_other_languages_fall_back_to_the_default(self):
-        self.assertContains(self.client.get("/login/", HTTP_ACCEPT_LANGUAGE="fr"), "Accedi")
+    def test_other_languages_fall_back_to_english(self):
+        # Italian is the language of the message ids, not the fallback (as in the app and the PC interfaces)
+        for header in ("fr", "fr-FR,fr;q=0.9,ja;q=0.5", "*", ""):
+            r = self.client.get("/login/", HTTP_ACCEPT_LANGUAGE=header)
+            self.assertContains(r, "Log in", msg_prefix=repr(header))
+            self.assertContains(r, '<html lang="en"')
+        # no header at all is no language at all (the test client would ask for Italian)
+        self.assertContains(self.client.get("/login/", HTTP_ACCEPT_LANGUAGE=""), "Username")
+        del self.client.defaults["HTTP_ACCEPT_LANGUAGE"]
+        self.assertContains(self.client.get("/login/"), "Username")
+        # the first language it has, in the browser's order
+        self.assertContains(self.client.get("/login/", HTTP_ACCEPT_LANGUAGE="fr,it;q=0.8,en;q=0.5"), "Accedi")
 
     def test_the_menu_and_the_pages_are_in_english(self):
         self.client.force_login(self.admin)
@@ -357,3 +367,73 @@ class GermanAndSpanishPagesTest(TestCase):
         for lang, link in (("de", "erweiterten Administration"), ("es", "administración avanzada")):
             r = self.client.get("/utenti/", HTTP_ACCEPT_LANGUAGE=lang)
             self.assertContains(r, f'<a href="/admin/">{link}</a>')
+
+
+class PolicyLanguageTest(TestCase):
+    """The policy's ui.language wins over the user's choice, which wins over the browser's, then English."""
+
+    def setUp(self):
+        self.org = Organization.objects.create(name="Infra")
+        self.user = User.objects.create_user("alice", password="x", org=self.org)
+        self.client.force_login(self.user)
+
+    def policy(self, language, **scope):
+        from policies.models import Policy
+
+        return Policy.objects.create(org=self.org, data={"ui": {"language": language}}, revision=1, **scope)
+
+    def page(self, browser="", cookie=None):
+        if cookie:
+            self.client.cookies[settings.LANGUAGE_COOKIE_NAME] = cookie
+        return self.client.get("/preferenze/", HTTP_ACCEPT_LANGUAGE=browser)
+
+    def test_without_a_policy_the_choice_then_the_browser_then_english(self):
+        self.assertContains(self.page("de"), "Datumsformat")
+        self.assertContains(self.page("xx"), "Date format")
+        self.assertContains(self.page("de", cookie="es"), "Formato de fecha")
+        self.assertContains(self.page("de", cookie="en"), "Date format")
+        # an unknown language in the cookie is ignored
+        self.assertContains(self.page("de", cookie="xx"), "Datumsformat")
+
+    def test_the_policy_wins_over_the_choice_and_the_browser(self):
+        self.policy("de")
+        r = self.page("es", cookie="en")
+        self.assertContains(r, "Datumsformat")
+        self.assertContains(r, '<html lang="de"')
+        self.assertContains(self.page("fr"), "Datumsformat")
+
+    def test_the_most_specific_policy_decides_and_a_bad_language_is_ignored(self):
+        self.policy("de")
+        self.policy("es", user=self.user)
+        self.assertContains(self.page("it"), "Formato de fecha")
+        self.client.logout()
+        # without a login there is no policy
+        self.assertContains(self.client.get("/login/", HTTP_ACCEPT_LANGUAGE="it"), "Accedi")
+        from policies.models import Policy
+
+        Policy.objects.all().delete()
+        self.policy("fr")
+        self.client.force_login(self.user)
+        self.assertContains(self.page("de"), "Datumsformat")
+
+    def test_the_policy_disables_the_language_buttons(self):
+        free = self.page("en").content.decode()
+        self.assertNotIn("Set by the policy", free)
+        self.assertIn('<button name="language" value="de" >Deutsch</button>', free)
+        self.policy("es")
+        r = self.page("en", cookie="de")
+        page = r.content.decode()
+        self.assertContains(r, "Establecido por la política")
+        for code in ("it", "en", "de", "es"):
+            self.assertRegex(page, rf'<button name="language" value="{code}"[^>]* disabled>')
+        # the language in force is the highlighted one
+        self.assertRegex(page, r'<button name="language" value="es" class="primary" aria-current="true" disabled>')
+
+    def test_the_note_of_the_policy_is_translated_in_every_language(self):
+        from django.utils.translation import gettext, override
+
+        notes = {"it": "Impostato dalla policy", "en": "Set by the policy", "de": "Von der Richtlinie festgelegt",
+                 "es": "Establecido por la política"}
+        for code, note in notes.items():
+            with override(code):
+                self.assertEqual(gettext("Impostato dalla policy"), note)

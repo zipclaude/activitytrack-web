@@ -20,7 +20,7 @@
 		T = JSON.parse(body.dataset.pickerTexts) || {};
 	} catch (e) { /* the texts stay the keys */ }
 	var STEP = 5, CELLS = 1440 / STEP, HOURS = 12;
-	var lang = document.documentElement.lang || "it";
+	var lang = document.documentElement.lang || "en";
 
 	function pad(n) {
 		return (n < 10 ? "0" : "") + n;

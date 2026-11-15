@@ -1583,10 +1583,10 @@ msgstr "Idioma"
 
 msgid ""
 "La scelta vale per questo browser; senza una scelta si segue la lingua "
-"del browser."
+"del browser, altrimenti l'inglese."
 msgstr ""
 "La elección vale para este navegador; sin elección se sigue el idioma "
-"del navegador."
+"del navegador y, si no, el inglés."
 
 msgid "Le attività chiuse delle aziende assegnate a questo account."
 msgstr "Las actividades cerradas de las empresas asignadas a esta cuenta."
@@ -2062,3 +2062,6 @@ msgstr "Elemento guardado."
 #, python-format
 msgid "Voce assegnata a %(name)s."
 msgstr "Elemento asignado a %(name)s."
+
+msgid "Impostato dalla policy"
+msgstr "Establecido por la política"
