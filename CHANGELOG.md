@@ -88,7 +88,9 @@ with 0.9 are in its `CHANGELOG.md`.
   place, tags, work, travel, km, expenses, attachments and state. Each can be exported as shown, with its filters,
   sort and columns, in CSV (semicolon, byte order mark), XML or JSON, within the policy's `export` rules (the
   feature, `export.formats`, `behaviours.exportMaxDays`; the old CSV of the entries obeys them too), and printed
-  (a print stylesheet; Print / PDF uses the browser's).
+  (a print stylesheet; Print / PDF uses the browser's). The detail switches between a row for each activity
+  and day and a row for each segment (work, travel, pause, absence: its own times, recorded minutes and km, not
+  rounded, on the day it starts), each mode with its own columns, sort, exports and print (`?rows=`).
 - Attività: ordered by date (by day, as before), start time of day, company, client, duration, state or
   person, both ways, in the URL; the cards (here and on the Home) show an icon for each type of attachment
   (photo, voice note, receipt, file) and, when there is travel, its time and km.

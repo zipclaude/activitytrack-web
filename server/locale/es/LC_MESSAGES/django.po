@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ActivityTrack Web\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-15 14:50+0100\n"
+"POT-Creation-Date: 2026-11-15 14:55+0100\n"
 "PO-Revision-Date: 2026-11-15 12:00+0100\n"
 "Last-Translator: ActivityTrack\n"
 "Language-Team: Spanish\n"
@@ -1014,6 +1014,15 @@ msgstr "Gastos"
 msgid "Allegati"
 msgstr "Adjuntos"
 
+msgid "Durata"
+msgstr "Duración"
+
+msgid "Tratto"
+msgstr "Tramo"
+
+msgid "Nota del tratto"
+msgstr "Nota del tramo"
+
 msgid "Riepilogativo"
 msgstr "Resumen"
 
@@ -1630,6 +1639,15 @@ msgstr ""
 msgid "Le attività chiuse delle aziende assegnate a questo account."
 msgstr "Las actividades cerradas de las empresas asignadas a esta cuenta."
 
+msgid "Una riga per tratto"
+msgstr "Una fila por tramo"
+
+msgid "Righe"
+msgstr "Filas"
+
+msgid "Una riga per attività"
+msgstr "Una fila por actividad"
+
 msgid "Colonne"
 msgstr "Columnas"
 
@@ -1663,6 +1681,17 @@ msgstr ""
 "política de cada persona (si no, las predeterminadas); debajo, en pequeño, "
 "los tiempos registrados. Una actividad que abarca varios días cuenta en cada "
 "uno."
+
+msgid ""
+"Una riga per tratto (lavoro, viaggio, pausa, assenza) nel giorno in cui "
+"inizia, con i minuti registrati: l'arrotondamento e il riporto al giorno "
+"prima valgono per l'attività, quindi i totali qui possono differire dal "
+"riepilogo."
+msgstr ""
+"Una fila por tramo (trabajo, viaje, pausa, ausencia) en el día en que "
+"empieza, con los minutos registrados: el redondeo y el traslado al día "
+"anterior valen para la actividad, así que los totales aquí pueden diferir "
+"del resumen."
 
 msgid ""
 "Una riga per attività e giorno, come i totali del riepilogo. Km, spese e "
@@ -2122,9 +2151,6 @@ msgstr "para otra persona solo se puede registrar un viaje ya hecho"
 
 msgid "Ora di inizio"
 msgstr "Hora de inicio"
-
-msgid "Durata"
-msgstr "Duración"
 
 #, python-format
 msgid "solo i tag dell'anagrafica: %(t)s non c'è"

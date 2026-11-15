@@ -147,6 +147,17 @@ def icon(name, label=""):
     return format_html('<svg class="i" aria-hidden="true"><use href="#i-{}"/></svg>', name)
 
 
+@register.simple_tag
+def query(params, **changes):
+    """The query string of [params] (a QueryDict) with the changes: a value set, an empty one dropped."""
+    q = params.copy()
+    for key, value in changes.items():
+        q.pop(key, None)
+        if value != "":
+            q[key] = value
+    return q.urlencode()
+
+
 @register.simple_tag(takes_context=True)
 def nav_on(context, *names):
     """"on" when the page is one of the named views (namespace:name for apps)."""

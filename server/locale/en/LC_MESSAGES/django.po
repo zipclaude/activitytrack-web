@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ActivityTrack Web\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-15 14:50+0100\n"
+"POT-Creation-Date: 2026-11-15 14:55+0100\n"
 "PO-Revision-Date: 2026-11-05 22:00+0100\n"
 "Last-Translator: ActivityTrack\n"
 "Language-Team: English\n"
@@ -1013,6 +1013,15 @@ msgstr "Expenses"
 msgid "Allegati"
 msgstr "Attachments"
 
+msgid "Durata"
+msgstr "Duration"
+
+msgid "Tratto"
+msgstr "Segment"
+
+msgid "Nota del tratto"
+msgstr "Segment note"
+
 msgid "Riepilogativo"
 msgstr "Summary"
 
@@ -1624,6 +1633,15 @@ msgstr ""
 msgid "Le attività chiuse delle aziende assegnate a questo account."
 msgstr "The closed activities of the companies assigned to this account."
 
+msgid "Una riga per tratto"
+msgstr "One row per segment"
+
+msgid "Righe"
+msgstr "Rows"
+
+msgid "Una riga per attività"
+msgstr "One row per activity"
+
 msgid "Colonne"
 msgstr "Columns"
 
@@ -1655,6 +1673,16 @@ msgstr ""
 "Times rounded as in the app's report, with the rules of each person's policy "
 "(the default ones otherwise); below, in small print, the recorded times. An "
 "activity spanning several days counts in each."
+
+msgid ""
+"Una riga per tratto (lavoro, viaggio, pausa, assenza) nel giorno in cui "
+"inizia, con i minuti registrati: l'arrotondamento e il riporto al giorno "
+"prima valgono per l'attività, quindi i totali qui possono differire dal "
+"riepilogo."
+msgstr ""
+"One row per segment (work, travel, pause, absence) on the day it starts, "
+"with the recorded minutes: rounding and the carry-over to the day before "
+"apply to the activity, so the totals here may differ from the summary."
 
 msgid ""
 "Una riga per attività e giorno, come i totali del riepilogo. Km, spese e "
@@ -2105,9 +2133,6 @@ msgstr "for somebody else only a trip already made can be recorded"
 
 msgid "Ora di inizio"
 msgstr "Start time"
-
-msgid "Durata"
-msgstr "Duration"
 
 #, python-format
 msgid "solo i tag dell'anagrafica: %(t)s non c'è"

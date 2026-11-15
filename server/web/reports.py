@@ -26,6 +26,8 @@ from .templatetags import at
 
 ABSENCE = ActivityKind.ABSENCE
 SUMMARY, DETAIL = "summary", "detail"
+# the rows of the detail: one for each activity and day (the report's lines), or one for each segment
+BY_ACTIVITY, BY_SEGMENT = "activity", "segment"
 
 
 def _period(request):
@@ -38,8 +40,8 @@ def _period(request):
     return since, until
 
 
-def _days(request, since, until):
-    """The report's days of the period; an absence without a company counts for every company."""
+def _entries(request):
+    """The activities and absences the user reads, with the company and person filters of the request."""
     q = data.readable_entries(request.user)
     # a filter that is not an id is left out, as a bad link
     company, person = data.parse_uid(request.GET.get("company")), data.parse_pk(request.GET.get("person"))
@@ -47,7 +49,12 @@ def _days(request, since, until):
         q = q.filter(Q(company__uid=company) | Q(kind=ABSENCE, company__isnull=True))
     if person is not None:
         q = q.filter(owner_id=person)
-    return reporting.report(q, since, until)
+    return q
+
+
+def _days(request, since, until):
+    """The report's days of the period; an absence without a company counts for every company."""
+    return reporting.report(_entries(request), since, until)
 
 
 def _absences(days):
@@ -234,6 +241,66 @@ def _detail_columns(ctx):
     ]
 
 
+def _segment_records(request, since, until):
+    """
+    The real segments (work, travel, pause, absence) that start in the period, one row each, on the local day
+    they start: no carry-over to the day before and no rounding, which are rules of an activity's day (the
+    other mode and the summary); the durations are the recorded minutes, a running segment up to now.
+    """
+    lo, hi = data.day_bounds(since)[0], data.day_bounds(until)[1]
+    segs = Segment.objects.filter(
+        entry__in=_entries(request), deleted=False, planned=False, start_utc__gte=lo, start_utc__lt=hi)
+    segs = segs.select_related("entry__company", "entry__client", "entry__role", "entry__owner")
+    segs = list(segs.order_by("start_utc"))
+    # one object for each activity, annotated with its state once
+    entries = {}
+    for s in segs:
+        s.entry = entries.setdefault(s.entry_id, s.entry)
+    states.annotate(entries.values())
+    now, out = timezone.now(), []
+    for s in segs:
+        km = s.km_declared if s.km_declared is not None else s.km_estimated
+        out.append({
+            "s": s, "e": s.entry, "day": timezone.localtime(s.start_utc).date(), "start": s.start_utc, "end": s.end_utc,
+            "kind": s.kind, "minutes": int(((s.end_utc or now) - s.start_utc).total_seconds() // 60),
+            "km": round(km, 1) if s.kind == "TRAVEL" and km is not None else None, "absent": s.kind == "ABSENCE",
+            "note": s.note or "",
+        })
+    return out
+
+
+def _segment_columns(ctx):
+    """The columns of the detail by segment: the segment's own, then what its activity says."""
+    shared = {c.key: c for c in _detail_columns(ctx)}
+    kind = lambda r: str(at.MODE.get(r["kind"], r["kind"]))  # noqa: E731
+    duration = _duration("minutes", _("Durata"))
+    duration.key, duration.fields = "duration", (("duration", _("Durata"), "min"),)
+    for key in ("role",):
+        shared[key].default = False
+    return [
+        shared["date"], shared["time"],
+        Column("kind", _("Tratto"), lambda r: cell(kind(r)), lambda r: _cf(kind(r)), lambda r: [r["kind"]],
+               (("kind", _("Tratto"), ""),)),
+        duration,
+        Column("km", _("Km"), lambda r: cell(f"{r['km']:.1f}" if r["km"] is not None else ""), lambda r: r["km"],
+               lambda r: [r["km"]], (("km", _("Km"), "km"),), True, True,
+               lambda rows: cell(f"{sum(r['km'] or 0 for r in rows):.1f}") if any(r["km"] for r in rows) else None),
+        shared["person"], shared["company"], shared["client"], shared["role"], shared["activity"], shared["site"],
+        shared["tags"], shared["state"],
+        _text_column("note", _("Nota del tratto"), lambda r: r["note"], False),
+    ]
+
+
+def rows_mode(request):
+    """activity or segment: the request's ?rows=, else the last one chosen, else by activity."""
+    asked = request.GET.get("rows")
+    if asked in (BY_ACTIVITY, BY_SEGMENT):
+        request.session["report_rows"] = asked
+        return asked
+    kept = request.session.get("report_rows")
+    return kept if kept in (BY_ACTIVITY, BY_SEGMENT) else BY_ACTIVITY
+
+
 def _summary_columns(ctx):
     return [
         Column("company", _("Azienda"), lambda r: cell(r["company"]), lambda r: _cf(r["company"]),
@@ -289,12 +356,20 @@ def detail(request):
 def _tables(request, mode):
     """(table, since, until, days, people) of a report with the filters of the request."""
     user = request.user
+    rows = rows_mode(request) if mode == DETAIL else None
+    if rows:
+        # the links of the page (sort, exports, the form) carry the mode shown
+        request.GET = request.GET.copy()
+        request.GET["rows"] = rows
     since, until = _period(request)
     days = _days(request, since, until)
     records = _records(_lines(request, since, until, days))
     people = data.readable_people(user) if (user.is_admin or user.profile == Profile.MANAGER) else None
     if mode == SUMMARY:
         table = tables.build(request, mode, _summary_columns(_ctx(request, people)), _summary_rows(records))
+    elif rows == BY_SEGMENT:
+        table = tables.build(request, f"{DETAIL}-{BY_SEGMENT}", _segment_columns(_ctx(request, people)),
+                             _segment_records(request, since, until))
     else:
         rows = records + _absence_records(days)
         rows.sort(key=lambda r: (r["day"], r["start"]))
@@ -319,6 +394,7 @@ def _report(request, mode):
     formats_, longest = export_rules(user)
     return render(request, "web/report.html", {
         "mode": mode, "since": since, "until": until, "f": request.GET, "t": tables.page(request, table),
+        "rows": request.GET.get("rows", ""),
         "columns": [{"key": c.key, "label": c.label, "on": c.key in table.chosen} for c in table.columns],
         "sorted": table.sort, "direction": table.direction,
         "absences": absences if mode == SUMMARY else [], "reader": reader,
@@ -352,7 +428,7 @@ def export(request, fmt, mode):
     if why:
         return HttpResponse(why, status=403, content_type="text/plain; charset=utf-8")
     table = _tables(request, mode)[0]
-    meta = {"report": mode, "from": since.isoformat(), "to": until.isoformat()}
+    meta = {"report": table.name, "from": since.isoformat(), "to": until.isoformat()}
     return tables.export(table, fmt, meta, _cell)
 
 

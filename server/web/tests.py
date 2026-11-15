@@ -1886,7 +1886,7 @@ class ReportTableTests(WorkTests):
         self.assertIn('aria-sort="descending"', page)
         self.assertIn('aria-sort="none"', page)
         # the head links keep the filters and flip the direction of the sorted column
-        self.assertRegex(page, r'<a href="\?from=2026-10-01&amp;to=2026-10-31&amp;sort=work&amp;dir=asc"')
+        self.assertIn('<a href="?from=2026-10-01&amp;to=2026-10-31&amp;rows=activity&amp;sort=work&amp;dir=asc"', page)
         self.assertIn("▼", page)
 
     def test_the_summary_sorts_too(self):
@@ -1924,6 +1924,81 @@ class ReportTableTests(WorkTests):
         # a person without a team has no column of persons by default
         self.assertEqual(default[:3], ["Data", "Orario", "Azienda"])
         self.assertEqual(self.heads(f"/report/dettaglio/?{self.RANGE}&f=1&col=zzz"), default)
+
+    def segments(self):
+        """Alfa (09:00-12:00 work) gets a trip before it (08:10-08:50, 12.5 km) and a pause inside the day after it."""
+        import uuid
+        from datetime import timedelta
+
+        from records.models import Entry, Segment
+        from web import ops
+
+        e = Entry.objects.get(activity="Alfa")
+        seg = Segment.objects.get(entry=e)
+        for kind, a, b, more in (("TRAVEL", -50, -10, {"kmDeclared": 12.5}), ("PAUSE", 180, 195, {})):
+            ops.put(self.alice, "segment", uuid.uuid4(), {
+                "entryUid": str(e.uid), "kind": kind, "startUtcMs": ops.ms(seg.start_utc + timedelta(minutes=a)),
+                "endUtcMs": ops.ms(seg.start_utc + timedelta(minutes=b)), "zoneId": e.zone_id, "source": "MANUAL",
+                **more})
+        return e
+
+    def test_the_detail_switches_to_one_row_for_each_segment(self):
+        self.three()
+        self.segments()
+        base = f"/report/dettaglio/?{self.RANGE}"
+        r = self.client.get(base + "&rows=segment")
+        page = r.content.decode()
+        # three activities, five segments; the columns are the segment's own
+        self.assertEqual(len(r.context["t"]["rows"]), 5)
+        heads = self.heads(base + "&rows=segment")
+        self.assertEqual(heads[:5], ["Data", "Orario", "Tratto", "Durata", "Km"])
+        self.assertNotIn("Lavoro", heads)
+        for text in ("08:10–08:50", ">viaggio<", ">pausa<", ">12.5<", ">0:40<", ">0:15<"):
+            self.assertIn(text, page)
+        # the switch marks the mode, and the mode stays for the next visit and in every link of the page
+        self.assertRegex(page, r'rows=segment" class="on">Una riga per tratto')
+        self.assertEqual(len(self.client.get(base).context["t"]["rows"]), 5)
+        self.assertIn("rows=segment&amp;sort=duration&amp;dir=asc", page)
+        self.assertIn(f"/report/esporta/detail.csv?{self.RANGE.replace('&', '&amp;')}&amp;rows=segment", page)
+        self.assertIn('<input type="hidden" name="rows" value="segment">', page)
+        back = self.client.get(base + "&rows=activity")
+        self.assertEqual(len(back.context["t"]["rows"]), 3)
+        self.assertEqual(len(self.client.get(base).context["t"]["rows"]), 3)
+        # a mode that is not one is the one in force
+        self.assertEqual(len(self.client.get(base + "&rows=zzz").context["t"]["rows"]), 3)
+
+    def test_segments_sort_choose_columns_and_export_in_their_own_mode(self):
+        import json
+
+        self.three()
+        self.segments()
+        base = f"/report/dettaglio/?{self.RANGE}&rows=segment"
+        r = self.client.get(base + "&sort=duration&dir=desc")
+        durations = [row[3]["text"] for row in r.context["t"]["rows"]]
+        self.assertEqual(durations, ["3:00", "1:30", "1:00", "0:40", "0:15"])
+        # the footer adds the recorded minutes and the km
+        self.assertEqual((r.context["t"]["foot"][3]["text"], r.context["t"]["foot"][4]["text"]), ("6:25", "12.5"))
+        # its own columns, apart from those of the other mode
+        self.assertEqual(self.heads(base + "&f=1&col=kind&col=duration"), ["Tratto", "Durata"])
+        self.assertEqual(self.heads(base), ["Tratto", "Durata"])
+        self.assertIn("Lavoro", self.heads(f"/report/dettaglio/?{self.RANGE}&rows=activity"))
+        csv = self.client.get(f"/report/esporta/detail.csv?{self.RANGE}&rows=segment&sort=duration&dir=desc")
+        lines = csv.content.decode().lstrip("\ufeff").splitlines()
+        self.assertEqual(lines, ["Tratto;Durata (min)", "WORK;180", "WORK;90", "WORK;60", "TRAVEL;40", "PAUSE;15"])
+        self.assertIn("detail-segment", csv["Content-Disposition"])
+        cols = "&f=1&col=date&col=time&col=kind&col=km&sort=km"
+        body = json.loads(self.client.get(f"/report/esporta/detail.json?{self.RANGE}&rows=segment{cols}").content)
+        self.assertEqual(body["report"], "detail-segment")
+        self.assertEqual(body["rows"][0],
+                         {"date": "2026-10-28", "start": "08:10", "end": "08:50", "kind": "TRAVEL", "km": 12.5})
+        self.assertEqual(len(body["rows"]), 5)
+
+    def test_absences_are_segments_too(self):
+        self.client.post("/dafare/nuova/", {"kind": "ABSENCE", "absence_kind": "HOLIDAY", "plan_date": "2026-10-28",
+                                            "plan_time": "09:00", "end_time": "13:00"})
+        r = self.client.get(f"/report/dettaglio/?{self.RANGE}&rows=segment")
+        self.assertEqual([row[2]["text"] for row in r.context["t"]["rows"]], ["assenza"])
+        self.assertContains(r, "Ferie")
 
     def rows(self, fmt, query=""):
         r = self.client.get(f"/report/esporta/detail.{fmt}?{self.RANGE}{query}")

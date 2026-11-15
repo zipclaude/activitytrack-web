@@ -5,9 +5,10 @@
 <p class="tabs no-print"><a href="{% url 'report' %}?{{ request.GET.urlencode }}" class="{% if mode == 'summary' %}on{% endif %}">{% translate "Riepilogativo" %}</a>
 	<a href="{% url 'report_detail' %}?{{ request.GET.urlencode }}" class="{% if mode == 'detail' %}on{% endif %}">{% translate "Dettaglio attività" %}</a></p>
 {% if reader %}<p class="muted no-print">{% translate "Le attività chiuse delle aziende assegnate a questo account." %}</p>{% endif %}
-<div class="print-head"><h2>{{ title }}</h2>
+<div class="print-head"><h2>{{ title }}{% if rows == "segment" %} · {% translate "Una riga per tratto" %}{% endif %}</h2>
 	<p>{{ since|udate }} – {{ until|udate }}{% if company %} · {{ company.name }}{% endif %}{% if person %} · {{ person.get_full_name|default:person.username }}{% endif %} · <span>ActivityTrack Web</span> · {{ now|udate }} {{ now|utime }}</p></div>
-<form class="filters no-print" method="get"><input type="hidden" name="f" value="1">
+{% if mode == "detail" %}<div class="no-print rowsmode"><nav class="seg" aria-label="{% translate 'Righe' %}"><a href="?{% query f rows='activity' sort='' dir='' %}" class="{% if rows == 'activity' %}on{% endif %}">{% translate "Una riga per attività" %}</a><a href="?{% query f rows='segment' sort='' dir='' %}" class="{% if rows == 'segment' %}on{% endif %}">{% translate "Una riga per tratto" %}</a></nav></div>{% endif %}
+<form class="filters no-print" method="get"><input type="hidden" name="f" value="1">{% if rows %}<input type="hidden" name="rows" value="{{ rows }}">{% endif %}
 	{% if sorted %}<input type="hidden" name="sort" value="{{ sorted }}"><input type="hidden" name="dir" value="{{ direction }}">{% endif %}
 	<label>{% translate "Dal" %}<input type="date" name="from" value="{{ since|date:'Y-m-d' }}"></label>
 	<label>{% translate "Al" %}<input type="date" name="to" value="{{ until|date:'Y-m-d' }}"></label>
@@ -15,7 +16,7 @@
 	{% if people %}<label>{% translate "Persona" %}<select name="person"><option value="">{% translate "tutte" %}</option>{% for p in people %}<option value="{{ p.pk }}" {% if f.person == p.pk|stringformat:"s" %}selected{% endif %}>{{ p.get_full_name|default:p.username }}</option>{% endfor %}</select></label>{% endif %}
 	<details class="dropdown"><summary class="button">{% translate "Colonne" %} ▾</summary><div class="menu">
 		{% for c in columns %}<label class="check"><input type="checkbox" name="col" value="{{ c.key }}" {% if c.on %}checked{% endif %}> {{ c.label }}</label>{% endfor %}
-		<hr><a href="?f=1{% if f.from %}&amp;from={{ f.from|urlencode }}{% endif %}{% if f.to %}&amp;to={{ f.to|urlencode }}{% endif %}">{% translate "Colonne predefinite" %}</a>
+		<hr><a href="?f=1{% if rows %}&amp;rows={{ rows }}{% endif %}{% if f.from %}&amp;from={{ f.from|urlencode }}{% endif %}{% if f.to %}&amp;to={{ f.to|urlencode }}{% endif %}">{% translate "Colonne predefinite" %}</a>
 	</div></details>
 	<button>{% translate "Aggiorna" %}</button>
 </form>
@@ -28,7 +29,7 @@
 </p>
 <section class="card">{% include "web/_table.html" with klass=mode %}</section>
 {% if mode == "summary" %}<p class="doc">{% translate "Tempi arrotondati come nel report dell'app, con le regole della policy di ciascuno (altrimenti quelle predefinite); sotto, in piccolo, i tempi registrati. Un'attività a cavallo di più giorni conta in ciascuno." %}</p>{% endif %}
-{% if mode == "detail" %}<p class="doc">{% translate "Una riga per attività e giorno, come i totali del riepilogo. Km, spese e allegati sono contati sulla prima riga di un'attività nel periodo." %}</p>{% endif %}
+{% if rows == "segment" %}<p class="doc">{% translate "Una riga per tratto (lavoro, viaggio, pausa, assenza) nel giorno in cui inizia, con i minuti registrati: l'arrotondamento e il riporto al giorno prima valgono per l'attività, quindi i totali qui possono differire dal riepilogo." %}</p>{% elif mode == "detail" %}<p class="doc">{% translate "Una riga per attività e giorno, come i totali del riepilogo. Km, spese e allegati sono contati sulla prima riga di un'attività nel periodo." %}</p>{% endif %}
 {% if absences %}<h2>{% translate "Assenze" %}</h2>
 <section class="card"><table class="list totals"><thead><tr><th>{% translate "Tipo" %}</th><th>{% translate "Giorni" %}</th><th>{% translate "Ore" %}</th></tr></thead>
 	<tbody>{% for a in absences %}<tr><td>{{ a.kind }}</td><td>{{ a.days }}</td><td>{{ a.time }}</td></tr>{% endfor %}</tbody></table></section>

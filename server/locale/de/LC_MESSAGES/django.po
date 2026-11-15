@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ActivityTrack Web\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-15 14:50+0100\n"
+"POT-Creation-Date: 2026-11-15 14:55+0100\n"
 "PO-Revision-Date: 2026-11-15 12:00+0100\n"
 "Last-Translator: ActivityTrack\n"
 "Language-Team: German\n"
@@ -1025,6 +1025,15 @@ msgstr "Ausgaben"
 msgid "Allegati"
 msgstr "Anhänge"
 
+msgid "Durata"
+msgstr "Dauer"
+
+msgid "Tratto"
+msgstr "Abschnitt"
+
+msgid "Nota del tratto"
+msgstr "Notiz des Abschnitts"
+
 msgid "Riepilogativo"
 msgstr "Zusammenfassung"
 
@@ -1647,6 +1656,15 @@ msgid "Le attività chiuse delle aziende assegnate a questo account."
 msgstr ""
 "Die abgeschlossenen Tätigkeiten der Firmen, die diesem Konto zugewiesen sind."
 
+msgid "Una riga per tratto"
+msgstr "Eine Zeile pro Abschnitt"
+
+msgid "Righe"
+msgstr "Zeilen"
+
+msgid "Una riga per attività"
+msgstr "Eine Zeile pro Tätigkeit"
+
 msgid "Colonne"
 msgstr "Spalten"
 
@@ -1679,6 +1697,17 @@ msgstr ""
 "Zeiten gerundet wie im Bericht der App, mit den Regeln der Richtlinie jeder "
 "Person (sonst den Standardregeln); darunter, klein, die erfassten Zeiten. "
 "Eine Tätigkeit über mehrere Tage zählt an jedem Tag."
+
+msgid ""
+"Una riga per tratto (lavoro, viaggio, pausa, assenza) nel giorno in cui "
+"inizia, con i minuti registrati: l'arrotondamento e il riporto al giorno "
+"prima valgono per l'attività, quindi i totali qui possono differire dal "
+"riepilogo."
+msgstr ""
+"Eine Zeile pro Abschnitt (Arbeit, Reise, Pause, Abwesenheit) an dem Tag, an "
+"dem er beginnt, mit den erfassten Minuten: Rundung und Übertrag auf den "
+"Vortag gelten für die Tätigkeit, daher können die Summen hier von der "
+"Zusammenfassung abweichen."
 
 msgid ""
 "Una riga per attività e giorno, come i totali del riepilogo. Km, spese e "
@@ -2144,9 +2173,6 @@ msgstr ""
 
 msgid "Ora di inizio"
 msgstr "Startzeit"
-
-msgid "Durata"
-msgstr "Dauer"
 
 #, python-format
 msgid "solo i tag dell'anagrafica: %(t)s non c'è"
