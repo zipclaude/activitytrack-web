@@ -23,7 +23,7 @@
 
 <details><summary><h2>{% translate "Campi" %}</h2></summary>
 <table class="list">
-<thead><tr><th></th><th>{% translate "Visibile" %}</th><th>{% translate "Modificabile" %}</th><th>{% translate "Obbligatorio" %}</th><th>{% translate "Etichetta it / en" %}</th></tr></thead>
+<thead><tr><th></th><th>{% translate "Visibile" %}</th><th>{% translate "Modificabile" %}</th><th>{% translate "Obbligatorio" %}</th><th>{% translate "Etichetta per lingua" %}</th></tr></thead>
 {% for f in c.fields %}
 <tr><td><b>{{ f.key }}</b><div class="doc">{{ f.doc }}</div>{% with k="field:"|add:f.key %}{% if errors|get:k %}<div class="err">{{ errors|get:k }}</div>{% endif %}{% endwith %}</td>
 {% with kv="field:"|add:f.key|add:":visible" ke="field:"|add:f.key|add:":enabled" kr="field:"|add:f.key|add:":required" %}
