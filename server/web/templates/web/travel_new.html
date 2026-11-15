@@ -2,7 +2,7 @@
 {% block title %}{% translate "Nuovo viaggio" %} · ActivityTrack{% endblock %}
 {% block content %}
 <h1>{% translate "Nuovo viaggio" %}</h1>
-<p class="doc">{% translate "Dal web un viaggio ha sempre una persona e un'attività: scegli a chi appartiene e a che cosa serve. Per un'altra persona si registra un viaggio già fatto." %}</p>
+<p class="doc">{% translate "Dal web un viaggio ha sempre una persona, un'azienda e un cliente: sceglili tutti e tre. Per un'altra persona si registra un viaggio già fatto." %}</p>
 <form method="post" class="card narrowform" data-when data-label-now="{% translate 'Avvia' %}" data-label-past="{% translate 'Registra' %}">{% csrf_token %}
 	{% if people %}<label>{% translate "Persona" %}<select name="person">{% for p in people %}<option value="{{ p.pk }}" {% if v.person == p.pk|stringformat:"s" or not v.person and p == user %}selected{% endif %}>{{ p.get_full_name|default:p.username }}</option>{% endfor %}</select></label>{% endif %}
 	<label>{% translate "Voce Da fare" %}<select name="todo"><option value="">—</option>{% for t in todos %}<option value="{{ t.uid }}" {% if v.todo == t.uid|stringformat:"s" %}selected{% endif %}>{{ t.activity|default:"…" }}{% if t.client or t.company %} · {% firstof t.client.name t.company.name %}{% endif %}{% if people %} · {{ t.owner.get_full_name|default:t.owner.username }}{% endif %}</option>{% endfor %}</select></label>

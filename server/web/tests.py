@@ -1061,7 +1061,7 @@ class HomeListTests(WorkTests):
         self.assertEqual(self.client.get("/attivita/viaggio/").status_code, 200)
         r = self.client.post("/attivita/viaggio/")
         self.assertEqual(r.status_code, 200)
-        self.assertContains(r, "indica a che cosa serve il viaggio")
+        self.assertContains(r, "scegli l&#x27;azienda del viaggio")
         self.assertFalse(Entry.objects.filter(owner=self.alice, mode="TRAVEL").exists())
 
     def test_planned_segments_never_count(self):
@@ -2160,17 +2160,50 @@ class TripFromTheWebTests(WorkTests):
         self.assertEqual((e.status, e.mode, e.client.name, e.company_id, e.activity),
                          ("RUNNING", "TRAVEL", "Banca", self.acme.uid, "Sopralluogo"))
 
-    def test_any_one_of_a_todo_a_client_a_company_or_a_description_is_enough_and_none_is_not(self):
+    def test_person_company_and_client_are_all_required(self):
         from records.models import Entry
 
-        self.assertContains(self.client.post("/attivita/viaggio/", {"when": "now"}), "indica a che cosa serve")
-        self.assertContains(self.client.post("/attivita/viaggio/", {"activity": "   "}), "indica a che cosa serve")
-        self.assertEqual(self.client.post("/attivita/viaggio/", {"company": str(self.acme.uid)}).status_code, 302)
+        company, post = str(self.acme.uid), lambda form: self.client.post("/attivita/viaggio/", form)  # noqa: E731
+        # a description or a to-do alone is not enough any more, nor the company alone
+        self.assertContains(post({"activity": "Sopralluogo"}), "scegli l&#x27;azienda del viaggio")
+        self.assertContains(post({"company": company, "activity": "Sopralluogo"}), "scegli il cliente del viaggio")
         self.client.post("/dafare/nuova/", {"title": "Posa"})
+        bare = Entry.objects.get(activity="Posa")
+        self.assertContains(post({"todo": str(bare.uid)}), "scegli l&#x27;azienda del viaggio")
+        self.assertFalse(self.trips().exists())
+        # the client brings its company; with both, they must go together
+        from web import ops
+
+        other = ops.new_uid()
+        ops.put(self.boss, "company", other, {"name": "Altra"}, central=True)
+        self.assertContains(post({"company": str(other), "client": self.client_uid}), "non è di questa azienda")
+        self.assertEqual(post({"company": company, "client": self.client_uid}).status_code, 302)
+        self.assertEqual(post({"client": self.client_uid}).status_code, 302)
+        self.assertEqual({(e.company_id, e.client.name) for e in self.trips()}, {(self.acme.uid, "Banca")})
+
+    def test_a_todo_brings_its_company_and_client(self):
+        from records.models import Entry
+
+        self.client.post("/dafare/nuova/", {"title": "Posa", "client": self.client_uid})
         todo = Entry.objects.get(activity="Posa")
-        self.client.post("/attivita/viaggio/", {"todo": str(todo.uid)})
+        self.assertEqual(self.client.post("/attivita/viaggio/", {"todo": str(todo.uid)}).status_code, 302)
         todo.refresh_from_db()
-        self.assertEqual((todo.status, todo.mode), ("RUNNING", "TRAVEL"))
+        self.assertEqual((todo.status, todo.mode, todo.company_id, todo.client.name),
+                         ("RUNNING", "TRAVEL", self.acme.uid, "Banca"))
+
+    def test_what_the_person_does_not_have_is_not_asked_for(self):
+        from records.models import Client, Company
+        from web import ops
+
+        # no clients at all: the company is enough; no companies either: the form is still possible
+        Client.objects.all().delete()
+        r = self.client.post("/attivita/viaggio/", {"company": str(self.acme.uid)})
+        self.assertEqual(r.status_code, 302)
+        Company.objects.all().update(archived=True)
+        self.assertEqual(self.client.post("/attivita/viaggio/", {"activity": "Giro"}).status_code, 302)
+        # a client of no company (the policy hides the companies) is asked for alone
+        ops.put(self.alice, "client", ops.new_uid(), {"name": "Solo"})
+        self.assertContains(self.client.post("/attivita/viaggio/", {"activity": "Giro"}), "scegli il cliente")
 
     def test_a_trip_already_made_is_recorded_with_its_times(self):
         r = self.client.post("/attivita/viaggio/", {"client": self.client_uid, "when": "past",
@@ -2231,10 +2264,10 @@ class TripFromTheWebTests(WorkTests):
 
         mine = ops.new_uid()
         ops.put(self.boss, "client", mine, {"name": "Privato"})
-        form = {**past, "client": str(mine), "person": self.alice.pk, "activity": "x"}
+        form = {**past, "client": str(mine), "company": str(self.acme.uid), "person": self.alice.pk}
         r = self.client.post("/attivita/viaggio/", form)
-        self.assertEqual(self.trips().get().client_id, None)
-        self.assertEqual(r.status_code, 302)
+        self.assertContains(r, "scegli il cliente del viaggio")
+        self.assertFalse(self.trips().exists())
 
     def test_the_policy_decides(self):
         from policies.models import Policy
@@ -2247,7 +2280,7 @@ class TripFromTheWebTests(WorkTests):
         pol.data = {"entries": {"source": "plannedOnly"}}
         pol.save()
         self.assertContains(self.client.post("/attivita/viaggio/", form), "solo da una voce Da fare")
-        self.client.post("/dafare/nuova/", {"title": "Posa"})
+        self.client.post("/dafare/nuova/", {"title": "Posa", "client": self.client_uid})
         from records.models import Entry
 
         todo = Entry.objects.get(activity="Posa")

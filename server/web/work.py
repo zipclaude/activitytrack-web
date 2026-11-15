@@ -203,10 +203,13 @@ def entry_new(request):
 
 def _start_trip(user, target, p):
     """
-    A trip for [target] (a person [user] may act for) from the form [p]: never anonymous, it belongs to an
-    activity (a to-do of the person, a client, a company or a description), and what the policy of [target] says
-    about travel and about where activities start holds. For somebody else only a trip already made is recorded:
-    a running one would suspend the activities the person has open on their phone.
+    A trip for [target] (a person [user] may act for) from the form [p]: never anonymous, it is identified by
+    the person, the company and the client (the owner's decision on issue #66), all three required among those
+    the person sees; a client of a company goes with that company only (Client.company, null for a client of no
+    company). A to-do of the person may be linked and brings its company and client when the form has none. Where
+    the person sees no company at all, or no client at all, that one cannot be asked for and is left out. The
+    policy of [target] holds for travel and for where activities start. For somebody else only a trip already
+    made is recorded: a running one would suspend the activities the person has open on their phone.
     """
     from policies.effective import merged
 
@@ -219,14 +222,20 @@ def _start_trip(user, target, p):
             uid=data.parse_uid(p["todo"]), owner=target, deleted_utc__isnull=True).first()
         if todo is None:
             raise ops.OpError(_("la voce Da fare scelta non è di questa persona o non c'è più"))
-    client = _pick(target, Client, p.get("client"))
-    company = client.company if client and client.company_id else _pick(target, Company, p.get("company"))
+    client = _pick(target, Client, p.get("client")) or (todo.client if todo else None)
+    company = _pick(target, Company, p.get("company")) or (todo.company if todo and not p.get("client") else None)
+    if client and client.company_id:
+        if company and company.uid != client.company_id:
+            raise ops.OpError(_("il cliente scelto non è di questa azienda"))
+        # a client brings its company
+        company = company or data.masters(target, Company).filter(uid=client.company_id).first()
+    if company is None and data.companies(target).exists():
+        raise ops.OpError(_("scegli l'azienda del viaggio"))
+    if client is None and data.clients(target).exists():
+        raise ops.OpError(_("scegli il cliente del viaggio"))
     role, activity = _pick(target, Role, p.get("role")), p.get("activity", "").strip()
     if policy.get("entries", {}).get("source") in ("plannedOnly", "todosOnly") and todo is None:
         raise ops.OpError(_("la policy permette di iniziare solo da una voce Da fare"))
-    if not (todo or client or company or activity):
-        raise ops.OpError(
-            _("indica a che cosa serve il viaggio: una voce Da fare, un cliente, un'azienda o una descrizione"))
     when = p.get("when") if p.get("when") in ("now", "started", "past") else "now"
     if target != user and when != "past":
         raise ops.OpError(_("per un'altra persona si può registrare solo un viaggio già fatto"))
