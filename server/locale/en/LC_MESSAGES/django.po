@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ActivityTrack Web\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-15 09:28+0100\n"
+"POT-Creation-Date: 2026-11-15 09:31+0100\n"
 "PO-Revision-Date: 2026-11-05 22:00+0100\n"
 "Last-Translator: ActivityTrack\n"
 "Language-Team: English\n"
@@ -16,6 +16,9 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Utenti"
+msgstr "Users"
 
 msgid "nome"
 msgstr "name"
@@ -135,6 +138,9 @@ msgstr "schema"
 msgid "invia ai gestionali"
 msgstr "sends to the management systems"
 
+msgid "Mappe offline"
+msgstr "Offline maps"
+
 msgid "in coda"
 msgstr "queued"
 
@@ -230,9 +236,6 @@ msgstr "Sassari and northern Sardinia"
 
 msgid "Nuova area"
 msgstr "New area"
-
-msgid "Mappe offline"
-msgstr "Offline maps"
 
 msgid "Correggi i campi segnati."
 msgstr "Correct the marked fields."
@@ -564,14 +567,20 @@ msgstr "Policy of “%(s)s” deleted."
 msgid "Policy di «%(s)s» salvata (revisione %(r)d)."
 msgstr "Policy of “%(s)s” saved (revision %(r)d)."
 
+msgid "Dati"
+msgstr "Data"
+
+msgid "Sincronizzazione"
+msgstr "Synchronisation"
+
+msgid "Aggiornamenti"
+msgstr "Updates"
+
 msgid "controlla gli aggiornamenti"
 msgstr "check for updates"
 
 msgid "indirizzo del manifesto"
 msgstr "manifest address"
-
-msgid "Aggiornamenti"
-msgstr "Updates"
 
 msgid ""
 "Il server cerca le nuove versioni di ActivityTrack in un manifesto firmato e "
@@ -915,6 +924,42 @@ msgid ""
 msgstr ""
 "The organisation requires two-step verification: switch it on to continue."
 
+msgid "la voce è stata eliminata"
+msgstr "the item has been deleted"
+
+msgid "la voce non è più da fare"
+msgstr "the item is no longer to do"
+
+msgid "la fine deve seguire l'inizio"
+msgstr "the end must be after the start"
+
+msgid "l'attività non è in corso"
+msgstr "the activity is not running"
+
+msgid "l'attività non è chiusa"
+msgstr "the activity is not closed"
+
+msgid "l'attività non può essere dichiarata completa"
+msgstr "the activity cannot be declared complete"
+
+msgid "l'attività non è dichiarata completa"
+msgstr "the activity is not declared complete"
+
+msgid "servono un importo e una descrizione"
+msgstr "an amount and a description are needed"
+
+msgid "la voce non è stata spuntata"
+msgstr "the item has not been ticked"
+
+msgid "la voce non è nel cestino"
+msgstr "the item is not in the bin"
+
+msgid "non c'è un viaggio di andata da ripetere al ritorno"
+msgstr "there is no outbound trip to repeat on the way back"
+
+msgid "i giorni non sono validi"
+msgstr "the days are not valid"
+
 msgid "chi la riceve ha già un'attività con la stessa chiave esterna"
 msgstr "the assignee already has an activity with the same external key"
 
@@ -1122,9 +1167,6 @@ msgstr "Devices"
 msgid "Mappe"
 msgstr "Maps"
 
-msgid "Utenti"
-msgstr "Users"
-
 msgid "Sicurezza dell’account"
 msgstr "Account security"
 
@@ -1212,6 +1254,9 @@ msgstr "Locality"
 
 msgid "Note"
 msgstr "Notes"
+
+msgid "rete urgente"
+msgstr "urgent network"
 
 msgid "Solo i tag dell'anagrafica:"
 msgstr "Only the master data's tags:"

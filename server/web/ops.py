@@ -60,7 +60,7 @@ def put(user, type_, uid, fields, central=False):
     except engine.ChangeError as e:
         raise OpError(f"{e.code}: {e.detail}") from None
     if result["status"] == "conflict" and result["record"].get("deleted"):
-        raise OpError("deleted")
+        raise OpError(_("la voce è stata eliminata"))
     return result["record"]
 
 
@@ -158,7 +158,7 @@ def start(user, *, company=None, client=None, role=None, activity="", todo=None,
     _alone(user, todo, at)
     if todo is not None:
         if todo.status != TODO:
-            raise OpError("not to do")
+            raise OpError(_("la voce non è più da fare"))
         _drop_planned(user, todo)
         _touch(user, todo, {"status": RUNNING, "mode": mode, **_fields(company, client, role, activity)})
         entry = todo
@@ -173,10 +173,10 @@ def start(user, *, company=None, client=None, role=None, activity="", todo=None,
 def record_past(user, *, start_at, end_at, company=None, client=None, role=None, activity="", todo=None):
     """A closed activity with the work done (the app's Lavoro · Passata), or [todo] closed with it."""
     if end_at <= start_at:
-        raise OpError("end before start")
+        raise OpError(_("la fine deve seguire l'inizio"))
     if todo is not None:
         if todo.status != TODO:
-            raise OpError("not to do")
+            raise OpError(_("la voce non è più da fare"))
         _drop_planned(user, todo)
         _touch(user, todo, {"status": CLOSED, "closedUtcMs": engine.now_ms(), **_fields(company, client, role, activity)})
         entry = todo
@@ -191,7 +191,7 @@ def record_past(user, *, start_at, end_at, company=None, client=None, role=None,
 
 def _running(entry):
     if entry.status != RUNNING:
-        raise OpError("not running")
+        raise OpError(_("l'attività non è in corso"))
 
 
 @command
@@ -228,7 +228,7 @@ def reopen(user, entry, mode=WORK, at=None):
     """CLOSED -> RUNNING with [mode] open; the gap since the end stays a gap."""
     at = at or datetime.now().astimezone()
     if entry.status != CLOSED or entry.kind != ActivityKind.ACTIVITY:
-        raise OpError("not closed")
+        raise OpError(_("l'attività non è chiusa"))
     _alone(user, entry, at)
     _open(user, entry, mode, at)
     # leaving CLOSED clears a declared completion (ACTIVITY-MODEL §2.4)
@@ -239,7 +239,7 @@ def reopen(user, entry, mode=WORK, at=None):
 def complete(user, entry):
     """§3 complete() (app issue #189): an activity of travel only, closed and incomplete, declared complete now."""
     if not A.can_complete(entry, Segment.objects.filter(entry=entry, deleted=False)):
-        raise OpError("not completable")
+        raise OpError(_("l'attività non può essere dichiarata completa"))
     _touch(user, entry, {"completedUtcMs": engine.now_ms()})
 
 
@@ -247,7 +247,7 @@ def complete(user, entry):
 def uncomplete(user, entry):
     """§3 uncomplete(): the declared completion goes; the activity is judged by §2.4 again."""
     if not A.can_uncomplete(entry):
-        raise OpError("not completed")
+        raise OpError(_("l'attività non è dichiarata completa"))
     _touch(user, entry, {"completedUtcMs": None})
 
 
@@ -255,7 +255,7 @@ def uncomplete(user, entry):
 def tick(user, entry):
     """A to-do done without work: TODO -> CLOSED, the plan's segments gone."""
     if entry.status != TODO:
-        raise OpError("not to do")
+        raise OpError(_("la voce non è più da fare"))
     _drop_planned(user, entry)
     _touch(user, entry, {"status": CLOSED, "closedUtcMs": engine.now_ms()})
 
@@ -298,7 +298,7 @@ def _review(user, entry):
 @command
 def edit_segment(user, segment, *, start_at, end_at, kind):
     if end_at is not None and end_at <= start_at:
-        raise OpError("end before start")
+        raise OpError(_("la fine deve seguire l'inizio"))
     put(user, "segment", segment.uid, {"startUtcMs": ms(start_at), "endUtcMs": ms(end_at) if end_at else None, "kind": kind})
     _review(user, segment.entry)
 
@@ -312,7 +312,7 @@ def remove_segment(user, segment):
 @command
 def add_segment(user, entry, *, start_at, end_at, kind):
     if end_at <= start_at:
-        raise OpError("end before start")
+        raise OpError(_("la fine deve seguire l'inizio"))
     fields = {"entryUid": str(entry.uid), "kind": kind, "startUtcMs": ms(start_at), "endUtcMs": ms(end_at), "zoneId": entry.zone_id, "source": "MANUAL"}
     if entry.status == EntryStatus.TODO:
         # the segments of a to-do are its plan (ACTIVITY-MODEL §1.2): confirmed or changed when it starts
@@ -324,7 +324,7 @@ def add_segment(user, entry, *, start_at, end_at, kind):
 @command
 def add_expense(user, entry, *, cents, description):
     if cents <= 0 or not description.strip():
-        raise OpError("amount and description")
+        raise OpError(_("servono un importo e una descrizione"))
     put(user, "expense", new_uid(), {"entryUid": str(entry.uid), "amountCents": cents, "description": description.strip(), "createdUtcMs": engine.now_ms()})
     _touch(user, entry, {})
 
@@ -348,7 +348,7 @@ def save_todo(user, uid, fields, owner=None):
 def untick(user, entry):
     """CLOSED without real segments -> TODO: a task ticked off by mistake (§3 untick)."""
     if entry.status != CLOSED or entry.kind != ActivityKind.ACTIVITY or real_segments(entry):
-        raise OpError("not ticked")
+        raise OpError(_("la voce non è stata spuntata"))
     _touch(user, entry, {"status": TODO, "closedUtcMs": None, "completedUtcMs": None})
 
 
@@ -356,7 +356,7 @@ def untick(user, entry):
 def purge(user, entry):
     """Deleted for good: only an activity already in the bin (the web's bin page)."""
     if entry.deleted_utc is None:
-        raise OpError("not in the bin")
+        raise OpError(_("la voce non è nel cestino"))
     delete(user, "entry", entry.uid)
 
 
@@ -414,7 +414,7 @@ def stop_with_return(user, entry, at=None):
     _running(entry)
     out = outbound(entry)
     if out is None or out.end_utc is None:
-        raise OpError("no return trip")
+        raise OpError(_("non c'è un viaggio di andata da ripetere al ritorno"))
     length = out.end_utc - out.start_utc
     with transaction.atomic():
         _close_open(user, entry, at)
@@ -442,7 +442,7 @@ def save_absence(user, uid, *, first, last, start_min=None, duration_min=None, a
 
     user = owner or user
     if last < first or (last - first).days >= 366:
-        raise OpError("days")
+        raise OpError(_("i giorni non sono validi"))
     now = engine.now_ms()
     fields = {"absenceKind": absence_kind, "companyUid": str(company.uid) if company else None, "activity": activity, "notes": notes,
               "updatedUtcMs": now}
@@ -464,11 +464,11 @@ def save_absence(user, uid, *, first, last, start_min=None, duration_min=None, a
         # one day with times is taken as chosen, as the app's AbsencePlanner (a permesso on a Saturday)
         spans = A.absence_segments(first, last, ZoneInfo(dj.TIME_ZONE), start_min, duration_min, rows(WorkSchedule), rows(LunchBreak), off,
                                    with_times_every_day=first == last)
-        for _, _, a, b in spans:
+        for *_day, a, b in spans:
             put(user, "segment", new_uid(), {
                 "entryUid": str(uid), "kind": A.ABSENCE, "startUtcMs": ms(a), "endUtcMs": ms(b), "zoneId": entry.zone_id, "source": "MANUAL",
             })
-        put(user, "entry", uid, {"closedUtcMs": max((ms(b) for *_, b in spans), default=now)})
+        put(user, "entry", uid, {"closedUtcMs": max((ms(b) for *_day, b in spans), default=now)})
     return uid
 
 
@@ -493,7 +493,7 @@ def assign(by, todo, to):
     from records.models import ActivityAssignment
 
     if todo.status != TODO:
-        raise OpError("not to do")
+        raise OpError(_("la voce non è più da fare"))
     try:
         with transaction.atomic():
             rev = engine.next_rev(todo.org)
