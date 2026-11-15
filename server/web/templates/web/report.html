@@ -1,33 +1,36 @@
 {% extends "web/base.html" %}{% load i18n at %}
-{% block title %}{% translate "Report" %} · ActivityTrack{% endblock %}
+{% block title %}{{ page_title }} · ActivityTrack{% endblock %}
 {% block content %}
 <h1>{% translate "Report" %}</h1>
-<p class="tabs"><a href="{% url 'report' %}?{{ request.GET.urlencode }}" class="{% if mode == 'summary' %}on{% endif %}">{% translate "Riepilogativo" %}</a>
+<p class="tabs no-print"><a href="{% url 'report' %}?{{ request.GET.urlencode }}" class="{% if mode == 'summary' %}on{% endif %}">{% translate "Riepilogativo" %}</a>
 	<a href="{% url 'report_detail' %}?{{ request.GET.urlencode }}" class="{% if mode == 'detail' %}on{% endif %}">{% translate "Dettaglio attività" %}</a></p>
-{% if reader %}<p class="muted">{% translate "Le attività chiuse delle aziende assegnate a questo account." %}</p>{% endif %}
-<form class="filters" method="get">
+{% if reader %}<p class="muted no-print">{% translate "Le attività chiuse delle aziende assegnate a questo account." %}</p>{% endif %}
+<div class="print-head"><h2>{{ title }}</h2>
+	<p>{{ since|udate }} – {{ until|udate }}{% if company %} · {{ company.name }}{% endif %}{% if person %} · {{ person.get_full_name|default:person.username }}{% endif %} · <span>ActivityTrack Web</span> · {{ now|udate }} {{ now|utime }}</p></div>
+<form class="filters no-print" method="get"><input type="hidden" name="f" value="1">
+	{% if sorted %}<input type="hidden" name="sort" value="{{ sorted }}"><input type="hidden" name="dir" value="{{ direction }}">{% endif %}
 	<label>{% translate "Dal" %}<input type="date" name="from" value="{{ since|date:'Y-m-d' }}"></label>
 	<label>{% translate "Al" %}<input type="date" name="to" value="{{ until|date:'Y-m-d' }}"></label>
 	<label>{% translate "Azienda" %}<select name="company"><option value="">{% translate "tutte" %}</option>{% for c in companies %}<option value="{{ c.uid }}" {% if f.company == c.uid|stringformat:"s" %}selected{% endif %}>{{ c.name }}</option>{% endfor %}</select></label>
 	{% if people %}<label>{% translate "Persona" %}<select name="person"><option value="">{% translate "tutte" %}</option>{% for p in people %}<option value="{{ p.pk }}" {% if f.person == p.pk|stringformat:"s" %}selected{% endif %}>{{ p.get_full_name|default:p.username }}</option>{% endfor %}</select></label>{% endif %}
+	<details class="dropdown"><summary class="button">{% translate "Colonne" %} ▾</summary><div class="menu">
+		{% for c in columns %}<label class="check"><input type="checkbox" name="col" value="{{ c.key }}" {% if c.on %}checked{% endif %}> {{ c.label }}</label>{% endfor %}
+		<hr><a href="?f=1{% if f.from %}&amp;from={{ f.from|urlencode }}{% endif %}{% if f.to %}&amp;to={{ f.to|urlencode }}{% endif %}">{% translate "Colonne predefinite" %}</a>
+	</div></details>
 	<button>{% translate "Aggiorna" %}</button>
-	<a class="button" href="{% url 'report_csv' %}?{{ request.GET.urlencode }}">{% icon "download" %}CSV</a>
 </form>
-{% if mode == "summary" %}<section class="card"><table class="list totals">
-	<thead><tr><th>{% translate "Azienda" %}</th><th>{% translate "Cliente" %}</th><th>{% translate "Attività" %}</th><th>{% translate "Lavoro" %}</th><th>{% translate "Viaggio" %}</th><th>{% translate "Pause" %}</th><th>{% translate "Spese" %}</th></tr></thead>
-	<tbody>{% for t in table %}<tr><td>{{ t.company }}</td><td>{{ t.client }}</td><td>{{ t.count }}</td><td><b>{{ t.work }}</b><span class="sub">{{ t.real_work }}</span></td><td>{{ t.travel }}<span class="sub">{{ t.real_travel }}</span></td><td>{{ t.pause }}<span class="sub">{{ t.real_pause }}</span></td><td>{{ t.expenses|eur }}</td></tr>
-	{% empty %}<tr><td colspan="7" class="muted">{% translate "Nessuna attività nel periodo." %}</td></tr>{% endfor %}</tbody>
-	{% if table %}<tfoot><tr><th colspan="3">{% translate "Totale" %}</th><th>{{ whole.work }}<span class="sub">{{ whole.real_work }}</span></th><th>{{ whole.travel }}<span class="sub">{{ whole.real_travel }}</span></th><th>{{ whole.pause }}<span class="sub">{{ whole.real_pause }}</span></th><th>{{ expenses|eur }}</th></tr></tfoot>{% endif %}
-</table></section>
-<p class="doc">{% translate "Tempi arrotondati come nel report dell'app, con le regole della policy di ciascuno (altrimenti quelle predefinite); sotto, in piccolo, i tempi registrati. Un'attività a cavallo di più giorni conta in ciascuno." %}</p>
+<p class="actions export no-print">
+	{% if exports and not export_long %}{% for fmt in exports %}<a class="button" href="{% url 'report_export' mode fmt %}?{{ request.GET.urlencode }}">{% icon "download" %}{{ fmt|upper }}</a>{% endfor %}{% endif %}
+	<button type="button" class="tonal" data-print hidden>{% translate "Stampa / PDF" %}</button>
+	{% if exports and export_long %}<span class="doc">{% blocktranslate with n=export_max %}L'esportazione è consentita fino a {{ n }} giorni.{% endblocktranslate %}</span>{% endif %}
+	{% if not exports %}<span class="doc">{% translate "L'esportazione non è consentita dalla policy." %}</span>{% endif %}
+	{% if exports and mode == "detail" %}<a class="button" href="{% url 'report_csv' %}?{{ request.GET.urlencode }}" title="{% translate 'Una riga per attività e giorno, tutte le colonne, con i minuti registrati' %}">{% icon "download" %}{% translate "CSV completo" %}</a>{% endif %}
+</p>
+<section class="card">{% include "web/_table.html" with klass=mode %}</section>
+{% if mode == "summary" %}<p class="doc">{% translate "Tempi arrotondati come nel report dell'app, con le regole della policy di ciascuno (altrimenti quelle predefinite); sotto, in piccolo, i tempi registrati. Un'attività a cavallo di più giorni conta in ciascuno." %}</p>{% endif %}
+{% if mode == "detail" %}<p class="doc">{% translate "Una riga per attività e giorno, come i totali del riepilogo. Km, spese e allegati sono contati sulla prima riga di un'attività nel periodo." %}</p>{% endif %}
 {% if absences %}<h2>{% translate "Assenze" %}</h2>
 <section class="card"><table class="list totals"><thead><tr><th>{% translate "Tipo" %}</th><th>{% translate "Giorni" %}</th><th>{% translate "Ore" %}</th></tr></thead>
 	<tbody>{% for a in absences %}<tr><td>{{ a.kind }}</td><td>{{ a.days }}</td><td>{{ a.time }}</td></tr>{% endfor %}</tbody></table></section>
 <p class="doc">{% translate "Le assenze si contano a parte: non sono lavoro, viaggio né pausa e non sono arrotondate. Una assenza senza azienda vale per tutte." %}</p>{% endif %}
-{% endif %}
-{% if mode == "detail" %}{% regroup rows by day as by_day %}{% for d in by_day %}<h3 class="sec">{{ d.grouper|udate:"long" }}</h3>
-{% for r in d.list %}{% include "web/_entry_row.html" with show_owner=people %}{% endfor %}{% endfor %}
-{% for r in absence_rows %}{% if forloop.first %}<h3 class="sec">{% translate "Assenze" %}</h3>{% endif %}<a class="row" href="{% url 'todo_edit' r.e.uid %}" style="--band: var(--absence)">
-	<span class="main"><b>{{ r.e.absence_kind|absence_label }}</b><span class="sub">{{ r.day|udate:"day" }}{% if r.e.company %} · {{ r.e.company.name }}{% endif %}{% if people %} · {{ r.e.owner.get_full_name|default:r.e.owner.username }}{% endif %}</span></span>
-	<span class="side">{{ r.start|utime }}–{{ r.end|utime }}<span class="sub">{{ r.time }}</span></span></a>{% endfor %}{% endif %}
 {% endblock %}

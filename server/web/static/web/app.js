@@ -4,6 +4,7 @@
  * the Content-Security-Policy allows scripts from this site only.
  *   data-autosubmit    on a form or a field: a change submits the form
  *   data-confirm       on a form (submit) or a button (click): asks first
+ *   data-print         a button of the reports: prints the page (shown only with a script; the print stylesheet does the rest)
  *   data-policy-user   the policy index: opens the chosen user's policy
  *   data-when          the new-activity form: the fields of "now", "started", "past"
  *   data-profile       the user form: the parts of the chosen profile
@@ -25,6 +26,10 @@
 			ev.preventDefault();
 			location.href = form.dataset.policyUser.replace("0", form.elements.u.value);
 		}
+	});
+	document.querySelectorAll("button[data-print]").forEach(function (b) {
+		b.hidden = false;
+		b.addEventListener("click", function () { window.print(); });
 	});
 	document.addEventListener("click", function (ev) {
 		var b = ev.target.closest("button[data-confirm]");

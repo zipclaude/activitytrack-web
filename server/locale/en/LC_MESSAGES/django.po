@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ActivityTrack Web\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-15 11:50+0100\n"
+"POT-Creation-Date: 2026-11-15 12:00+0100\n"
 "PO-Revision-Date: 2026-11-05 22:00+0100\n"
 "Last-Translator: ActivityTrack\n"
 "Language-Team: English\n"
@@ -967,6 +967,65 @@ msgstr "the days are not valid"
 msgid "chi la riceve ha già un'attività con la stessa chiave esterna"
 msgstr "the assignee already has an activity with the same external key"
 
+#, python-format
+msgid "%(l)s registrato"
+msgstr "%(l)s recorded"
+
+msgid "Orario"
+msgstr "Time"
+
+msgid "Persona"
+msgstr "Person"
+
+msgid "Azienda"
+msgstr "Company"
+
+msgid "Cliente"
+msgstr "Client"
+
+msgid "Ruolo"
+msgstr "Role"
+
+msgid "Attività"
+msgstr "Activities"
+
+msgid "Località"
+msgstr "Locality"
+
+msgid "Lavoro"
+msgstr "Work"
+
+msgid "Viaggio"
+msgstr "Travel"
+
+msgid "Pause"
+msgstr "Pauses"
+
+msgid "Rendicontato"
+msgstr "Reported"
+
+msgid "Km"
+msgstr "Km"
+
+msgid "Spese"
+msgstr "Expenses"
+
+msgid "Allegati"
+msgstr "Attachments"
+
+msgid "Riepilogativo"
+msgstr "Summary"
+
+msgid "Dettaglio attività"
+msgstr "Activity detail"
+
+msgid "l'esportazione in questo formato non è consentita dalla policy"
+msgstr "exporting in this format is not allowed by the policy"
+
+#, python-format
+msgid "il periodo supera i %(n)s giorni che la policy consente di esportare"
+msgstr "the period is longer than the %(n)s days the policy allows to export"
+
 msgid "Eliminata"
 msgstr "Deleted"
 
@@ -979,12 +1038,6 @@ msgstr "Planned"
 msgctxt "stato"
 msgid "Da fare"
 msgstr "To do"
-
-msgid "Lavoro"
-msgstr "Work"
-
-msgid "Viaggio"
-msgstr "Travel"
 
 msgid "Pausa"
 msgstr "Pause"
@@ -1064,15 +1117,6 @@ msgstr "Delete this activity? It goes to the bin and can be restored."
 msgid "Eliminare definitivamente? Non si può annullare."
 msgstr "Delete permanently? This cannot be undone."
 
-msgid "Azienda"
-msgstr "Company"
-
-msgid "Cliente"
-msgstr "Client"
-
-msgid "Ruolo"
-msgstr "Role"
-
 msgid "Descrizione"
 msgstr "Description"
 
@@ -1090,6 +1134,15 @@ msgstr "due"
 
 msgid "Avvia"
 msgstr "Start"
+
+msgid "Ordina per questa colonna"
+msgstr "Sort by this column"
+
+msgid "Nessuna attività nel periodo."
+msgstr "No activities in the period."
+
+msgid "Totale"
+msgstr "Total"
 
 msgid "Agenda"
 msgstr "Agenda"
@@ -1111,9 +1164,6 @@ msgstr "Week"
 
 msgid "Mese"
 msgstr "Month"
-
-msgid "Persona"
-msgstr "Person"
 
 msgid "Tutti i tag"
 msgstr "All tags"
@@ -1155,15 +1205,6 @@ msgstr "Home"
 
 msgid "Report"
 msgstr "Report"
-
-msgid "Riepilogativo"
-msgstr "Summary"
-
-msgid "Dettaglio attività"
-msgstr "Activity detail"
-
-msgid "Attività"
-msgstr "Activities"
 
 msgid "Cestino"
 msgstr "Bin"
@@ -1217,9 +1258,6 @@ msgstr "To"
 msgid "tutte"
 msgstr "all"
 
-msgid "Nessuna attività nel periodo."
-msgstr "No activities in the period."
-
 msgid ""
 "Da verificare: dopo una sincronizzazione due periodi si sovrappongono. "
 "Correggi gli orari."
@@ -1259,9 +1297,6 @@ msgstr "End the activity and add the return trip"
 msgid "Dettagli"
 msgstr "Details"
 
-msgid "Località"
-msgstr "Locality"
-
 msgid "Note"
 msgstr "Notes"
 
@@ -1290,14 +1325,8 @@ msgstr ""
 msgid "Aggiungi"
 msgstr "Add"
 
-msgid "Spese"
-msgstr "Expenses"
-
 msgid "Parcheggio"
 msgstr "Parking"
-
-msgid "Allegati"
-msgstr "Attachments"
 
 msgid "file in arrivo"
 msgstr "file on its way"
@@ -1579,11 +1608,28 @@ msgstr ""
 msgid "Le attività chiuse delle aziende assegnate a questo account."
 msgstr "The closed activities of the companies assigned to this account."
 
-msgid "Pause"
-msgstr "Pauses"
+msgid "Colonne"
+msgstr "Columns"
 
-msgid "Totale"
-msgstr "Total"
+msgid "Colonne predefinite"
+msgstr "Default columns"
+
+msgid "Stampa / PDF"
+msgstr "Print / PDF"
+
+#, python-format
+msgid "L'esportazione è consentita fino a %(n)s giorni."
+msgstr "Exporting is allowed up to %(n)s days."
+
+msgid "L'esportazione non è consentita dalla policy."
+msgstr "Exporting is not allowed by the policy."
+
+msgid ""
+"Una riga per attività e giorno, tutte le colonne, con i minuti registrati"
+msgstr "One row per activity and day, all columns, with the recorded minutes"
+
+msgid "CSV completo"
+msgstr "Full CSV"
 
 msgid ""
 "Tempi arrotondati come nel report dell'app, con le regole della policy di "
@@ -1593,6 +1639,13 @@ msgstr ""
 "Times rounded as in the app's report, with the rules of each person's policy "
 "(the default ones otherwise); below, in small print, the recorded times. An "
 "activity spanning several days counts in each."
+
+msgid ""
+"Una riga per attività e giorno, come i totali del riepilogo. Km, spese e "
+"allegati sono contati sulla prima riga di un'attività nel periodo."
+msgstr ""
+"One row per activity and day, as in the summary's totals. Km, expenses and "
+"attachments are counted on an activity's first row in the period."
 
 msgid "Assenze"
 msgstr "Absences"

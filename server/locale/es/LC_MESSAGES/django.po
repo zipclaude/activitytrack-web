@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ActivityTrack Web\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-15 11:50+0100\n"
+"POT-Creation-Date: 2026-11-15 12:00+0100\n"
 "PO-Revision-Date: 2026-11-15 12:00+0100\n"
 "Last-Translator: ActivityTrack\n"
 "Language-Team: Spanish\n"
@@ -968,6 +968,65 @@ msgstr "los días no son válidos"
 msgid "chi la riceve ha già un'attività con la stessa chiave esterna"
 msgstr "quien la recibe ya tiene una actividad con la misma clave externa"
 
+#, python-format
+msgid "%(l)s registrato"
+msgstr "%(l)s registrado"
+
+msgid "Orario"
+msgstr "Horario"
+
+msgid "Persona"
+msgstr "Persona"
+
+msgid "Azienda"
+msgstr "Empresa"
+
+msgid "Cliente"
+msgstr "Cliente"
+
+msgid "Ruolo"
+msgstr "Rol"
+
+msgid "Attività"
+msgstr "Actividades"
+
+msgid "Località"
+msgstr "Localidad"
+
+msgid "Lavoro"
+msgstr "Trabajo"
+
+msgid "Viaggio"
+msgstr "Viaje"
+
+msgid "Pause"
+msgstr "Pausas"
+
+msgid "Rendicontato"
+msgstr "Reportado"
+
+msgid "Km"
+msgstr "Km"
+
+msgid "Spese"
+msgstr "Gastos"
+
+msgid "Allegati"
+msgstr "Adjuntos"
+
+msgid "Riepilogativo"
+msgstr "Resumen"
+
+msgid "Dettaglio attività"
+msgstr "Detalle de actividades"
+
+msgid "l'esportazione in questo formato non è consentita dalla policy"
+msgstr "la política no permite exportar en este formato"
+
+#, python-format
+msgid "il periodo supera i %(n)s giorni che la policy consente di esportare"
+msgstr "el periodo supera los %(n)s días que la política permite exportar"
+
 msgid "Eliminata"
 msgstr "Eliminada"
 
@@ -980,12 +1039,6 @@ msgstr "Planificada"
 msgctxt "stato"
 msgid "Da fare"
 msgstr "Por hacer"
-
-msgid "Lavoro"
-msgstr "Trabajo"
-
-msgid "Viaggio"
-msgstr "Viaje"
 
 msgid "Pausa"
 msgstr "Pausa"
@@ -1065,15 +1118,6 @@ msgstr "¿Eliminar esta actividad? Va a la papelera y se puede restaurar."
 msgid "Eliminare definitivamente? Non si può annullare."
 msgstr "¿Eliminar definitivamente? No se puede deshacer."
 
-msgid "Azienda"
-msgstr "Empresa"
-
-msgid "Cliente"
-msgstr "Cliente"
-
-msgid "Ruolo"
-msgstr "Rol"
-
 msgid "Descrizione"
 msgstr "Descripción"
 
@@ -1091,6 +1135,15 @@ msgstr "vence"
 
 msgid "Avvia"
 msgstr "Iniciar"
+
+msgid "Ordina per questa colonna"
+msgstr "Ordenar por esta columna"
+
+msgid "Nessuna attività nel periodo."
+msgstr "Ninguna actividad en el periodo."
+
+msgid "Totale"
+msgstr "Total"
 
 msgid "Agenda"
 msgstr "Agenda"
@@ -1112,9 +1165,6 @@ msgstr "Semana"
 
 msgid "Mese"
 msgstr "Mes"
-
-msgid "Persona"
-msgstr "Persona"
 
 msgid "Tutti i tag"
 msgstr "Todas las etiquetas"
@@ -1157,15 +1207,6 @@ msgstr "Inicio"
 
 msgid "Report"
 msgstr "Informe"
-
-msgid "Riepilogativo"
-msgstr "Resumen"
-
-msgid "Dettaglio attività"
-msgstr "Detalle de actividades"
-
-msgid "Attività"
-msgstr "Actividades"
 
 msgid "Cestino"
 msgstr "Papelera"
@@ -1219,9 +1260,6 @@ msgstr "Hasta"
 msgid "tutte"
 msgstr "todas"
 
-msgid "Nessuna attività nel periodo."
-msgstr "Ninguna actividad en el periodo."
-
 msgid ""
 "Da verificare: dopo una sincronizzazione due periodi si sovrappongono. "
 "Correggi gli orari."
@@ -1263,9 +1301,6 @@ msgstr "Terminar la actividad y añadir el viaje de vuelta"
 msgid "Dettagli"
 msgstr "Detalles"
 
-msgid "Località"
-msgstr "Localidad"
-
 msgid "Note"
 msgstr "Notas"
 
@@ -1294,14 +1329,8 @@ msgstr ""
 msgid "Aggiungi"
 msgstr "Añadir"
 
-msgid "Spese"
-msgstr "Gastos"
-
 msgid "Parcheggio"
 msgstr "Aparcamiento"
-
-msgid "Allegati"
-msgstr "Adjuntos"
 
 msgid "file in arrivo"
 msgstr "archivo en camino"
@@ -1585,11 +1614,29 @@ msgstr ""
 msgid "Le attività chiuse delle aziende assegnate a questo account."
 msgstr "Las actividades cerradas de las empresas asignadas a esta cuenta."
 
-msgid "Pause"
-msgstr "Pausas"
+msgid "Colonne"
+msgstr "Columnas"
 
-msgid "Totale"
-msgstr "Total"
+msgid "Colonne predefinite"
+msgstr "Columnas predeterminadas"
+
+msgid "Stampa / PDF"
+msgstr "Imprimir / PDF"
+
+#, python-format
+msgid "L'esportazione è consentita fino a %(n)s giorni."
+msgstr "La exportación está permitida hasta %(n)s días."
+
+msgid "L'esportazione non è consentita dalla policy."
+msgstr "La política no permite exportar."
+
+msgid ""
+"Una riga per attività e giorno, tutte le colonne, con i minuti registrati"
+msgstr ""
+"Una fila por actividad y día, todas las columnas, con los minutos registrados"
+
+msgid "CSV completo"
+msgstr "CSV completo"
 
 msgid ""
 "Tempi arrotondati come nel report dell'app, con le regole della policy di "
@@ -1600,6 +1647,14 @@ msgstr ""
 "política de cada persona (si no, las predeterminadas); debajo, en pequeño, "
 "los tiempos registrados. Una actividad que abarca varios días cuenta en cada "
 "uno."
+
+msgid ""
+"Una riga per attività e giorno, come i totali del riepilogo. Km, spese e "
+"allegati sono contati sulla prima riga di un'attività nel periodo."
+msgstr ""
+"Una fila por actividad y día, como los totales del resumen. Los km, los "
+"gastos y los adjuntos se cuentan en la primera fila de una actividad en el "
+"periodo."
 
 msgid "Assenze"
 msgstr "Ausencias"

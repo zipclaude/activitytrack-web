@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ActivityTrack Web\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-15 11:50+0100\n"
+"POT-Creation-Date: 2026-11-15 12:00+0100\n"
 "PO-Revision-Date: 2026-11-15 12:00+0100\n"
 "Last-Translator: ActivityTrack\n"
 "Language-Team: German\n"
@@ -979,6 +979,67 @@ msgid "chi la riceve ha già un'attività con la stessa chiave esterna"
 msgstr ""
 "der Empfänger hat bereits eine Tätigkeit mit demselben externen Schlüssel"
 
+#, python-format
+msgid "%(l)s registrato"
+msgstr "%(l)s erfasst"
+
+msgid "Orario"
+msgstr "Zeit"
+
+msgid "Persona"
+msgstr "Person"
+
+msgid "Azienda"
+msgstr "Firma"
+
+msgid "Cliente"
+msgstr "Kunde"
+
+msgid "Ruolo"
+msgstr "Rolle"
+
+msgid "Attività"
+msgstr "Tätigkeiten"
+
+msgid "Località"
+msgstr "Ort"
+
+msgid "Lavoro"
+msgstr "Arbeit"
+
+msgid "Viaggio"
+msgstr "Reise"
+
+msgid "Pause"
+msgstr "Pausen"
+
+msgid "Rendicontato"
+msgstr "Berichtet"
+
+msgid "Km"
+msgstr "Km"
+
+msgid "Spese"
+msgstr "Ausgaben"
+
+msgid "Allegati"
+msgstr "Anhänge"
+
+msgid "Riepilogativo"
+msgstr "Zusammenfassung"
+
+msgid "Dettaglio attività"
+msgstr "Tätigkeitsdetails"
+
+msgid "l'esportazione in questo formato non è consentita dalla policy"
+msgstr "der Export in diesem Format ist durch die Richtlinie nicht erlaubt"
+
+#, python-format
+msgid "il periodo supera i %(n)s giorni che la policy consente di esportare"
+msgstr ""
+"der Zeitraum überschreitet die %(n)s Tage, die die Richtlinie für den Export "
+"erlaubt"
+
 msgid "Eliminata"
 msgstr "Gelöscht"
 
@@ -991,12 +1052,6 @@ msgstr "Geplant"
 msgctxt "stato"
 msgid "Da fare"
 msgstr "Zu erledigen"
-
-msgid "Lavoro"
-msgstr "Arbeit"
-
-msgid "Viaggio"
-msgstr "Reise"
 
 msgid "Pausa"
 msgstr "Pause"
@@ -1078,15 +1133,6 @@ msgstr ""
 msgid "Eliminare definitivamente? Non si può annullare."
 msgstr "Endgültig löschen? Das lässt sich nicht rückgängig machen."
 
-msgid "Azienda"
-msgstr "Firma"
-
-msgid "Cliente"
-msgstr "Kunde"
-
-msgid "Ruolo"
-msgstr "Rolle"
-
 msgid "Descrizione"
 msgstr "Beschreibung"
 
@@ -1104,6 +1150,15 @@ msgstr "fällig"
 
 msgid "Avvia"
 msgstr "Starten"
+
+msgid "Ordina per questa colonna"
+msgstr "Nach dieser Spalte sortieren"
+
+msgid "Nessuna attività nel periodo."
+msgstr "Keine Tätigkeiten im Zeitraum."
+
+msgid "Totale"
+msgstr "Gesamt"
 
 msgid "Agenda"
 msgstr "Agenda"
@@ -1125,9 +1180,6 @@ msgstr "Woche"
 
 msgid "Mese"
 msgstr "Monat"
-
-msgid "Persona"
-msgstr "Person"
 
 msgid "Tutti i tag"
 msgstr "Alle Tags"
@@ -1171,15 +1223,6 @@ msgstr "Start"
 
 msgid "Report"
 msgstr "Bericht"
-
-msgid "Riepilogativo"
-msgstr "Zusammenfassung"
-
-msgid "Dettaglio attività"
-msgstr "Tätigkeitsdetails"
-
-msgid "Attività"
-msgstr "Tätigkeiten"
 
 msgid "Cestino"
 msgstr "Papierkorb"
@@ -1233,9 +1276,6 @@ msgstr "Bis"
 msgid "tutte"
 msgstr "alle"
 
-msgid "Nessuna attività nel periodo."
-msgstr "Keine Tätigkeiten im Zeitraum."
-
 msgid ""
 "Da verificare: dopo una sincronizzazione due periodi si sovrappongono. "
 "Correggi gli orari."
@@ -1277,9 +1317,6 @@ msgstr "Tätigkeit beenden und die Rückfahrt hinzufügen"
 msgid "Dettagli"
 msgstr "Details"
 
-msgid "Località"
-msgstr "Ort"
-
 msgid "Note"
 msgstr "Notizen"
 
@@ -1308,14 +1345,8 @@ msgstr ""
 msgid "Aggiungi"
 msgstr "Hinzufügen"
 
-msgid "Spese"
-msgstr "Ausgaben"
-
 msgid "Parcheggio"
 msgstr "Parkplatz"
-
-msgid "Allegati"
-msgstr "Anhänge"
 
 msgid "file in arrivo"
 msgstr "Datei unterwegs"
@@ -1600,11 +1631,29 @@ msgid "Le attività chiuse delle aziende assegnate a questo account."
 msgstr ""
 "Die abgeschlossenen Tätigkeiten der Firmen, die diesem Konto zugewiesen sind."
 
-msgid "Pause"
-msgstr "Pausen"
+msgid "Colonne"
+msgstr "Spalten"
 
-msgid "Totale"
-msgstr "Gesamt"
+msgid "Colonne predefinite"
+msgstr "Standardspalten"
+
+msgid "Stampa / PDF"
+msgstr "Drucken / PDF"
+
+#, python-format
+msgid "L'esportazione è consentita fino a %(n)s giorni."
+msgstr "Der Export ist bis zu %(n)s Tagen erlaubt."
+
+msgid "L'esportazione non è consentita dalla policy."
+msgstr "Der Export ist durch die Richtlinie nicht erlaubt."
+
+msgid ""
+"Una riga per attività e giorno, tutte le colonne, con i minuti registrati"
+msgstr ""
+"Eine Zeile pro Tätigkeit und Tag, alle Spalten, mit den erfassten Minuten"
+
+msgid "CSV completo"
+msgstr "Vollständiges CSV"
 
 msgid ""
 "Tempi arrotondati come nel report dell'app, con le regole della policy di "
@@ -1614,6 +1663,14 @@ msgstr ""
 "Zeiten gerundet wie im Bericht der App, mit den Regeln der Richtlinie jeder "
 "Person (sonst den Standardregeln); darunter, klein, die erfassten Zeiten. "
 "Eine Tätigkeit über mehrere Tage zählt an jedem Tag."
+
+msgid ""
+"Una riga per attività e giorno, come i totali del riepilogo. Km, spese e "
+"allegati sono contati sulla prima riga di un'attività nel periodo."
+msgstr ""
+"Eine Zeile pro Tätigkeit und Tag, wie die Summen der Zusammenfassung. Km, "
+"Ausgaben und Anhänge werden in der ersten Zeile einer Tätigkeit im Zeitraum "
+"gezählt."
 
 msgid "Assenze"
 msgstr "Abwesenheiten"

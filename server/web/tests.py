@@ -697,7 +697,7 @@ class AgendaTests(WorkTests):
     def test_the_report_rounds_as_the_app(self):
         self.client.post("/attivita/nuova/", {"when": "past", "client": "22222222-2222-4222-8222-222222222222", "activity": "Riunione", "start": "2026-10-27T09:00", "end": "2026-10-27T10:07"})
         page = self.client.get("/report/?from=2026-10-01&to=2026-10-31").content.decode()
-        self.assertIn("<b>1:15</b><span class=\"sub\">1:07</span>", page)
+        self.assertIn(">1:15<span class=\"sub\">1:07</span>", page)
         csv = self.client.get("/report/csv/?from=2026-10-01&to=2026-10-31").content.decode()
         self.assertIn(";67;0;0;0.00;;", csv)
         self.assertTrue(csv.strip().endswith(";75;0;0;0"), csv)
@@ -1037,7 +1037,7 @@ class HomeListTests(WorkTests):
         self.assertIn("Ferie", page)
         self.assertIn(">8:00<", page)
         # the work total is the work's alone
-        self.assertIn("<b>1:00</b>", page)
+        self.assertIn(">1:00<", page)
         csv = self.client.get("/report/csv/?from=2026-10-01&to=2026-10-31").content.decode()
         csv = csv.splitlines()
         self.assertTrue(csv[0].endswith("absence_min"))
@@ -1831,3 +1831,207 @@ class MenuTreeTests(WorkTests):
         page = self.client.get("/").content.decode()
         self.assertEqual(page.count('<details class="branch"'), 2)
         self.assertNotRegex(page, r"<details class=\"branch\"[^>]*(onclick|tabindex)")
+
+
+class ReportTableTests(WorkTests):
+    """The reports are tables: sorted, with chosen columns, exported as shown, printable (issues #62, #63)."""
+
+    RANGE = "from=2026-10-01&to=2026-10-31"
+
+    client_uid = "22222222-2222-4222-8222-222222222222"
+
+    def three(self):
+        """Three activities of different length, the shortest the earliest."""
+        for activity, day, start, end in (("Beta", "27", "09:00", "10:00"), ("Alfa", "28", "09:00", "12:00"),
+                                          ("=Gamma", "29", "09:00", "10:30")):
+            self.client.post("/attivita/nuova/", {"when": "past", "client": self.client_uid, "activity": activity,
+                                                  "start": f"2026-10-{day}T{start}", "end": f"2026-10-{day}T{end}"})
+
+    def heads(self, url):
+        return re.findall(r'scope="col"><a [^>]*>([^<]*)', self.client.get(url).content.decode())
+
+    def names(self, url):
+        page = self.client.get(url).content.decode()
+        found = re.findall(r"(Alfa|Beta|=Gamma)</a>", page)
+        return found
+
+    def test_the_detail_is_one_row_for_each_activity_and_day_with_what_is_useful(self):
+        self.three()
+        from records.models import Entry
+
+        e = Entry.objects.get(activity="Alfa")
+        form = {"action": "save", "client": self.client_uid, "activity": "Alfa", "tags": "remoto"}
+        self.client.post(f"/attivita/{e.uid}/", form)
+        cols = "&f=1&col=date&col=time&col=client&col=activity&col=tags&col=work&col=state"
+        r = self.client.get(f"/report/dettaglio/?{self.RANGE}{cols}")
+        page = r.content.decode()
+        self.assertEqual(len(r.context["t"]["rows"]), 3)
+        heads = re.findall(r'scope="col"><a [^>]*>([^<]*)', page)
+        self.assertEqual(heads, ["Data", "Orario", "Cliente", "Attività", "Tag", "Lavoro", "Stato"])
+        self.assertIn("09:00–12:00", page)
+        self.assertIn(">3:00<", page)
+        self.assertIn(">remoto<", page)
+        self.assertIn("Banca", page)
+
+    def test_a_column_sorts_both_ways_and_the_url_keeps_it(self):
+        self.three()
+        base = f"/report/dettaglio/?{self.RANGE}"
+        self.assertEqual(self.names(base), ["Beta", "Alfa", "=Gamma"])
+        self.assertEqual(self.names(base + "&sort=work&dir=asc"), ["Beta", "=Gamma", "Alfa"])
+        self.assertEqual(self.names(base + "&sort=work&dir=desc"), ["Alfa", "=Gamma", "Beta"])
+        self.assertEqual(self.names(base + "&sort=activity&dir=asc"), ["=Gamma", "Alfa", "Beta"])
+        # a column that is not one is no sort
+        self.assertEqual(self.names(base + "&sort=nonsense&dir=desc"), ["Beta", "Alfa", "=Gamma"])
+        page = self.client.get(base + "&sort=work&dir=desc").content.decode()
+        self.assertIn('aria-sort="descending"', page)
+        self.assertIn('aria-sort="none"', page)
+        # the head links keep the filters and flip the direction of the sorted column
+        self.assertRegex(page, r'<a href="\?from=2026-10-01&amp;to=2026-10-31&amp;sort=work&amp;dir=asc"')
+        self.assertIn("▼", page)
+
+    def test_the_summary_sorts_too(self):
+        self.three()
+        # two clients, the second with more work
+        from sync import engine
+        from records.models import Client
+
+        engine.apply(self.boss, {"type": "client", "uid": "22222222-2222-4222-8222-222222222223",
+                                 "fields": {"name": "Zeta", "companyUid": str(self.acme.uid)}}, central=True)
+        self.client.post("/attivita/nuova/", {"when": "past", "client": "22222222-2222-4222-8222-222222222223",
+                                              "activity": "Z", "start": "2026-10-26T09:00", "end": "2026-10-26T17:00"})
+        base = f"/report/?{self.RANGE}"
+
+        def order(url):
+            return re.findall(r"<td[^>]*>(Banca|Zeta)</td>", self.client.get(url).content.decode())
+        self.assertEqual(order(base), ["Banca", "Zeta"])
+        self.assertEqual(order(base + "&sort=work&dir=desc"), ["Zeta", "Banca"])
+        self.assertEqual(order(base + "&sort=client&dir=desc"), ["Zeta", "Banca"])
+        self.assertEqual(Client.objects.filter(name="Zeta").count(), 1)
+
+    def test_the_columns_are_chosen_and_remembered(self):
+        self.three()
+        page = self.client.get(f"/report/dettaglio/?{self.RANGE}&f=1&col=date&col=work").content.decode()
+        heads = re.findall(r'<th class="[^"]*" aria-sort="\w+" scope="col"><a [^>]*>([^<]*)', page)
+        self.assertEqual(heads, ["Data", "Lavoro"])
+        # the next visit without a choice has the last one; the summary has its own
+        self.assertEqual(self.heads(f"/report/dettaglio/?{self.RANGE}"), ["Data", "Lavoro"])
+        self.assertIn("Cliente", self.client.get(f"/report/?{self.RANGE}").content.decode())
+        # the chooser shows what is on; nothing chosen, an unknown column: the default ones
+        page = self.client.get(f"/report/dettaglio/?{self.RANGE}&f=1&col=work").content.decode()
+        self.assertRegex(page, r'name="col" value="work" checked')
+        self.assertNotRegex(page, r'name="col" value="date" checked')
+        default = self.heads(f"/report/dettaglio/?{self.RANGE}&f=1")
+        # a person without a team has no column of persons by default
+        self.assertEqual(default[:3], ["Data", "Orario", "Azienda"])
+        self.assertEqual(self.heads(f"/report/dettaglio/?{self.RANGE}&f=1&col=zzz"), default)
+
+    def rows(self, fmt, query=""):
+        r = self.client.get(f"/report/esporta/detail.{fmt}?{self.RANGE}{query}")
+        self.assertEqual(r.status_code, 200)
+        return r
+
+    def test_the_csv_is_the_table_as_shown(self):
+        self.three()
+        r = self.rows("csv", "&f=1&col=date&col=activity&col=work&sort=work&dir=desc")
+        body = r.content.decode("utf-8")
+        # the byte order mark, a semicolon, the head in the user's language with the unit, the rows in the order shown
+        self.assertTrue(body.startswith("﻿"))
+        lines = body.lstrip("﻿").splitlines()
+        self.assertEqual(lines[0], "Data;Attività;Lavoro (min);Lavoro registrato (min)")
+        self.assertEqual(lines[1:], ["2026-10-28;Alfa;180;180", "2026-10-29;'=Gamma;90;90", "2026-10-27;Beta;60;60"])
+        self.assertIn("attachment", r["Content-Disposition"])
+        self.assertTrue(r["Content-Disposition"].endswith('.csv"'))
+
+    def test_json_and_xml_carry_the_same_rows(self):
+        self.three()
+        import json
+        from xml.etree import ElementTree as ET
+
+        query = "&f=1&col=date&col=time&col=activity&col=work&sort=activity&dir=asc"
+        body = json.loads(self.rows("json", query).content)
+        self.assertEqual((body["report"], body["from"], body["to"]), ("detail", "2026-10-01", "2026-10-31"))
+        self.assertEqual([c["key"] for c in body["columns"]], ["date", "start", "end", "activity", "work", "work_real"])
+        self.assertEqual(body["columns"][4], {"key": "work", "label": "Lavoro", "unit": "min"})
+        self.assertEqual([r["activity"] for r in body["rows"]], ["=Gamma", "Alfa", "Beta"])
+        self.assertEqual(body["rows"][1], {"date": "2026-10-28", "start": "09:00", "end": "12:00", "activity": "Alfa",
+                                           "work": 180, "work_real": 180})
+        root = ET.fromstring(self.rows("xml", query).content)
+        self.assertEqual(root.tag, "report")
+        self.assertEqual(root.get("report"), "detail")
+        rows = root.find("rows").findall("row")
+        self.assertEqual([r.findtext("activity") for r in rows], ["=Gamma", "Alfa", "Beta"])
+        self.assertEqual(rows[1].findtext("work"), "180")
+        self.assertEqual([c.get("key") for c in root.find("columns")],
+                         ["date", "start", "end", "activity", "work", "work_real"])
+
+    def test_the_summary_exports_too_and_the_filters_apply(self):
+        self.three()
+        from sync import engine
+        r = self.client.get(f"/report/esporta/summary.csv?{self.RANGE}&f=1&col=company&col=client&col=count&col=work")
+        lines = r.content.decode().lstrip("﻿").splitlines()
+        self.assertEqual(lines[0], "Azienda;Cliente;Attività;Lavoro (min);Lavoro registrato (min)")
+        self.assertEqual(lines[1], "Acme;Banca;3;330;330")
+        # another period: nothing
+        empty = self.client.get("/report/esporta/summary.json?from=2026-09-01&to=2026-09-30").json()
+        self.assertEqual(empty["rows"], [])
+
+    def test_unknown_reports_and_formats_are_not_found(self):
+        self.assertEqual(self.client.get("/report/esporta/detail.pdf").status_code, 404)
+        self.assertEqual(self.client.get("/report/esporta/other.csv").status_code, 404)
+
+    def test_the_policy_decides_what_can_be_exported(self):
+        self.three()
+        from policies.models import Policy
+
+        def page():
+            return self.client.get(f"/report/dettaglio/?{self.RANGE}").content.decode()
+        self.assertIn("/report/esporta/detail.xml", page())
+        pol = Policy.objects.create(org=self.org, data={"export": {"formats": ["json"]}}, revision=1)
+        p = page()
+        self.assertIn("/report/esporta/detail.json", p)
+        self.assertNotIn("/report/esporta/detail.csv", p)
+        self.assertEqual(self.client.get(f"/report/esporta/detail.csv?{self.RANGE}").status_code, 403)
+        self.assertEqual(self.client.get(f"/report/esporta/detail.json?{self.RANGE}").status_code, 200)
+        # the old CSV of the entries is a CSV export
+        self.assertEqual(self.client.get(f"/report/csv/?{self.RANGE}").status_code, 403)
+        # the feature off: no export at all
+        pol.data = {"features": {"export": False}}
+        pol.save()
+        self.assertNotIn("/report/esporta/", page())
+        self.assertIn("non è consentita", page())
+        for fmt in ("csv", "xml", "json"):
+            self.assertEqual(self.client.get(f"/report/esporta/summary.{fmt}?{self.RANGE}").status_code, 403, fmt)
+        # the longest period
+        pol.data = {"behaviours": {"exportMaxDays": 10}}
+        pol.save()
+        self.assertEqual(self.client.get("/report/esporta/detail.csv?from=2026-10-01&to=2026-10-10").status_code, 200)
+        self.assertEqual(self.client.get("/report/esporta/detail.csv?from=2026-10-01&to=2026-10-11").status_code, 403)
+        long = self.client.get("/report/dettaglio/?from=2026-10-01&to=2026-10-31").content.decode()
+        self.assertNotIn("/report/esporta/", long)
+        self.assertEqual(self.client.get("/report/csv/?from=2026-10-01&to=2026-10-31").status_code, 403)
+
+    def test_the_page_is_ready_to_print(self):
+        self.three()
+        from pathlib import Path
+
+        page = self.client.get(f"/report/dettaglio/?{self.RANGE}&sort=work&dir=desc").content.decode()
+        # a title with the period for the paper, a button that only a script shows, what is not for paper marked
+        self.assertIn('<div class="print-head">', page)
+        self.assertIn('<button type="button" class="tonal" data-print hidden>', page)
+        self.assertGreaterEqual(page.count("no-print"), 3)
+        css = (Path(__file__).parent / "static/web/app.css").read_text(encoding="utf-8")
+        printed = css[css.index("@media print"):]
+        for rule in (".rail", ".filters", ".no-print", "table-layout: auto", "break-inside: avoid",
+                     "table-header-group"):
+            self.assertIn(rule, printed)
+        js = (Path(__file__).parent / "static/web/app.js").read_text(encoding="utf-8")
+        self.assertIn("window.print()", js)
+
+    def test_a_reader_sees_the_tables_of_their_companies(self):
+        from accounts.models import Profile
+
+        reader = User.objects.create_user("acme", password="x-x-x-x-x-x", org=self.org, profile=Profile.READER)
+        reader.companies.add(self.acme)
+        self.client.force_login(reader)
+        for url in ("/report/", "/report/dettaglio/"):
+            self.assertEqual(self.client.get(f"{url}?{self.RANGE}").status_code, 200)

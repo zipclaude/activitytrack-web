@@ -431,3 +431,38 @@ label.pk-exact-l { margin: 0; flex-direction: row; align-items: center; gap: 8px
 	.pk-days { grid-template-columns: repeat(7, minmax(0, 1fr)); }
 	.pk-day { width: 100%; }
 }
+
+/* the reports: sortable head, right-aligned numbers, the print */
+table.report th.num, table.report td.num { text-align: right; }
+table.report th a { color: inherit; text-decoration: none; display: inline-flex; gap: 4px; align-items: center; }
+table.report th a:hover { color: var(--text); }
+table.report th[aria-sort=ascending] a, table.report th[aria-sort=descending] a { color: var(--accent); }
+table.report .arrow { font-size: 9px; }
+table.report td .sub { font-size: 12px; }
+table.report td a { text-decoration: none; }
+table.report td a:hover { text-decoration: underline; }
+.export { margin-top: 0; }
+.print-head { display: none; }
+@media print {
+	@page { size: A4 landscape; margin: 12mm; }
+	body { background: #fff; color: #000; font-size: 11px; }
+	.rail, nav.bottom, .no-print, .actions, .tabs, .filters, .note, [data-print] { display: none !important; }
+	.app main { margin: 0; padding: 0; max-width: none; }
+	.app main > * { max-width: none; }
+	.print-head { display: block; margin-bottom: 8px; }
+	.print-head h2 { margin: 0; font-size: 16px; }
+	.print-head p { margin: 2px 0 0; color: #333; }
+	h1 { display: none; }
+	.card { border: 0; box-shadow: none; padding: 0; margin: 0; overflow: visible !important; background: #fff; }
+	table.report { width: 100%; table-layout: auto; font-size: 10px; }
+	table.report th, table.report td { padding: 3px 5px; white-space: normal !important; border-bottom: 1px solid #bbb; color: #000; }
+	table.report th a { color: #000; }
+	table.report .arrow { font-size: 8px; }
+	table.report thead { display: table-header-group; }
+	table.report tfoot { display: table-footer-group; }
+	table.report tr { break-inside: avoid; }
+	table.report td .sub { font-size: 9px; color: #444; }
+	.pill, .tag { border: 1px solid #888; background: #fff !important; color: #000 !important; font-size: 9px; padding: 0 5px; height: auto; border-radius: 8px; }
+	.pill .i { width: 10px; height: 10px; }
+	a { color: #000; text-decoration: none; }
+}

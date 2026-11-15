@@ -1,0 +1,6 @@
+{% load i18n at %}<table class="list totals report {{ klass }}">
+	<thead><tr>{% for h in t.head %}<th class="{% if h.right %}num{% endif %}" aria-sort="{{ h.aria }}" scope="col"><a href="{{ h.href }}" title="{% translate 'Ordina per questa colonna' %}">{{ h.label }}{% if h.sorted %}<span class="arrow" aria-hidden="true">{% if h.direction == "desc" %}▼{% else %}▲{% endif %}</span>{% endif %}</a></th>{% endfor %}</tr></thead>
+	<tbody>{% for row in t.rows %}<tr>{% for c in row %}<td class="{% if forloop.counter0 in t.numeric %}num{% endif %}"{% if c.title %} title="{{ c.title }}"{% endif %}>{% if c.html %}{{ c.html }}{% elif c.href %}<a href="{{ c.href }}">{{ c.text }}</a>{% else %}{{ c.text }}{% endif %}{% if c.sub %}<span class="sub">{{ c.sub }}</span>{% endif %}</td>{% endfor %}</tr>
+	{% empty %}<tr><td colspan="{{ t.head|length }}" class="muted">{% translate "Nessuna attività nel periodo." %}</td></tr>{% endfor %}</tbody>
+	{% if t.foot %}<tfoot><tr>{% for c in t.foot %}<th class="{% if forloop.counter0 in t.numeric %}num{% endif %}">{% if c %}{{ c.text }}{% if c.sub %}<span class="sub">{{ c.sub }}</span>{% endif %}{% elif forloop.first %}{% translate "Totale" %}{% endif %}</th>{% endfor %}</tr></tfoot>{% endif %}
+</table>

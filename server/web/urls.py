@@ -26,6 +26,7 @@ urlpatterns = [
     path("report/", reports.report, name="report"),
     path("report/dettaglio/", reports.detail, name="report_detail"),
     path("report/csv/", reports.report_csv, name="report_csv"),
+    path("report/esporta/<str:mode>.<str:fmt>", reports.export, name="report_export"),
     path("utenti/", users.users, name="users"),
     path("utenti/nuovo/", users.user_edit, name="user_new"),
     path("utenti/<int:pk>/", users.user_edit, name="user_edit"),

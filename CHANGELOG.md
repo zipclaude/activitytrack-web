@@ -82,6 +82,13 @@ with 0.9 are in its `CHANGELOG.md`.
   disabled), else the one chosen in Preferences, else the browser's, else English (a `ui.language` that is not one of the four forces English, with a note on
   the Preferences page; the policy editor refuses to save one): a
   browser language the server does not have gets English, not Italian, as in the app.
+- Reports: the summary and the activity detail are two tables (two entries of the menu) whose columns sort
+  (click the head, both ways, kept in the URL) and can be chosen (remembered for the session), with the same
+  filters. The detail has a row for each activity and day with date, time, person, company, client, activity,
+  place, tags, work, travel, km, expenses, attachments and state. Each can be exported as shown, with its filters,
+  sort and columns, in CSV (semicolon, byte order mark), XML or JSON, within the policy's `export` rules (the
+  feature, `export.formats`, `behaviours.exportMaxDays`; the old CSV of the entries obeys them too), and printed
+  (a print stylesheet; Print / PDF uses the browser's).
 - The agenda adds an absence or an activity already done (when the policy leaves the
   times editable), besides a to-do.
 
