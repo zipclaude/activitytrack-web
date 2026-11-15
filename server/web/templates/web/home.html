@@ -2,7 +2,7 @@
 {% block content %}
 <div class="head"><h1>{% blocktranslate with name=user.first_name|default:user.username %}Ciao {{ name }}{% endblocktranslate %}</h1>
 <div class="actions"><a class="button primary" href="{% url 'entry_new' %}">{% icon "play" %}{% translate "Lavoro" %}</a>
-	<form method="post" action="{% url 'entry_travel' %}">{% csrf_token %}<button class="c-travel">{% icon "travel" %}{% translate "Viaggio" %}</button></form>
+	{% if travel_on %}<a class="button c-travel" href="{% url 'entry_travel' %}">{% icon "travel" %}{% translate "Viaggio" %}</a>{% endif %}
 	{% if todos_on %}<a class="button" href="{% url 'todo_new' %}">{% icon "checkbox" %}{% translate "Da fare" %}</a>{% endif %}
 	<a class="button" href="{% url 'todo_new' %}?kind=ABSENCE">{% icon "dot" %}{% translate "Assenza" %}</a></div></div>
 {% if first %}<section class="card"><h2>{% translate "Associa il telefono o il PC" %}</h2><p>{% translate "Collega l'app ActivityTrack a questo server: i dati restano sincronizzati nei due sensi." %}</p><a class="button tonal" href="{% url 'phones' %}">{% icon "devices" %}{% translate "Associa un dispositivo" %}</a></section>{% endif %}

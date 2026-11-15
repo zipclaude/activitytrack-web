@@ -162,6 +162,7 @@ def home(request):
         "running": running, "sections": listed, "first": not user.devices.exists() if user.syncs else False,
         "f": f, "show": show, "offered": offered, "windows": homelist.WINDOWS, "companies": data.companies(user), "company": company,
         "tags": tags, "tag": tag, "todos_on": todos_on, "today": timezone.localdate(),
+        "travel_on": merged(user).get("features", {}).get("travel", True) is not False,
         "show_changed": set(show) != set(homelist.DEFAULT_SHOW) & set(offered),
         "only_todo": link(show=[homelist.TODO]), "only_done": link(show=[homelist.DONE]), "show_all": link(show=offered),
     })
@@ -200,18 +201,75 @@ def entry_new(request):
     })
 
 
+def _start_trip(user, target, p):
+    """
+    A trip for [target] (a person [user] may act for) from the form [p]: never anonymous, it belongs to an
+    activity (a to-do of the person, a client, a company or a description), and what the policy of [target] says
+    about travel and about where activities start holds. For somebody else only a trip already made is recorded:
+    a running one would suspend the activities the person has open on their phone.
+    """
+    from policies.effective import merged
+
+    policy = merged(target)
+    if policy.get("features", {}).get("travel", True) is False:
+        raise ops.OpError(_("la policy non consente i viaggi"))
+    todo = None
+    if p.get("todo"):
+        todo = data.todo_activities(user.org).filter(
+            uid=data.parse_uid(p["todo"]), owner=target, deleted_utc__isnull=True).first()
+        if todo is None:
+            raise ops.OpError(_("la voce Da fare scelta non è di questa persona o non c'è più"))
+    client = _pick(target, Client, p.get("client"))
+    company = client.company if client and client.company_id else _pick(target, Company, p.get("company"))
+    role, activity = _pick(target, Role, p.get("role")), p.get("activity", "").strip()
+    if policy.get("entries", {}).get("source") in ("plannedOnly", "todosOnly") and todo is None:
+        raise ops.OpError(_("la policy permette di iniziare solo da una voce Da fare"))
+    if not (todo or client or company or activity):
+        raise ops.OpError(
+            _("indica a che cosa serve il viaggio: una voce Da fare, un cliente, un'azienda o una descrizione"))
+    when = p.get("when") if p.get("when") in ("now", "started", "past") else "now"
+    if target != user and when != "past":
+        raise ops.OpError(_("per un'altra persona si può registrare solo un viaggio già fatto"))
+    if target == user and when != "now" and data.owner_times_fixed_for(user):
+        raise ops.OpError(_("la policy non consente di scegliere gli orari"))
+    kwargs = {"company": company, "client": client, "role": role, "activity": activity, "todo": todo,
+              "mode": ops.TRAVEL}
+    begin, end = _parse_dt(p.get("start")), _parse_dt(p.get("end"))
+    if when == "past":
+        if not (begin and end):
+            raise ops.OpError(_("data e ora non valide"))
+        return ops.record_past(target, start_at=begin, end_at=end, **kwargs)
+    if when == "started" and not begin:
+        raise ops.OpError(_("data e ora non valide"))
+    return ops.start(target, at=begin if when == "started" else None, **kwargs)
+
+
 @login_required
-@require_POST
-def travel_now(request):
-    """The Home's Viaggio button: an anonymous activity travelling from now (§3 creation)."""
-    if not request.user.syncs:
+def travel_new(request):
+    """The Home's Viaggio: a trip of a chosen person for a chosen activity, not an anonymous one from the web."""
+    user = request.user
+    if not user.syncs:
         raise PermissionDenied
-    try:
-        e = ops.start(request.user, mode=ops.TRAVEL)
-    except ops.OpError as err:
-        messages.error(request, str(err))
-        return redirect("home")
-    return redirect("entry", uid=e.uid)
+    people = data.assignable(user)
+    p = request.POST
+    if request.method == "POST":
+        target = people.filter(pk=data.parse_pk(p.get("person"))).first() if p.get("person") else user
+        if target is None:
+            raise PermissionDenied
+        try:
+            e = _start_trip(user, target, p)
+            return redirect("entry", uid=e.uid)
+        except ops.OpError as err:
+            messages.error(request, str(err))
+    todos = data.todo_activities(user.org).filter(owner__in=people, deleted_utc__isnull=True)
+    todos = todos.select_related("owner", "client", "company")
+    todos = todos.order_by("owner__first_name", "owner__username", "activity")
+    return render(request, "web/travel_new.html", {
+        "people": people if people.count() > 1 else None, "todos": todos, "companies": data.companies(user),
+        "clients": data.clients(user), "roles": data.roles(user), "fixed": data.owner_times_fixed_for(user),
+        "initial": {"client": p.get("client", ""), "company": p.get("company", ""), "activity": p.get("activity", "")},
+        "v": p, "when": p.get("when") if p.get("when") in ("started", "past") else "now",
+    })
 
 
 # the orders of the Attività page: key, label, the direction it starts with

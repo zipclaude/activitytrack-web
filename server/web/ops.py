@@ -170,8 +170,8 @@ def start(user, *, company=None, client=None, role=None, activity="", todo=None,
 
 
 @command
-def record_past(user, *, start_at, end_at, company=None, client=None, role=None, activity="", todo=None):
-    """A closed activity with the work done (the app's Lavoro · Passata), or [todo] closed with it."""
+def record_past(user, *, start_at, end_at, company=None, client=None, role=None, activity="", todo=None, mode=WORK):
+    """A closed activity with the work done (the app's Lavoro · Passata), or [todo] closed with it; TRAVEL: a trip."""
     if end_at <= start_at:
         raise OpError(_("la fine deve seguire l'inizio"))
     if todo is not None:
@@ -183,7 +183,8 @@ def record_past(user, *, start_at, end_at, company=None, client=None, role=None,
     else:
         entry = _new_activity(user, CLOSED, company, client, role, activity, closedUtcMs=engine.now_ms())
     put(user, "segment", new_uid(), {
-        "entryUid": str(entry.uid), "kind": WORK, "startUtcMs": ms(start_at), "endUtcMs": ms(end_at), "zoneId": entry.zone_id, "source": "MANUAL",
+        "entryUid": str(entry.uid), "kind": mode, "startUtcMs": ms(start_at), "endUtcMs": ms(end_at),
+        "zoneId": entry.zone_id, "source": "MANUAL",
     })
     entry.refresh_from_db()
     return entry

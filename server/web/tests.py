@@ -1053,16 +1053,16 @@ class HomeListTests(WorkTests):
         )
         self.assertEqual(sum(d.reported for d in days.values()), 60)
 
-    def test_the_travel_button_starts_an_anonymous_activity(self):
+    def test_the_travel_button_opens_a_form_and_no_trip_is_anonymous(self):
+        # the Home's Viaggio is a link to the form of a trip, which wants an activity (issue #66)
+        from records.models import Entry
+
+        self.assertContains(self.client.get("/"), 'href="/attivita/viaggio/"')
+        self.assertEqual(self.client.get("/attivita/viaggio/").status_code, 200)
         r = self.client.post("/attivita/viaggio/")
-        e = self.entry()
-        self.assertRedirects(r, f"/attivita/{e.uid}/")
-        self.assertEqual(
-            (e.status, e.mode, e.company_id, e.client_id), ("RUNNING", "TRAVEL", None, None)
-        )
-        page = self.client.get("/").content.decode()
-        self.assertIn("st-TRAVEL", page)
-        self.assertNotIn("Sospendi", page)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "indica a che cosa serve il viaggio")
+        self.assertFalse(Entry.objects.filter(owner=self.alice, mode="TRAVEL").exists())
 
     def test_planned_segments_never_count(self):
         from datetime import date
@@ -2139,3 +2139,122 @@ class ActivityPageTests(WorkTests):
                                                          "createdUtcMs": ops.ms(e.created_utc)})
         page = self.client.get("/?f=1&period=0&show=done&show=missing").content.decode()
         self.assertIn('href="#i-receipt"', page)
+
+
+class TripFromTheWebTests(WorkTests):
+    """A trip from the web belongs to a chosen person and a chosen activity (issue #66)."""
+
+    client_uid = "22222222-2222-4222-8222-222222222222"
+
+    def trips(self, owner=None):
+        from records.models import Entry, Segment
+
+        ids = Segment.objects.filter(entry__owner=owner or self.alice, kind="TRAVEL", deleted=False).values("entry")
+        return Entry.objects.filter(uid__in=ids, deleted=False)
+
+    def test_a_trip_for_a_client_runs_for_the_person(self):
+        form = {"client": self.client_uid, "activity": "Sopralluogo", "when": "now"}
+        r = self.client.post("/attivita/viaggio/", form)
+        e = self.trips().get()
+        self.assertRedirects(r, f"/attivita/{e.uid}/")
+        self.assertEqual((e.status, e.mode, e.client.name, e.company_id, e.activity),
+                         ("RUNNING", "TRAVEL", "Banca", self.acme.uid, "Sopralluogo"))
+
+    def test_any_one_of_a_todo_a_client_a_company_or_a_description_is_enough_and_none_is_not(self):
+        from records.models import Entry
+
+        self.assertContains(self.client.post("/attivita/viaggio/", {"when": "now"}), "indica a che cosa serve")
+        self.assertContains(self.client.post("/attivita/viaggio/", {"activity": "   "}), "indica a che cosa serve")
+        self.assertEqual(self.client.post("/attivita/viaggio/", {"company": str(self.acme.uid)}).status_code, 302)
+        self.client.post("/dafare/nuova/", {"title": "Posa"})
+        todo = Entry.objects.get(activity="Posa")
+        self.client.post("/attivita/viaggio/", {"todo": str(todo.uid)})
+        todo.refresh_from_db()
+        self.assertEqual((todo.status, todo.mode), ("RUNNING", "TRAVEL"))
+
+    def test_a_trip_already_made_is_recorded_with_its_times(self):
+        r = self.client.post("/attivita/viaggio/", {"client": self.client_uid, "when": "past",
+                                                    "start": "2026-10-27T08:00", "end": "2026-10-27T08:50"})
+        e = self.trips().get()
+        self.assertRedirects(r, f"/attivita/{e.uid}/")
+        self.assertEqual(e.status, "CLOSED")
+        from records.models import Segment
+
+        self.assertEqual([(s.kind, s.start_utc.hour, s.end_utc.minute) for s in Segment.objects.filter(entry=e)],
+                         [("TRAVEL", 7, 50)])
+        # times are needed, and in order
+        for form in ({"when": "past"}, {"when": "past", "start": "2026-10-27T09:00", "end": "2026-10-27T08:00"},
+                     {"when": "started"}):
+            r = self.client.post("/attivita/viaggio/", {"client": self.client_uid, **form})
+            self.assertEqual(r.status_code, 200, form)
+        self.assertEqual(self.trips().count(), 1)
+
+    def test_a_manager_records_a_trip_of_somebody_of_the_team_and_only_one_already_made(self):
+        self.client.force_login(self.boss)
+        page = self.client.get("/attivita/viaggio/").content.decode()
+        self.assertIn(f'<option value="{self.alice.pk}"', page)
+        form = {"person": self.alice.pk, "client": self.client_uid}
+        # a running trip would suspend what the person has open on their phone: refused
+        for when in ("now", "started"):
+            r = self.client.post("/attivita/viaggio/", {**form, "when": when, "start": "2026-10-27T08:00"})
+            self.assertContains(r, "solo un viaggio già fatto")
+        self.assertFalse(self.trips().exists())
+        times = {"when": "past", "start": "2026-10-27T08:00", "end": "2026-10-27T09:00"}
+        r = self.client.post("/attivita/viaggio/", {**form, **times})
+        e = self.trips().get()
+        self.assertRedirects(r, f"/attivita/{e.uid}/")
+        self.assertEqual(e.owner, self.alice)
+        self.assertEqual(self.trips(self.boss).count(), 0)
+
+    def test_the_person_is_one_the_user_may_act_for(self):
+        # a user acts for themself only; a manager not for people outside the team
+        other = User.objects.create_user("carol", password="x-x-x-x-x-x", org=self.org)
+        form = {"client": self.client_uid, "when": "past", "start": "2026-10-27T08:00", "end": "2026-10-27T09:00"}
+        self.assertEqual(self.client.post("/attivita/viaggio/", {**form, "person": other.pk}).status_code, 403)
+        self.client.force_login(self.boss)
+        self.assertEqual(self.client.post("/attivita/viaggio/", {**form, "person": other.pk}).status_code, 403)
+        self.assertNotContains(self.client.get("/attivita/viaggio/"), f'<option value="{other.pk}"')
+        self.assertFalse(self.trips(other).exists())
+
+    def test_the_activity_must_be_the_persons_and_the_masters_are_central_for_somebody_else(self):
+        from records.models import Entry
+
+        self.client.post("/dafare/nuova/", {"title": "Posa"})
+        todo = Entry.objects.get(activity="Posa")
+        self.client.force_login(self.boss)
+        past = {"when": "past", "start": "2026-10-27T08:00", "end": "2026-10-27T09:00"}
+        # alice's to-do for a trip of the manager: not the manager's
+        r = self.client.post("/attivita/viaggio/", {**past, "todo": str(todo.uid), "person": self.boss.pk})
+        self.assertContains(r, "non è di questa persona")
+        # a client that is the manager's own (personal) is not for a trip of somebody else
+        from web import ops
+
+        mine = ops.new_uid()
+        ops.put(self.boss, "client", mine, {"name": "Privato"})
+        form = {**past, "client": str(mine), "person": self.alice.pk, "activity": "x"}
+        r = self.client.post("/attivita/viaggio/", form)
+        self.assertEqual(self.trips().get().client_id, None)
+        self.assertEqual(r.status_code, 302)
+
+    def test_the_policy_decides(self):
+        from policies.models import Policy
+
+        form = {"client": self.client_uid}
+        pol = Policy.objects.create(org=self.org, data={"features": {"travel": False}}, revision=1)
+        self.assertNotContains(self.client.get("/"), "/attivita/viaggio/")
+        self.assertContains(self.client.post("/attivita/viaggio/", form), "non consente i viaggi")
+        # activities start only from a to-do
+        pol.data = {"entries": {"source": "plannedOnly"}}
+        pol.save()
+        self.assertContains(self.client.post("/attivita/viaggio/", form), "solo da una voce Da fare")
+        self.client.post("/dafare/nuova/", {"title": "Posa"})
+        from records.models import Entry
+
+        todo = Entry.objects.get(activity="Posa")
+        self.assertEqual(self.client.post("/attivita/viaggio/", {"todo": str(todo.uid)}).status_code, 302)
+        # times locked: the trip is for now
+        pol.data = {"settings": {"editableTimes": {"value": False, "locked": True}}}
+        pol.save()
+        times = {"when": "past", "start": "2026-10-27T08:00", "end": "2026-10-27T09:00"}
+        r = self.client.post("/attivita/viaggio/", {**form, **times})
+        self.assertContains(r, "non consente di scegliere gli orari")

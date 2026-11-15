@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ActivityTrack Web\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-15 12:08+0100\n"
+"POT-Creation-Date: 2026-11-15 12:14+0100\n"
 "PO-Revision-Date: 2026-11-15 12:00+0100\n"
 "Last-Translator: ActivityTrack\n"
 "Language-Team: German\n"
@@ -1888,6 +1888,21 @@ msgstr "Alle"
 msgid "Nessuna voce."
 msgstr "Keine Einträge."
 
+msgid "Nuovo viaggio"
+msgstr "Neue Reise"
+
+msgid ""
+"Dal web un viaggio ha sempre una persona e un'attività: scegli a chi "
+"appartiene e a che cosa serve. Per un'altra persona si registra un viaggio "
+"già fatto."
+msgstr ""
+"Im Web hat eine Reise immer eine Person und eine Tätigkeit: Wähle, wem sie "
+"gehört und wofür sie ist. Für eine andere Person wird eine bereits gemachte "
+"Reise erfasst."
+
+msgid "Voce Da fare"
+msgstr "Aufgabe"
+
 msgid "Nuovo utente"
 msgstr "Neuer Benutzer"
 
@@ -2105,6 +2120,27 @@ msgstr "Datei"
 
 msgid "la policy non consente di scegliere gli orari"
 msgstr "die Richtlinie erlaubt nicht, die Zeiten zu wählen"
+
+msgid "la policy non consente i viaggi"
+msgstr "die Richtlinie erlaubt keine Reisen"
+
+msgid "la voce Da fare scelta non è di questa persona o non c'è più"
+msgstr ""
+"die gewählte Aufgabe gehört nicht dieser Person oder gibt es nicht mehr"
+
+msgid "la policy permette di iniziare solo da una voce Da fare"
+msgstr "die Richtlinie erlaubt Tätigkeiten nur ausgehend von einer Aufgabe"
+
+msgid ""
+"indica a che cosa serve il viaggio: una voce Da fare, un cliente, un'azienda "
+"o una descrizione"
+msgstr ""
+"gib an, wofür die Reise ist: eine Aufgabe, ein Kunde, eine Firma oder eine "
+"Beschreibung"
+
+msgid "per un'altra persona si può registrare solo un viaggio già fatto"
+msgstr ""
+"für eine andere Person kann nur eine bereits gemachte Reise erfasst werden"
 
 msgid "Ora di inizio"
 msgstr "Startzeit"

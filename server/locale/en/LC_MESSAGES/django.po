@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ActivityTrack Web\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-15 12:08+0100\n"
+"POT-Creation-Date: 2026-11-15 12:14+0100\n"
 "PO-Revision-Date: 2026-11-05 22:00+0100\n"
 "Last-Translator: ActivityTrack\n"
 "Language-Team: English\n"
@@ -1853,6 +1853,20 @@ msgstr "All"
 msgid "Nessuna voce."
 msgstr "No items."
 
+msgid "Nuovo viaggio"
+msgstr "New trip"
+
+msgid ""
+"Dal web un viaggio ha sempre una persona e un'attività: scegli a chi "
+"appartiene e a che cosa serve. Per un'altra persona si registra un viaggio "
+"già fatto."
+msgstr ""
+"From the web a trip always has a person and an activity: choose whose it is "
+"and what it is for. For somebody else a trip already made is recorded."
+
+msgid "Voce Da fare"
+msgstr "To-do"
+
 msgid "Nuovo utente"
 msgstr "New user"
 
@@ -2068,6 +2082,24 @@ msgstr "File"
 
 msgid "la policy non consente di scegliere gli orari"
 msgstr "the policy does not allow choosing the times"
+
+msgid "la policy non consente i viaggi"
+msgstr "the policy does not allow trips"
+
+msgid "la voce Da fare scelta non è di questa persona o non c'è più"
+msgstr "the chosen to-do is not this person's or no longer exists"
+
+msgid "la policy permette di iniziare solo da una voce Da fare"
+msgstr "the policy only lets activities start from a to-do"
+
+msgid ""
+"indica a che cosa serve il viaggio: una voce Da fare, un cliente, un'azienda "
+"o una descrizione"
+msgstr ""
+"say what the trip is for: a to-do, a client, a company or a description"
+
+msgid "per un'altra persona si può registrare solo un viaggio già fatto"
+msgstr "for somebody else only a trip already made can be recorded"
 
 msgid "Ora di inizio"
 msgstr "Start time"

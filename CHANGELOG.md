@@ -97,6 +97,10 @@ with 0.9 are in its `CHANGELOG.md`.
 
 ### Behaviour
 
+- A trip started from the web is never anonymous: the Home's Viaggio opens a form that asks for the person
+  and for what the trip is for (a to-do, a client, a company or a description), checked on the server against
+  the policy (the `travel` feature, `entries.source` plannedOnly, locked times). For somebody else of the
+  team only a trip already made is recorded, since a running one would suspend what they have open.
 - An activity, its to-do and its absence have one lifecycle: TODO → RUNNING → CLOSED,
   an absence always CLOSED; there is no "Sospendi" button (an activity is suspended only
   when another one starts and concurrent activities are not allowed).
