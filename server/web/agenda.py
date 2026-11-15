@@ -97,6 +97,21 @@ def _plannable(user, person):
     return f.get("planning", True) is not False and f.get("todos", True) is not False
 
 
+def _slot(anchor, today, now, tz):
+    """The start and the end ("YYYY-MM-DDTHH:MM") proposed for an activity already done on the agenda's day."""
+    if anchor == today:
+        # the last quarter of an hour that has passed, and the hour before it (not before midnight)
+        end = now.astimezone(tz).replace(second=0, microsecond=0)
+        midnight = datetime.combine(today, datetime.min.time(), tzinfo=tz)
+        rounded = end - timedelta(minutes=end.minute % 15)
+        end = rounded if rounded > midnight else end
+        start = max(end - timedelta(hours=1), midnight)
+    else:
+        start = datetime.combine(anchor, datetime.min.time(), tzinfo=tz).replace(hour=9)
+        end = start + timedelta(hours=1)
+    return start.strftime("%Y-%m-%dT%H:%M"), end.strftime("%Y-%m-%dT%H:%M")
+
+
 @login_required
 def agenda(request):
     user = request.user
@@ -223,7 +238,12 @@ def agenda(request):
     if running and not work_from <= running[0] < work_to:
         work_from, work_to = max(0, running[0] - 60), min(DAY_MIN, running[0] + 3 * 60)
 
+    # what can be added from here, all in the person's own agenda: a to-do (plannable), an absence, and an activity
+    # already done unless the policy locks the times (the same check as the new-activity form)
+    own = person == user and user.syncs
+    done_start, done_end = _slot(anchor, today, now, tz)
     return render(request, "web/agenda.html", {
+        "can_absence": own, "can_done": own and not data.owner_times_fixed_for(user), "done_start": done_start, "done_end": done_end,
         "view": view, "anchor": anchor, "since": since, "until": until, "columns": columns,
         "weeks": [columns[i:i + 7] for i in range(0, len(columns), 7)] if view == "month" else None,
         "total": reporting.hm(total) if total else "", "tag": tag, "tags": seen_tags, "tag_colors": colors,

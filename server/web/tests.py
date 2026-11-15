@@ -505,6 +505,12 @@ class ReportingTests(TestCase):
         self.assertEqual(out, {"a": (0, 2), "b": (1, 2), "c": (1, 2), "d": (0, 1)})
 
 
+def timezone_now_text():
+    from django.utils import timezone
+
+    return timezone.localtime().strftime("%Y-%m-%dT%H:%M")
+
+
 class AgendaTests(WorkTests):
     """Agenda by day, week and month (manual §7)."""
 
@@ -619,6 +625,59 @@ class AgendaTests(WorkTests):
         self.assertRedirects(r, "/agenda/?view=day", fetch_redirect_response=False)
         r = self.client.post("/dafare/nuova/", {"title": "Altrove", "next": "https://evil.example/"})
         self.assertRedirects(r, "/dafare/", fetch_redirect_response=False)
+
+    def test_an_absence_or_an_activity_already_done_can_be_added_from_the_agenda(self):
+        from records.models import Entry
+
+        page = self.client.get("/agenda/?view=day&date=2026-10-27").content.decode()
+        self.assertIn("/dafare/nuova/?plan_date=2026-10-27&amp;plan_time=09:00", page)
+        absence = "/dafare/nuova/?kind=ABSENCE&amp;plan_date=2026-10-27&amp;next=/agenda/%3Fview%3Dday%26date%3D2026-10-27"
+        self.assertIn(absence, page)
+        done = "/attivita/nuova/?when=past&amp;start=2026-10-27T09%3A00&amp;end=2026-10-27T10%3A00"
+        self.assertIn(done, page)
+        # the absence form opens on the day and comes back to the agenda
+        form = self.client.get("/dafare/nuova/?kind=ABSENCE&plan_date=2026-10-27&next=/agenda/%3Fview%3Dday")
+        self.assertContains(form, 'value="2026-10-27"')
+        r = self.client.post("/dafare/nuova/", {"kind": "ABSENCE", "plan_date": "2026-10-27", "next": "/agenda/?view=day"})
+        self.assertRedirects(r, "/agenda/?view=day", fetch_redirect_response=False)
+        self.assertEqual(Entry.objects.filter(kind="ABSENCE", owner=self.alice).count(), 1)
+        # the activity form opens on "Passata", with the slot
+        form = self.client.get("/attivita/nuova/?when=past&start=2026-10-27T09:00&end=2026-10-27T10:00")
+        self.assertContains(form, '<input type="radio" name="when" value="past" checked>', html=False)
+        self.assertContains(form, 'name="start" value="2026-10-27T09:00"')
+        self.assertContains(form, 'name="end" value="2026-10-27T10:00"')
+        self.assertNotContains(self.client.get("/attivita/nuova/?when=past&start=x"), 'name="start" value="x"')
+        r = self.client.post("/attivita/nuova/", {"when": "past", "client": "22222222-2222-4222-8222-222222222222", "start": "2026-10-27T09:00", "end": "2026-10-27T10:00"})
+        self.assertEqual(r.status_code, 302)
+        # today: the slot ends in the past
+        today = self.client.get("/agenda/").context
+        self.assertLessEqual(today["done_end"], timezone_now_text())
+        self.assertLessEqual(today["done_start"], today["done_end"])
+
+    def test_the_agenda_offers_only_what_the_policy_and_the_person_allow(self):
+        from policies.models import Policy
+
+        page = lambda url="/agenda/?view=day&date=2026-10-27": self.client.get(url).content.decode()
+        # to-dos off: no planning, but absences and done activities stay
+        Policy.objects.create(org=self.org, data={"features": {"todos": False}}, revision=1)
+        p = page()
+        self.assertNotIn("plan_time=", p)
+        self.assertIn("kind=ABSENCE", p)
+        self.assertIn("when=past", p)
+        # times locked: no activity already done, on the form either
+        Policy.objects.all().delete()
+        Policy.objects.create(org=self.org, data={"settings": {"editableTimes": {"value": False, "locked": True}}}, revision=1)
+        p = page()
+        self.assertNotIn("when=past", p)
+        self.assertIn("kind=ABSENCE", p)
+        form = self.client.get("/attivita/nuova/?when=past&start=2026-10-27T09:00&end=2026-10-27T10:00").content.decode()
+        self.assertNotIn('value="past"', form)
+        self.assertIn('value="now" checked', form)
+        # someone else's agenda: nothing to add
+        self.client.force_login(self.boss)
+        p = page(f"/agenda/?view=day&date=2026-10-27&person={self.alice.pk}")
+        self.assertNotIn("kind=ABSENCE", p)
+        self.assertNotIn("when=past", p)
 
     def test_a_manager_sees_the_team_without_planning(self):
         self.client.post("/attivita/nuova/", {"when": "past", "client": "22222222-2222-4222-8222-222222222222", "activity": "Riunione", "start": "2026-10-27T09:00", "end": "2026-10-27T10:00"})

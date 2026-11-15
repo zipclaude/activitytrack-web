@@ -178,7 +178,12 @@ def entry_new(request):
         except (ops.OpError, TypeError) as e:
             messages.error(request, str(e))
     initial = {"client": str(todo.client_id or "") if todo else "", "company": str(todo.company_id or "") if todo else "", "activity": todo.activity or "" if todo else ""}
-    return render(request, "web/entry_new.html", {"companies": data.companies(user), "clients": data.clients(user), "roles": data.roles(user), "todo": todo, "initial": initial, "fixed": fixed})
+    # opened from the agenda for an activity already done: the form comes on "Passata", with the times of the slot
+    when = request.GET.get("when") if request.GET.get("when") in ("started", "past") and not fixed else "now"
+    return render(request, "web/entry_new.html", {
+        "companies": data.companies(user), "clients": data.clients(user), "roles": data.roles(user), "todo": todo, "initial": initial,
+        "fixed": fixed, "when": when, "start": _iso_datetime(request.GET.get("start")), "end": _iso_datetime(request.GET.get("end")),
+    })
 
 
 @login_required
@@ -690,6 +695,14 @@ def hhmm_add(text, minutes):
 def _iso_date(text):
     try:
         return date.fromisoformat(text).isoformat() if text else ""
+    except ValueError:
+        return ""
+
+
+def _iso_datetime(text):
+    """A datetime-local value ("2026-11-15T09:00") from the query string, else empty."""
+    try:
+        return datetime.fromisoformat(text).strftime("%Y-%m-%dT%H:%M") if text else ""
     except ValueError:
         return ""
 
