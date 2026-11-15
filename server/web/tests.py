@@ -1,4 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
+import re
+
 from django.test import TestCase, override_settings
 from django.urls import clear_script_prefix, reverse, set_script_prefix
 
@@ -1771,3 +1773,18 @@ class SetupCommandTests(TestCase):
             call_command("setup", org="Infra", admin="admin", stdout=StringIO())
         call_command("setup", org="Infra", admin="admin", password="try-it-once", stdout=StringIO())
         self.assertTrue(User.objects.get(username="admin").check_password("try-it-once"))
+
+
+class LayoutTests(TestCase):
+    """The pages keep one centred content column at any zoom (issue #65)."""
+
+    def test_no_panel_is_an_inline_box(self):
+        # .inline-form is inline-flex: with the auto margins of the column it sticks to the left of a wide window
+        from pathlib import Path
+
+        bad = [f.name for f in Path(__file__).parent.glob("templates/web/*.html")
+               if re.search(r'class="[^"]*\b(card|row|filters)\b[^"]*\binline-form\b|class="[^"]*\binline-form\b[^"]*\b(card|row|filters)\b',
+                            f.read_text(encoding="utf-8"))]
+        self.assertEqual(bad, [])
+        css = (Path(__file__).parent / "static/web/app.css").read_text(encoding="utf-8")
+        self.assertIn(".app main > .inline-form { display: flex; }", css)
