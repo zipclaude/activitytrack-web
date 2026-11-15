@@ -221,7 +221,7 @@ class WorkTests(TestCase):
         reader.companies.add(self.acme)
         self.client.force_login(reader)
         self.assertRedirects(self.client.get("/"), "/report/")
-        page = self.client.get("/report/?from=2026-10-01").content.decode()
+        page = self.client.get("/report/dettaglio/?from=2026-10-01").content.decode()
         self.assertIn("Chiusa", page)
         self.assertNotIn("Aperta", page)
         self.assertEqual(self.client.get("/dafare/").status_code, 403)
@@ -1361,7 +1361,7 @@ class ManagerCompaniesTests(WorkTests):
         self.assertNotIn("Lavoro admin", self.client.get("/attivita/?from=2026-10-01").content.decode())
         self.boss.companies.add(self.acme)
         self.assertIn("Lavoro admin", self.client.get("/attivita/?from=2026-10-01").content.decode())
-        self.assertIn("Lavoro admin", self.client.get("/report/?from=2026-10-01").content.decode())
+        self.assertIn("Lavoro admin", self.client.get("/report/dettaglio/?from=2026-10-01").content.decode())
         self.assertIn(f'value="{admin.pk}"', self.client.get("/report/?from=2026-10-01").content.decode())
         self.assertIn("Lavoro admin", self.client.get(f"/agenda/?view=day&date=2026-10-27&person={admin.pk}").content.decode())
         # read only: the admin is not in the manager's team
@@ -1788,3 +1788,46 @@ class LayoutTests(TestCase):
         self.assertEqual(bad, [])
         css = (Path(__file__).parent / "static/web/app.css").read_text(encoding="utf-8")
         self.assertIn(".app main > .inline-form { display: flex; }", css)
+
+
+class MenuTreeTests(WorkTests):
+    """The left menu is a tree: Report and Anagrafiche have entries, the branch of the page is open (issue #61)."""
+
+    LINK = re.compile(r'<a class="([^"]*)" href="([^"]*)">([^<]*)</a>')
+    BRANCH = re.compile(r'<details class="branch"([^>]*)>\s*<summary class="([^"]*)">.*?</svg>([^<]+)</summary>\s*'
+                        r'<div class="items">(.*?)</div>', re.S)
+
+    def branch(self, url, title):
+        """(open?, summary highlighted?, [(href, text)], [href of the entries marked "on"]) of a branch of the menu."""
+        found = [b for b in self.BRANCH.findall(self.client.get(url).content.decode()) if b[2].strip() == title]
+        self.assertTrue(found, title)
+        attrs, summary, _title, inner = found[0]
+        links = self.LINK.findall(inner)
+        return ("open" in attrs, "on" in summary.split(), [(h, t) for _c, h, t in links],
+                [h for c, h, _t in links if "on" in c.split()])
+
+    def test_report_has_its_two_entries_and_opens_on_them(self):
+        opened, _on, links, current = self.branch("/agenda/", "Report")
+        self.assertFalse(opened)
+        self.assertEqual(links, [("/report/", "Riepilogativo"), ("/report/dettaglio/", "Dettaglio attività")])
+        for url in ("/report/", "/report/dettaglio/"):
+            opened, on, _links, current = self.branch(url, "Report")
+            self.assertTrue(opened and on)
+            self.assertEqual(current, [url])
+
+    def test_master_data_has_a_link_for_each_kind_and_marks_the_current_one(self):
+        from web.masters import KINDS
+
+        opened, on, links, current = self.branch("/anagrafiche/clienti/", "Anagrafiche")
+        self.assertTrue(opened and on)
+        self.assertEqual([h for h, _t in links], [f"/anagrafiche/{k}/" for k in KINDS])
+        self.assertEqual(current, ["/anagrafiche/clienti/"])
+        # the start of the master data is the first kind; the form of a new one belongs to its kind
+        self.assertEqual(self.branch("/anagrafiche/", "Anagrafiche")[3], ["/anagrafiche/aziende/"])
+        self.assertEqual(self.branch("/anagrafiche/ruoli/nuova/", "Anagrafiche")[3], ["/anagrafiche/ruoli/"])
+
+    def test_the_tree_needs_no_script(self):
+        # <details> and <summary>: the browser opens them, and the keyboard (Enter, Space) too
+        page = self.client.get("/").content.decode()
+        self.assertEqual(page.count('<details class="branch"'), 2)
+        self.assertNotRegex(page, r"<details class=\"branch\"[^>]*(onclick|tabindex)")

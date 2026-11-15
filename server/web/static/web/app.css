@@ -70,9 +70,20 @@ h3 { font-size: 15px; font-weight: 500; }
 .brand small { display: block; font-size: 12px; font-weight: 400; color: var(--bar-muted); }
 .logo { width: 36px; height: 36px; flex: none; }
 .rail nav { display: flex; flex-direction: column; gap: 2px; flex: 1; overflow-y: auto; }
+.rail nav > *, .rail nav .items > * { flex: none; }
 .rail nav a { display: flex; align-items: center; gap: 14px; padding: 0 16px; height: 48px; border-radius: 24px; color: var(--bar-muted); text-decoration: none; font-weight: 500; }
 .rail nav a:hover { background: var(--bar-hover); color: var(--on-bar); }
 .rail nav a.on { background: var(--bar-sel); color: var(--on-bar); }
+/* a branch of the menu: <details>, open on the page's own branch, the keyboard toggles it */
+.rail nav details > summary { display: flex; align-items: center; gap: 14px; padding: 0 16px; height: 48px; border-radius: 24px; color: var(--bar-muted); font-weight: 500; cursor: pointer; list-style: none; }
+.rail nav details > summary::-webkit-details-marker { display: none; }
+.rail nav details > summary::after { content: ""; margin-left: auto; width: 7px; height: 7px; border: solid currentColor; border-width: 0 2px 2px 0; transform: rotate(45deg); transition: transform .15s; }
+.rail nav details[open] > summary::after { transform: rotate(-135deg); }
+.rail nav details > summary:hover { background: var(--bar-hover); color: var(--on-bar); }
+.rail nav details > summary.on { color: var(--on-bar); }
+.rail nav details > summary:focus-visible, .rail nav a:focus-visible { outline: 2px solid var(--on-bar); outline-offset: -2px; }
+.rail nav .items { display: flex; flex-direction: column; gap: 2px; margin: 2px 0 6px; }
+.rail nav .items a { height: 40px; padding-left: 50px; font-size: 14px; }
 .me { display: flex; align-items: center; gap: 4px; padding: 12px 8px 4px 16px; border-top: 1px solid var(--bar-sel); color: var(--on-bar); }
 .me .who { flex: 1; display: flex; align-items: center; gap: 10px; min-width: 0; font-size: 14px; }
 .me .who > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

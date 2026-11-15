@@ -21,11 +21,22 @@
 		<a class="{% nav_on 'todos' 'todo_new' 'todo_edit' %}" href="{% url 'todos' %}">{% icon "todo" %}{% translate "Da fare" %}</a>
 		{% endif %}
 		{% if user.syncs or user.can_edit_central %}<a class="{% nav_on 'agenda' %}" href="{% url 'agenda' %}">{% icon "agenda" %}{% translate "Agenda" %}</a>{% endif %}
-		<a class="{% nav_on 'report' %}" href="{% url 'report' %}">{% icon "report" %}{% translate "Report" %}</a>
+		<details class="branch"{% nav_on 'report' 'report_detail' as on_report %}{% if on_report %} open{% endif %}>
+			<summary class="{{ on_report }}">{% icon "report" %}{% translate "Report" %}</summary>
+			<div class="items">
+				<a class="{% nav_on 'report' %}" href="{% url 'report' %}">{% translate "Riepilogativo" %}</a>
+				<a class="{% nav_on 'report_detail' %}" href="{% url 'report_detail' %}">{% translate "Dettaglio attività" %}</a>
+			</div>
+		</details>
 		{% if user.syncs %}
 		<a class="{% nav_on 'entries' 'entry' 'entry_new' %}" href="{% url 'entries' %}">{% icon "list" %}{% translate "Attività" %}</a>
 		<a class="{% nav_on 'bin' %}" href="{% url 'bin' %}">{% icon "bin" %}{% translate "Cestino" %}</a>
-		<a class="{% nav_on 'masters_home' 'masters' 'master_new' 'master_edit' %}" href="{% url 'masters_home' %}">{% icon "folder" %}{% translate "Anagrafiche" %}</a>
+		<details class="branch"{% nav_on 'masters_home' 'masters' 'master_new' 'master_edit' as on_masters %}{% if on_masters %} open{% endif %}>
+			<summary class="{{ on_masters }}">{% icon "folder" %}{% translate "Anagrafiche" %}</summary>
+			<div class="items">{% for k, v in master_kinds %}
+				<a class="{% nav_master k %}" href="{% url 'masters' k %}">{{ v.2 }}</a>{% endfor %}
+			</div>
+		</details>
 		<a class="{% nav_on 'phones' 'pair_new' %}" href="{% url 'phones' %}">{% icon "devices" %}{% translate "Dispositivi" %}</a>
 		{% endif %}
 		{% if user.is_admin %}

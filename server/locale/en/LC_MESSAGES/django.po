@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ActivityTrack Web\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-15 10:55+0100\n"
+"POT-Creation-Date: 2026-11-15 11:50+0100\n"
 "PO-Revision-Date: 2026-11-05 22:00+0100\n"
 "Last-Translator: ActivityTrack\n"
 "Language-Team: English\n"
@@ -1156,6 +1156,12 @@ msgstr "Home"
 msgid "Report"
 msgstr "Report"
 
+msgid "Riepilogativo"
+msgstr "Summary"
+
+msgid "Dettaglio attività"
+msgstr "Activity detail"
+
 msgid "Attività"
 msgstr "Activities"
 
@@ -1603,9 +1609,6 @@ msgid ""
 msgstr ""
 "Absences are counted apart: they are not work, travel or pause, and are not "
 "rounded. An absence with no company counts for every company."
-
-msgid "Dettaglio"
-msgstr "Detail"
 
 msgid "Codici di recupero"
 msgstr "Recovery codes"

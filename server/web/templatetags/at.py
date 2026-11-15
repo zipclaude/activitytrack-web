@@ -152,3 +152,12 @@ def nav_on(context, *names):
     """"on" when the page is one of the named views (namespace:name for apps)."""
     match = getattr(context.get("request"), "resolver_match", None)
     return "on" if match and match.view_name in names else ""
+
+
+@register.simple_tag(takes_context=True)
+def nav_master(context, kind):
+    """"on" when the page is a list, a form or the start of the master data of [kind] (the first one is the start)."""
+    match = getattr(context.get("request"), "resolver_match", None)
+    if match and match.view_name in ("masters_home", "masters", "master_new", "master_edit"):
+        return "on" if match.kwargs.get("kind", "aziende") == kind else ""
+    return ""

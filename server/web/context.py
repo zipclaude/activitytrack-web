@@ -15,6 +15,13 @@ def tags(request):
     return {"tag_colors": SimpleLazyObject(lambda: data.tag_colors(user) if user.is_authenticated else {})}
 
 
+def menu(request):
+    """The kinds of master data, the branches of the menu's Anagrafiche."""
+    from .masters import KINDS
+
+    return {"master_kinds": list(KINDS.items())}
+
+
 def version(request):
     """The server's version, in the menu and on the login page: what the beta's reports ask for."""
     from atweb import __version__

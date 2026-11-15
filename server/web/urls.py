@@ -24,6 +24,7 @@ urlpatterns = [
     path("anagrafiche/<str:kind>/nuova/", masters.edit, name="master_new"),
     path("anagrafiche/<str:kind>/<uuid:uid>/", masters.edit, name="master_edit"),
     path("report/", reports.report, name="report"),
+    path("report/dettaglio/", reports.detail, name="report_detail"),
     path("report/csv/", reports.report_csv, name="report_csv"),
     path("utenti/", users.users, name="users"),
     path("utenti/nuovo/", users.user_edit, name="user_new"),

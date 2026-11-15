@@ -74,6 +74,17 @@ def _row(x):
 
 @login_required
 def report(request):
+    """Riepilogativo: the totals by company and client, and the absences."""
+    return _report(request, "summary")
+
+
+@login_required
+def detail(request):
+    """Dettaglio attività: the report's lines, a day each."""
+    return _report(request, "detail")
+
+
+def _report(request, mode):
     user = request.user
     since, until = _period(request)
     days = _days(request, since, until)
@@ -112,7 +123,7 @@ def report(request):
     whole = shown({n: sum(v[n] for v in totals.values()) for n in names})
     reader = user.profile == Profile.READER
     return render(request, "web/report.html", {
-        "since": since, "until": until, "f": request.GET, "table": table, "whole": whole,
+        "mode": mode, "since": since, "until": until, "f": request.GET, "table": table, "whole": whole,
         "rows": [_row(x) for x in lines], "reader": reader, "absences": absences,
         "absence_rows": [
             {"e": x.entry, "day": x.day, "start": x.start, "end": x.end,
