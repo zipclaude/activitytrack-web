@@ -121,6 +121,17 @@ class WorkTests(TestCase):
         csv = self.client.get("/report/csv/?from=2026-10-01&to=2026-10-31").content.decode()
         self.assertIn(";Acme;Banca;;Riunione;CLOSED;2026-10-27 09:00;2026-10-27 10:00;60;0;0;4.50;", csv)
 
+    def test_the_header_buttons_of_the_todo_page_are_in_one_right_aligned_group(self):
+        # .head spreads its children (space-between): two loose buttons put the first one in the middle (issue #58)
+        page = self.client.get("/dafare/").content.decode()
+        head = page[page.index('<div class="head">'):]
+        head = head[:head.index("</div></div>") + len("</div></div>")]
+        self.assertRegex(head, r'^<div class="head"><h1>[^<]*</h1>\s*<div class="actions">')
+        group = head[head.index('<div class="actions">'):]
+        self.assertEqual(group.count('class="button'), 2)
+        self.assertIn("/dafare/nuova/", group)
+        self.assertIn("kind=ABSENCE", group)
+
     def test_todos_and_starting_one(self):
         from records.models import Entry, Segment
 
