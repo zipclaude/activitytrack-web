@@ -31,9 +31,7 @@
 <td><select name="{{ ke }}"><option value="">—</option><option value="yes" {% if v|get:ke == "yes" %}selected{% endif %}>{% translate "sì" %}</option>{% if not f.essential %}<option value="no" {% if v|get:ke == "no" %}selected{% endif %}>{% translate "no" %}</option>{% endif %}</select></td>
 <td><select name="{{ kr }}"><option value="">—</option><option value="yes" {% if v|get:kr == "yes" %}selected{% endif %}>{% translate "sì" %}</option>{% if not f.essential %}<option value="no" {% if v|get:kr == "no" %}selected{% endif %}>{% translate "no" %}</option>{% endif %}</select></td>
 {% endwith %}
-{% with li="field:"|add:f.key|add:":label:it" le="field:"|add:f.key|add:":label:en" %}
-<td><input name="{{ li }}" value="{{ v|get:li }}" placeholder="it" size="10"> <input name="{{ le }}" value="{{ v|get:le }}" placeholder="en" size="10"></td>
-{% endwith %}</tr>
+<td>{% for lang in languages %}{% with kl="field:"|add:f.key|add:":label:"|add:lang %}<input name="{{ kl }}" value="{{ v|get:kl }}" placeholder="{{ lang }}" size="10"> {% endwith %}{% endfor %}</td></tr>
 {% endfor %}
 </table></details>
 

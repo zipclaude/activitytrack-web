@@ -74,6 +74,18 @@ class PolicyTests(PolicyBase):
         page = self.client.get("/policy/org/").content.decode()
         self.assertIn("<option selected>plannedOnly</option>", page)
 
+    def test_the_field_labels_come_in_every_language_of_the_apps(self):
+        # the apps speak it, en, de, es: the editor used to show it and en only and to drop the other labels on saving
+        self.client.force_login(self.admin)
+        labels = {"it": "Cantiere", "en": "Site", "de": "Baustelle", "es": "Obra"}
+        form = {f"field:client:label:{lang}": text for lang, text in labels.items()}
+        self.assertEqual(self.client.post("/policy/org/", form).status_code, 302)
+        p = Policy.objects.get(org=self.org, profile="", user__isnull=True)
+        self.assertEqual(p.data["fields"]["client"]["label"], labels)
+        page = self.client.get("/policy/org/").content.decode()
+        for lang, text in labels.items():
+            self.assertIn(f'name="field:client:label:{lang}" value="{text}"', page)
+
     def test_editor_saves_a_valid_body_and_refuses_errors(self):
         self.client.force_login(self.admin)
         form = {

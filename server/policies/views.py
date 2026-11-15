@@ -103,7 +103,7 @@ def _parse(post):
             choice = post.get(f"field:{f['key']}:{a}")
             if choice in ("yes", "no"):
                 attrs[a] = choice == "yes"
-        labels = {lang: post.get(f"field:{f['key']}:label:{lang}", "").strip() for lang in ("it", "en")}
+        labels = {lang: post.get(f"field:{f['key']}:label:{lang}", "").strip() for lang in c["languages"]}
         labels = {k: t for k, t in labels.items() if t}
         if labels:
             attrs["label"] = labels
@@ -216,6 +216,7 @@ def edit(request, scope):
         "scope": scope,
         "policy": policy,
         "c": catalog(),
+        "languages": sorted(catalog()["languages"], key=lambda l: (l != "it", l != "en", l)),
         "v": values,
         "errors": errors,
         "preview": json.dumps(policy.data, ensure_ascii=False, indent=2) if policy else "",
