@@ -89,6 +89,9 @@ with 0.9 are in its `CHANGELOG.md`.
   sort and columns, in CSV (semicolon, byte order mark), XML or JSON, within the policy's `export` rules (the
   feature, `export.formats`, `behaviours.exportMaxDays`; the old CSV of the entries obeys them too), and printed
   (a print stylesheet; Print / PDF uses the browser's).
+- Attività: ordered by date (by day, as before), start time of day, company, client, duration, state or
+  person, both ways, in the URL; the cards (here and on the Home) show an icon for each type of attachment
+  (photo, voice note, receipt, file) and, when there is travel, its time and km.
 - The agenda adds an absence or an activity already done (when the policy leaves the
   times editable), besides a to-do.
 

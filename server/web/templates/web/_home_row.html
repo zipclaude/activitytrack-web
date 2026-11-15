@@ -8,5 +8,6 @@
 	{% state_mark obj %}
 	<span class="main"><b>{% firstof obj.client.name obj.company.name _("Senza cliente") %}</b>
 		<span class="sub">{% if obj.client and obj.company %}{{ obj.company.name }} · {% endif %}{{ obj.activity|default:_("senza descrizione") }} · {{ obj|state_label }}</span></span>
-	<span class="side">{% if r.start %}{% if r.start|date:"Ymd" != today|date:"Ymd" %}{{ r.start|udate:"day" }} {% endif %}{{ r.start|utime }}{% if r.end %}–{{ r.end|utime }}{% endif %}{% else %}{{ extra|udatetime:"day" }}{% endif %}<span class="sub">{{ r.work }}{% if r.travel %} · ✈ {{ r.travel }}{% endif %}</span></span>
+	{% include "web/_attachments.html" %}
+	<span class="side">{% if r.start %}{% if r.start|date:"Ymd" != today|date:"Ymd" %}{{ r.start|udate:"day" }} {% endif %}{{ r.start|utime }}{% if r.end %}–{{ r.end|utime }}{% endif %}{% else %}{{ extra|udatetime:"day" }}{% endif %}<span class="sub">{{ r.work }}{% if r.travel %} · ✈ {{ r.travel }}{% if r.km %} · {% blocktranslate with n=r.km %}{{ n }} km{% endblocktranslate %}{% endif %}{% endif %}</span></span>
 </a>{% endif %}

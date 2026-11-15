@@ -2035,3 +2035,107 @@ class ReportTableTests(WorkTests):
         self.client.force_login(reader)
         for url in ("/report/", "/report/dettaglio/"):
             self.assertEqual(self.client.get(f"{url}?{self.RANGE}").status_code, 200)
+
+
+class ActivityPageTests(WorkTests):
+    """The Attività page: its orders, and what the cards say of attachments and travel (issue #64)."""
+
+    client_uid = "22222222-2222-4222-8222-222222222222"
+
+    def three(self):
+        """Beta: 14:00-15:00, Alfa: 09:00-12:00 (client Zeta), Gamma: 11:00-11:30, on three days."""
+        from sync import engine
+
+        engine.apply(self.boss, {"type": "client", "uid": "22222222-2222-4222-8222-222222222223",
+                                 "fields": {"name": "Zeta", "companyUid": str(self.acme.uid)}}, central=True)
+        zeta = "22222222-2222-4222-8222-222222222223"
+        for activity, client, day, start, end in (("Beta", self.client_uid, "27", "14:00", "15:00"),
+                                                  ("Alfa", zeta, "28", "09:00", "12:00"),
+                                                  ("Gamma", self.client_uid, "29", "11:00", "11:30")):
+            self.client.post("/attivita/nuova/", {"when": "past", "client": client, "activity": activity,
+                                                  "start": f"2026-10-{day}T{start}", "end": f"2026-10-{day}T{end}"})
+
+    def order(self, query):
+        page = self.client.get(f"/attivita/?from=2026-10-01&to=2026-10-31&{query}").content.decode()
+        return re.findall(r"<b>[^<]*</b>\s*<span class=\"sub\">(?:[^<]* · )?(Alfa|Beta|Gamma)\b", page)
+
+    def test_the_default_order_is_by_day_newest_first(self):
+        self.three()
+        page = self.client.get("/attivita/?from=2026-10-01&to=2026-10-31").content.decode()
+        self.assertEqual(page.count('<h3 class="sec">'), 3)
+        self.assertEqual(self.order(""), ["Gamma", "Alfa", "Beta"])
+        self.assertEqual(self.order("sort=date&dir=asc"), ["Beta", "Alfa", "Gamma"])
+
+    def test_every_order_goes_both_ways_and_stays_in_the_url(self):
+        self.three()
+        for query, expected in (
+            ("sort=start&dir=asc", ["Alfa", "Gamma", "Beta"]), ("sort=start&dir=desc", ["Beta", "Gamma", "Alfa"]),
+            ("sort=work&dir=desc", ["Alfa", "Beta", "Gamma"]), ("sort=work&dir=asc", ["Gamma", "Beta", "Alfa"]),
+        ):
+            self.assertEqual(self.order(query), expected, query)
+        # Banca for two of them, Zeta for Alfa: the client orders the clients
+        self.assertEqual(self.order("sort=client&dir=asc")[-1], "Alfa")
+        self.assertEqual(self.order("sort=client&dir=desc")[0], "Alfa")
+        # the other orders are one list, each row with its day; a bad order is the default one
+        page = self.client.get("/attivita/?from=2026-10-01&to=2026-10-31&sort=start").content.decode()
+        self.assertNotIn('<h3 class="sec">', page)
+        self.assertIn("28/10", page)
+        self.assertEqual(self.order("sort=nonsense&dir=sideways"), ["Gamma", "Alfa", "Beta"])
+        self.assertIn('<option value="start" selected>', page)
+        self.assertIn('<option value="asc" selected>', page)
+        self.assertIn('<option value="desc" selected>', self.client.get("/attivita/?sort=work").content.decode())
+
+    def test_the_person_is_an_order_for_those_who_see_people(self):
+        self.assertNotIn('value="person"', self.client.get("/attivita/").content.decode())
+        self.client.force_login(self.boss)
+        self.assertIn('value="person"', self.client.get("/attivita/").content.decode())
+
+    def test_a_card_has_an_icon_for_each_type_of_attachment_and_the_travel(self):
+        import uuid
+        from datetime import timedelta
+
+        from records.models import Entry, Segment
+        from web import ops
+
+        self.three()
+        e = Entry.objects.get(activity="Alfa")
+        seg = Segment.objects.filter(entry=e).first()
+        ops.put(self.alice, "segment", uuid.uuid4(), {
+            "entryUid": str(e.uid), "kind": "TRAVEL", "startUtcMs": ops.ms(seg.start_utc - timedelta(minutes=45)),
+            "endUtcMs": ops.ms(seg.start_utc - timedelta(minutes=5)), "zoneId": e.zone_id, "source": "MANUAL",
+            "kmDeclared": 12.5})
+        ops.put(self.alice, "segment", uuid.uuid4(), {
+            "entryUid": str(e.uid), "kind": "TRAVEL", "startUtcMs": ops.ms(seg.end_utc + timedelta(minutes=5)),
+            "endUtcMs": ops.ms(seg.end_utc + timedelta(minutes=35)), "zoneId": e.zone_id, "source": "MANUAL",
+            "kmEstimated": 8.0})
+        for kind in ("PHOTO", "PHOTO", "AUDIO"):
+            ops.put(self.alice, "attachment", uuid.uuid4(), {"entryUid": str(e.uid), "kind": kind, "mime": "x/y",
+                                                             "createdUtcMs": ops.ms(seg.start_utc)})
+        page = self.client.get("/attivita/?from=2026-10-01&to=2026-10-31").content.decode()
+        card = page[page.index("Alfa"):]
+        card = card[:card.index("</a>")]
+        self.assertIn('href="#i-photo"', card)
+        self.assertIn('title="Foto × 2"', card)
+        self.assertIn('href="#i-audio"', card)
+        self.assertNotIn("#i-receipt", card)
+        self.assertNotIn("#i-file", card)
+        # 40 + 30 minutes of travel, 12.5 declared and 8 estimated km
+        self.assertIn("✈ 1:10 · 20,5 km", card)
+        # the others have neither
+        other = page[page.index("Beta"):]
+        other = other[:other.index("</a>")]
+        self.assertNotIn("#i-photo", other)
+        self.assertNotIn("km", other)
+
+    def test_the_home_cards_say_it_too(self):
+        import uuid
+
+        from records.models import Entry
+        from web import ops
+
+        self.three()
+        e = Entry.objects.get(activity="Alfa")
+        ops.put(self.alice, "attachment", uuid.uuid4(), {"entryUid": str(e.uid), "kind": "RECEIPT", "mime": "x/y",
+                                                         "createdUtcMs": ops.ms(e.created_utc)})
+        page = self.client.get("/?f=1&period=0&show=done&show=missing").content.decode()
+        self.assertIn('href="#i-receipt"', page)

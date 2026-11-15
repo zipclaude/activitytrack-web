@@ -15,6 +15,7 @@ from django.utils import timezone
 from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy
 from django.views.decorators.http import require_POST
 
 from accounts.models import Profile
@@ -51,16 +52,28 @@ def _entry(request, uid, write=False):
     return entry
 
 
+# the types of attachment of the model: icon and label (the app's: Foto, Nota vocale, Scontrino, File)
+ATTACHMENT_KINDS = {
+    "PHOTO": ("photo", gettext_lazy("Foto")), "AUDIO": ("audio", gettext_lazy("Nota vocale")),
+    "RECEIPT": ("receipt", gettext_lazy("Scontrino")), "FILE": ("file", gettext_lazy("File")),
+}
+
+
 def _rows(entries):
     """Entries with segments, totals and expenses for a list; each gets its state (.shown)."""
     states.annotate(entries)
     segs = data.segments_of(entries)
     exps = data.expenses_of(entries)
+    atts = data.attachments_of(entries)
     out = []
     for e in entries:
         s = segs.get(e.uid, [])
         d = data.durations(s)
+        km = data.km_of(s)
         out.append({
+            "km": km if km else None,
+            # one icon for each type of attachment present, in the order of ATTACHMENT_KINDS
+            "kinds": [(k, atts[e.uid][k], *ATTACHMENT_KINDS[k]) for k in ATTACHMENT_KINDS if k in atts.get(e.uid, {})],
             "e": e,
             "start": s[0].start_utc if s else None,
             "end": None if not s or any(x.end_utc is None for x in s) else max(x.end_utc for x in s),
@@ -201,6 +214,47 @@ def travel_now(request):
     return redirect("entry", uid=e.uid)
 
 
+# the orders of the Attività page: key, label, the direction it starts with
+ENTRY_SORTS = (
+    ("date", gettext_lazy("Data")), ("start", gettext_lazy("Ora di inizio")), ("company", gettext_lazy("Azienda")),
+    ("client", gettext_lazy("Cliente")), ("work", gettext_lazy("Durata")), ("state", gettext_lazy("Stato")),
+    ("person", gettext_lazy("Persona")),
+)
+FIRST_DESC = ("date", "work")
+
+
+def _entry_order(g, people):
+    """(sort, direction) of the request: ?sort=date|start|company|client|work|state|person and ?dir=asc|desc."""
+    keys = [k for k, _l in ENTRY_SORTS if k != "person" or people]
+    sort = g.get("sort") if g.get("sort") in keys else "date"
+    direction = g.get("dir") if g.get("dir") in ("asc", "desc") else ("desc" if sort in FIRST_DESC else "asc")
+    return sort, direction
+
+
+def _sorted_entries(rows, sort, direction):
+    """The rows in the order asked; the ones without a value stay last in either direction."""
+    def key(r):
+        e = r["e"]
+        if sort == "date":
+            return (r["day"], r["start"].timestamp() if r["start"] else timezone.localtime(e.created_utc).timestamp())
+        if sort == "start":
+            t = timezone.localtime(r["start"]) if r["start"] else None
+            return t.hour * 60 + t.minute if t else None
+        if sort == "company":
+            return e.company.name.casefold() if e.company else None
+        if sort == "client":
+            return e.client.name.casefold() if e.client else None
+        if sort == "work":
+            return r["minutes"]["WORK"]
+        if sort == "state":
+            return str(states.label(e.shown, e)).casefold()
+        return (e.owner.get_full_name() or e.owner.username).casefold()
+
+    keyed = [(key(r), i, r) for i, r in enumerate(rows)]
+    full = sorted((x for x in keyed if x[0] is not None), key=lambda x: (x[0], x[1]), reverse=direction == "desc")
+    return [r for _k, _i, r in full] + [r for k, _i, r in keyed if k is None]
+
+
 @login_required
 def entries(request):
     user = request.user
@@ -212,7 +266,12 @@ def entries(request):
         until = date.fromisoformat(g.get("to")) if g.get("to") else today
     except ValueError:
         since, until = today - timedelta(days=30), today
-    q = q.filter(created_utc__gte=data.day_bounds(since)[0] - timedelta(days=1), created_utc__lt=data.day_bounds(until)[1])
+    # created in the period, or with time in it: one recorded later (a past activity) belongs to the period it was
+    # done in
+    lo, hi = data.day_bounds(since)[0], data.day_bounds(until)[1]
+    inside = Segment.objects.filter(
+        entry=OuterRef("pk"), deleted=False, planned=False, start_utc__gte=lo, start_utc__lt=hi)
+    q = q.filter(Q(created_utc__gte=lo - timedelta(days=1), created_utc__lt=hi) | Exists(inside))
     # a filter that is not an id is left out, as a bad link
     if data.parse_uid(g.get("company")):
         q = q.filter(company__uid=data.parse_uid(g["company"]))
@@ -223,14 +282,24 @@ def entries(request):
     if g.get("status") in states.UI:
         rows = [r for r in rows if r["e"].shown == g["status"]]
     rows = [r for r in rows if not r["start"] or (data.day_bounds(since)[0] <= r["start"] < data.day_bounds(until)[1])]
-    days = {}
+    people = data.readable_people(user) if user.profile in (Profile.ADMIN, Profile.MANAGER) or user.is_admin else None
+    sort, direction = _entry_order(g, bool(people))
     for r in rows:
-        day = timezone.localtime(r["start"]).date() if r["start"] else timezone.localtime(r["e"].created_utc).date()
-        days.setdefault(day, []).append(r)
+        r["day"] = timezone.localtime(r["start"] or r["e"].created_utc).date()
+    rows = _sorted_entries(rows, sort, direction)
+    if sort == "date":
+        # by day, as it has always been; the other orders are one list, each row with its day
+        days = {}
+        for r in rows:
+            days.setdefault(r["day"], []).append(r)
+        days = list(days.items())
+    else:
+        days = None
     return render(request, "web/entries.html", {
-        "days": sorted(days.items(), reverse=True), "since": since, "until": until, "f": g,
+        "days": days, "flat": rows if days is None else None, "sort": sort, "dir": direction,
+        "sorts": [(k, v) for k, v in ENTRY_SORTS if k != "person" or people], "since": since, "until": until, "f": g,
         "companies": data.companies(user) if user.profile != Profile.READER else user.companies.all(),
-        "people": data.readable_people(user) if user.profile in (Profile.ADMIN, Profile.MANAGER) or user.is_admin else None,
+        "people": people,
         "statuses": [(k, v[1]) for k, v in states.UI.items() if k != A.DELETED],
     })
 

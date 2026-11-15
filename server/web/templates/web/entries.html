@@ -8,10 +8,14 @@
 	<label>{% translate "Azienda" %}<select name="company"><option value="">{% translate "tutte" %}</option>{% for c in companies %}<option value="{{ c.uid }}" {% if f.company == c.uid|stringformat:"s" %}selected{% endif %}>{{ c.name }}</option>{% endfor %}</select></label>
 	<label>{% translate "Stato" %}<select name="status"><option value="">{% translate "tutti" %}</option>{% for v, l in statuses %}<option value="{{ v }}" {% if f.status == v %}selected{% endif %}>{{ l }}</option>{% endfor %}</select></label>
 	{% if people %}<label>{% translate "Persona" %}<select name="person"><option value="">{% translate "tutte" %}</option>{% for p in people %}<option value="{{ p.pk }}" {% if f.person == p.pk|stringformat:"s" %}selected{% endif %}>{{ p.get_full_name|default:p.username }}</option>{% endfor %}</select></label>{% endif %}
+	<label>{% translate "Ordina per" %}<select name="sort" data-autosubmit>{% for k, l in sorts %}<option value="{{ k }}" {% if sort == k %}selected{% endif %}>{{ l }}</option>{% endfor %}</select></label>
+	<label>{% translate "Ordine" %}<select name="dir" data-autosubmit><option value="asc" {% if dir == "asc" %}selected{% endif %}>▲ {% translate "crescente" %}</option><option value="desc" {% if dir == "desc" %}selected{% endif %}>▼ {% translate "decrescente" %}</option></select></label>
 	<button>{% translate "Filtra" %}</button>
 </form>
-{% for day, rows in days %}
+{% if days is not None %}{% for day, rows in days %}
 <h3 class="sec">{{ day|udate:"long" }}</h3>
 {% for r in rows %}{% include "web/_entry_row.html" with show_owner=people %}{% endfor %}
 {% empty %}<p class="muted">{% translate "Nessuna attività nel periodo." %}</p>{% endfor %}
+{% else %}{% for r in flat %}{% include "web/_entry_row.html" with show_owner=people with_day=True %}
+{% empty %}<p class="muted">{% translate "Nessuna attività nel periodo." %}</p>{% endfor %}{% endif %}
 {% endblock %}

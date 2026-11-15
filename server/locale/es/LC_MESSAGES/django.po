@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ActivityTrack Web\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-15 12:00+0100\n"
+"POT-Creation-Date: 2026-11-15 12:08+0100\n"
 "PO-Revision-Date: 2026-11-15 12:00+0100\n"
 "Last-Translator: ActivityTrack\n"
 "Language-Team: Spanish\n"
@@ -1020,6 +1020,9 @@ msgstr "Resumen"
 msgid "Dettaglio attività"
 msgstr "Detalle de actividades"
 
+msgid "Report"
+msgstr "Informe"
+
 msgid "l'esportazione in questo formato non è consentita dalla policy"
 msgstr "la política no permite exportar en este formato"
 
@@ -1127,6 +1130,10 @@ msgstr "Sin cliente"
 msgid "senza descrizione"
 msgstr "sin descripción"
 
+#, python-format
+msgid "%(n)s km"
+msgstr "%(n)s km"
+
 msgid "registrati"
 msgstr "registradas"
 
@@ -1205,9 +1212,6 @@ msgctxt "menu"
 msgid "Home"
 msgstr "Inicio"
 
-msgid "Report"
-msgstr "Informe"
-
 msgid "Cestino"
 msgstr "Papelera"
 
@@ -1259,6 +1263,18 @@ msgstr "Hasta"
 
 msgid "tutte"
 msgstr "todas"
+
+msgid "Ordina per"
+msgstr "Ordenar por"
+
+msgid "Ordine"
+msgstr "Orden"
+
+msgid "crescente"
+msgstr "ascendente"
+
+msgid "decrescente"
+msgstr "descendente"
 
 msgid ""
 "Da verificare: dopo una sincronizzazione due periodi si sovrappongono. "
@@ -2055,8 +2071,26 @@ msgstr "Vinculación de «%(name)s» revocada."
 msgid "data e ora non valide"
 msgstr "fecha y hora no válidas"
 
+msgid "Foto"
+msgstr "Foto"
+
+msgid "Nota vocale"
+msgstr "Nota de voz"
+
+msgid "Scontrino"
+msgstr "Recibo"
+
+msgid "File"
+msgstr "Archivo"
+
 msgid "la policy non consente di scegliere gli orari"
 msgstr "la política no permite elegir las horas"
+
+msgid "Ora di inizio"
+msgstr "Hora de inicio"
+
+msgid "Durata"
+msgstr "Duración"
 
 #, python-format
 msgid "solo i tag dell'anagrafica: %(t)s non c'è"

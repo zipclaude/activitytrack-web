@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ActivityTrack Web\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-15 12:00+0100\n"
+"POT-Creation-Date: 2026-11-15 12:08+0100\n"
 "PO-Revision-Date: 2026-11-05 22:00+0100\n"
 "Last-Translator: ActivityTrack\n"
 "Language-Team: English\n"
@@ -1019,6 +1019,9 @@ msgstr "Summary"
 msgid "Dettaglio attività"
 msgstr "Activity detail"
 
+msgid "Report"
+msgstr "Report"
+
 msgid "l'esportazione in questo formato non è consentita dalla policy"
 msgstr "exporting in this format is not allowed by the policy"
 
@@ -1126,6 +1129,10 @@ msgstr "No client"
 msgid "senza descrizione"
 msgstr "no description"
 
+#, python-format
+msgid "%(n)s km"
+msgstr "%(n)s km"
+
 msgid "registrati"
 msgstr "recorded"
 
@@ -1203,9 +1210,6 @@ msgctxt "menu"
 msgid "Home"
 msgstr "Home"
 
-msgid "Report"
-msgstr "Report"
-
 msgid "Cestino"
 msgstr "Bin"
 
@@ -1257,6 +1261,18 @@ msgstr "To"
 
 msgid "tutte"
 msgstr "all"
+
+msgid "Ordina per"
+msgstr "Sort by"
+
+msgid "Ordine"
+msgstr "Order"
+
+msgid "crescente"
+msgstr "ascending"
+
+msgid "decrescente"
+msgstr "descending"
 
 msgid ""
 "Da verificare: dopo una sincronizzazione due periodi si sovrappongono. "
@@ -2038,8 +2054,26 @@ msgstr "Pairing of “%(name)s” revoked."
 msgid "data e ora non valide"
 msgstr "invalid date and time"
 
+msgid "Foto"
+msgstr "Photo"
+
+msgid "Nota vocale"
+msgstr "Voice note"
+
+msgid "Scontrino"
+msgstr "Receipt"
+
+msgid "File"
+msgstr "File"
+
 msgid "la policy non consente di scegliere gli orari"
 msgstr "the policy does not allow choosing the times"
+
+msgid "Ora di inizio"
+msgstr "Start time"
+
+msgid "Durata"
+msgstr "Duration"
 
 #, python-format
 msgid "solo i tag dell'anagrafica: %(t)s non c'è"

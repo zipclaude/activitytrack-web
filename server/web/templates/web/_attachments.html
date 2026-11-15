@@ -1,0 +1,1 @@
+{% load at %}{% if r.kinds %}<span class="atts">{% for kind, n, ic, lb in r.kinds %}<span class="att" title="{{ lb }}{% if n > 1 %} × {{ n }}{% endif %}">{% icon ic %}{% if n > 1 %}<small>{{ n }}</small>{% endif %}</span>{% endfor %}</span>{% endif %}

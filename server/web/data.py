@@ -8,7 +8,7 @@ from django.db.models import Exists, OuterRef, Q
 from django.utils import timezone
 
 from accounts.models import Profile, User
-from records.models import ActivityKind, Client, Company, Entry, EntryStatus, Expense, Role, Segment, Tag
+from records.models import ActivityKind, Attachment, Client, Company, Entry, EntryStatus, Expense, Role, Segment, Tag
 
 
 def parse_pk(value):
@@ -182,6 +182,21 @@ def expenses_of(entries):
     for x in Expense.objects.filter(entry__in=entries, deleted=False):
         by.setdefault(x.entry_id, []).append(x)
     return by
+
+
+def attachments_of(entries):
+    """{entry uid: {kind: number}} of the live attachments (PHOTO, AUDIO, RECEIPT, FILE)."""
+    by = {}
+    for a in Attachment.objects.filter(entry__in=entries, deleted=False):
+        by.setdefault(a.entry_id, {}).setdefault(a.kind, 0)
+        by[a.entry_id][a.kind] += 1
+    return by
+
+
+def km_of(segments):
+    """Km of the travel segments: the declared ones, else the estimated ones."""
+    return round(sum((s.km_declared if s.km_declared is not None else s.km_estimated or 0)
+                     for s in segments if s.kind == "TRAVEL" and not s.planned), 1)
 
 
 def hm(minutes):
