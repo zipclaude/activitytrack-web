@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
+import html
 import re
 
 from django.test import TestCase, override_settings
@@ -1887,6 +1888,16 @@ class ReportTableTests(WorkTests):
         page = self.client.get(url).content.decode()
         found = re.findall(r"(Alfa|Beta|=Gamma)</a>", page)
         return found
+
+    def test_the_tabs_keep_the_filters_and_not_the_columns_of_the_other_report(self):
+        page = self.client.get(f"/report/dettaglio/?{self.RANGE}&f=1&col=date&col=work&sort=work&dir=desc&rows=segment")
+        tabs = re.search(r'<p class="tabs no-print">(.*?)</p>', page.content.decode(), re.S).group(1)
+        links = [html.unescape(h) for h in re.findall(r'href="([^"]*)"', tabs)]
+        self.assertEqual(len(links), 2)
+        for link in links:
+            self.assertIn("from=2026-10-01", link)
+            for carried in ("col=", "sort=", "dir=", "rows=", "f=1"):
+                self.assertNotIn(carried, link)
 
     def test_the_detail_is_one_row_for_each_activity_and_day_with_what_is_useful(self):
         self.three()
