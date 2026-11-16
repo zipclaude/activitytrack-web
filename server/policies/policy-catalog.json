@@ -650,7 +650,7 @@
         "STOP",
         "NONE"
       ],
-      "doc": "text — PAUSE_RESUME, STOP_OR_SUSPEND, STOP, SUSPEND, NONE"
+      "doc": "text — PAUSE_RESUME, STOP, NONE"
     },
     {
       "key": "gestureEntryToEnd",
