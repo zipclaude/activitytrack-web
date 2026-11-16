@@ -233,6 +233,11 @@ class AcceptTests(UpdatesCase):
         self.assertEqual(ordered, sorted(reversed(ordered), key=functools.cmp_to_key(compare)))
 
 
+    def test_a_release_candidate_follows_the_betas_and_precedes_its_release(self):
+        ordered = ["1.0.0-alfa-1", "1.0.0-beta-3", "1.0.0-beta-10", "1.0.0-rc-1", "1.0.0-rc-2", "1.0.0-rc-10", "1.0.0", "1.0.1-rc-1", "1.0.1"]
+        self.assertEqual(ordered, sorted(reversed(ordered), key=functools.cmp_to_key(compare)))
+
+
 class RunTests(UpdatesCase):
     def test_run_keeps_the_manifest_and_signs_it_for_the_devices(self):
         self.serve(self.signed())
