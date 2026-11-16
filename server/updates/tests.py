@@ -232,7 +232,6 @@ class AcceptTests(UpdatesCase):
         ordered = ["0.9.9", "0.9.9.1", "0.9.10-beta-1", "0.9.10-beta-2", "0.9.10-beta-10", "0.9.10", "0.9.10.1"]
         self.assertEqual(ordered, sorted(reversed(ordered), key=functools.cmp_to_key(compare)))
 
-
     def test_a_release_candidate_follows_the_betas_and_precedes_its_release(self):
         ordered = ["1.0.0-alfa-1", "1.0.0-beta-3", "1.0.0-beta-10", "1.0.0-rc-1", "1.0.0-rc-2", "1.0.0-rc-10", "1.0.0", "1.0.1-rc-1", "1.0.1"]
         self.assertEqual(ordered, sorted(reversed(ordered), key=functools.cmp_to_key(compare)))
