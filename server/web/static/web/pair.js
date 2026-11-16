@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
+/* SPDX-FileCopyrightText: 2026 Flavio Visentin <flavio-activitytrack@infraconsulting.it> */
 /* Polls the pairing state until the phone pairs or the code expires. */
 (function () {
 	const box = document.getElementById("pairing");

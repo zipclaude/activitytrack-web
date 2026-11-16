@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Flavio Visentin <flavio-activitytrack@infraconsulting.it>
 """
 The language of a page, as in the app and the PC interfaces: the policy's ui.language for the logged-in user
 (a bad value forces English), else the one chosen in Preferences (the cookie), else the browser's, else

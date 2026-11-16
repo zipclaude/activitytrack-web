@@ -1,3 +1,5 @@
+{# SPDX-License-Identifier: GPL-3.0-or-later #}
+{# SPDX-FileCopyrightText: 2026 Flavio Visentin <flavio-activitytrack@infraconsulting.it> #}
 {% load i18n %}<label>{% translate "Azienda" %}<select name="company" data-company-filter><option value="">—</option>
 	{% for c in companies %}<option value="{{ c.uid }}" {% if e and e.company_id == c.uid or not e and initial.company == c.uid|stringformat:"s" %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
 </select></label>

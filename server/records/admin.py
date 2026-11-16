@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Flavio Visentin <flavio-activitytrack@infraconsulting.it>
 """Raw access for administrators until the web screens exist; edits here bypass the sync clock."""
 
 from django.contrib import admin

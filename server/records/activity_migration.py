@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Flavio Visentin <flavio-activitytrack@infraconsulting.it>
 """
 The migration to the activity model 1.0 (the app's docs/ACTIVITY-MODEL.md §6)
 as a pure function over plain rows: the server's data migration

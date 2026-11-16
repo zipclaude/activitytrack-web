@@ -1,4 +1,6 @@
 #!/bin/sh
+# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Flavio Visentin <flavio-activitytrack@infraconsulting.it>
 # manage.py of ActivityTrack Web, run as its service user with its settings.
 # Installs not made by the package set ATWEB_HOME, ATWEB_PYTHON, ATWEB_USER
 # and ATWEB_CONFIG in manage.env beside settings.ini (docs/INSTALL.md).

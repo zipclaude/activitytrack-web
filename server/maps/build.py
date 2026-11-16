@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Flavio Visentin <flavio-activitytrack@infraconsulting.it>
 """Preparing an area: cut it out of the Protomaps basemap, as a small PMTiles file."""
 
 import datetime

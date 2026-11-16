@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Flavio Visentin <flavio-activitytrack@infraconsulting.it>
 """
 PMTiles v3 (https://github.com/protomaps/PMTiles) for the offline maps: read an
 archive, local or far away (HTTP range requests, so the 100 GB of the planet are

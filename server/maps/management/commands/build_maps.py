@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Flavio Visentin <flavio-activitytrack@infraconsulting.it>
 """Prepares offline maps: one area (the web page starts this), or all that are old (a timer)."""
 
 from datetime import timedelta

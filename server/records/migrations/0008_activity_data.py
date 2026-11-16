@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Flavio Visentin <flavio-activitytrack@infraconsulting.it>
 # Activity model 1.0, second step: the data (the app's docs/ACTIVITY-MODEL.md §6).
 # The rows go through records.activity_migration.migrate, the same pure function
 # the tests run against the shared cases. Every record it touches gets a new

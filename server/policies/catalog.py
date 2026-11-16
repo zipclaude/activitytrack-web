@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Flavio Visentin <flavio-activitytrack@infraconsulting.it>
 """
 The app's policy catalog (docs/policy-catalog.json of the app, copied here
 as policy-catalog.json): the editor's form and the checks of what it saves.

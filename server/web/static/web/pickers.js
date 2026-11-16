@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
+/* SPDX-FileCopyrightText: 2026 Flavio Visentin <flavio-activitytrack@infraconsulting.it> */
 /*
  * Date and time pickers (issue #38). The browser's own inputs follow its
  * language, often the American format; here each becomes a text field in

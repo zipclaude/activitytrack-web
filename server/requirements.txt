@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Flavio Visentin <flavio-activitytrack@infraconsulting.it>
 # For installs without the distribution's packages (docs/INSTALL.md): a
 # virtualenv with these. The lower bounds are the oldest releases tested
 # (Debian 13, Ubuntu 24.04); Django 5.2 is tested too.

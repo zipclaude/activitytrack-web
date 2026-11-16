@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Flavio Visentin <flavio-activitytrack@infraconsulting.it>
 """manage.py fetch_updates: look for new versions now, for every organisation (cron or a timer; docs/SYNC.md §12.4)."""
 
 from django.core.management.base import BaseCommand

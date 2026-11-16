@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Flavio Visentin <flavio-activitytrack@infraconsulting.it>
 """Home, activities and to-dos in the browser (docs/ROADMAP.md phase 4)."""
 
 import uuid

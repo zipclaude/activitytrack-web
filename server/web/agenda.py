@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Flavio Visentin <flavio-activitytrack@infraconsulting.it>
 """
 Agenda by day, week and month, as in the app (manual §7): the report's lines
 (day attribution, rounding, a running entry up to now), the TODO activities

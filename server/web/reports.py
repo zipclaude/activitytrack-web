@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Flavio Visentin <flavio-activitytrack@infraconsulting.it>
 """
 The reports: the summary (totals by company and client) and the detail (a row for each activity and day), the
 app's report lines rounded with each owner's rules (web/reporting.py). Both are tables whose columns can be

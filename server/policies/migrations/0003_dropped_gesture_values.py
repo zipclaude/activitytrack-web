@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Flavio Visentin <flavio-activitytrack@infraconsulting.it>
 from django.db import migrations
 
 # the swipes on a running activity that the app's 1.0 no longer has: suspend is no button any more (the app's

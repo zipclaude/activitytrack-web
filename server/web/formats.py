@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Flavio Visentin <flavio-activitytrack@infraconsulting.it>
 """
 Dates and times as the user prefers them (issue #38): European, American or
 ISO dates, 24 or 12 hours. The pages read the formats of the request's user

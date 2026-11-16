@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Flavio Visentin <flavio-activitytrack@infraconsulting.it>
 """The phones' API (docs/SYNC.md §5, §9): JSON, bearer device tokens."""
 
 import hashlib

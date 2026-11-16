@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Flavio Visentin <flavio-activitytrack@infraconsulting.it>
 """
 The tables of the reports (issues #62, #63): columns that can be sorted and chosen, in the page, in the print
 and in the exports. A table is rows (dicts of what the report knows) and columns; a column knows how to show a

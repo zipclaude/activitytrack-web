@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Flavio Visentin <flavio-activitytrack@infraconsulting.it>
 # CI of ActivityTrack Web on GitHub, the backup of the GitLab project: it does what .gitlab-ci.yml does
 # (keep the two in step, see CLAUDE.md). Nothing starts on its own (not on pushes to branches or tags, no pull
 # requests): start it by hand ("Run workflow" on a branch or tag), or push a branch ghtest/* (the

@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Flavio Visentin <flavio-activitytrack@infraconsulting.it>
 """
 What the browser does, as changes through sync.engine.apply: the same
 records, revisions and last-writer-wins rule as a phone's push, so every

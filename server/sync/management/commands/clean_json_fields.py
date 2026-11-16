@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Flavio Visentin <flavio-activitytrack@infraconsulting.it>
 """
 Repairs JSON fields stored before the wire checked their shape (sync/wire.py
 JSON_SHAPES): a tag list that is not one broke the pages of whoever read the

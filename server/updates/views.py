@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Flavio Visentin <flavio-activitytrack@infraconsulting.it>
 """The Aggiornamenti page: where the server looks for new versions, whom it trusts, the packages it keeps."""
 
 import logging

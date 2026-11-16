@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Flavio Visentin <flavio-activitytrack@infraconsulting.it>
 """
 The invariants of the activity model (the app's docs/ACTIVITY-MODEL.md §1–3)
 that a write must not break, issue #55. Each rule has a token, the detail of

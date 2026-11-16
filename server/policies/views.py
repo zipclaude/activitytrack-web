@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Flavio Visentin <flavio-activitytrack@infraconsulting.it>
 """The graphical policy editor (docs/ARCHITECTURE.md §7), built from the app's catalog."""
 
 import json

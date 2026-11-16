@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Flavio Visentin <flavio-activitytrack@infraconsulting.it>
 # Activity model 1.0, third step: the to-do, its assignment, the entries' link
 # to it and the legacy absences go; an activity's management-system key is
 # unique with its company for each owner.

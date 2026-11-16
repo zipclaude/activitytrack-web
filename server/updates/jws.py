@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Flavio Visentin <flavio-activitytrack@infraconsulting.it>
 """
 The update manifest as a JWS in JSON serialization (RFC 7515), the same format as the PC library's
 `activitytrack.manifest` and the app's: ES256 and RS256 only; the signer's certificate in the

@@ -3,8 +3,15 @@ Upstream-Name: activitytrack-web
 Source: https://gitlab.com/activitytrack/activitytrack-web
 
 Files: *
-Copyright: 2026 ActivityTrack Web contributors
+Copyright: 2026 Flavio Visentin <flavio-activitytrack@infraconsulting.it>
 License: GPL-3+
+
+Files: server/web/templates/web/_icons.html
+Copyright: 2026 Flavio Visentin <flavio-activitytrack@infraconsulting.it>
+License: GPL-3+
+Comment: Part of the icon paths in this file have the shape of Material Icons
+ (Google, https://github.com/google/material-design-icons), under the Apache
+ License 2.0; the file names them.
 
 License: GPL-3+
  This program is free software: you can redistribute it and/or modify it
@@ -14,3 +21,17 @@ License: GPL-3+
  .
  On Debian systems the full text of the GNU General Public License version 3
  is in /usr/share/common-licenses/GPL-3.
+
+License: Apache-2.0
+ Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ use this file except in compliance with the License. You may obtain a copy
+ of the License at http://www.apache.org/licenses/LICENSE-2.0
+ .
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ License for the specific language governing permissions and limitations
+ under the License.
+ .
+ On Debian systems the full text of the Apache License 2.0 is in
+ /usr/share/common-licenses/Apache-2.0.

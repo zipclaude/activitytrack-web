@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Flavio Visentin <flavio-activitytrack@infraconsulting.it>
 // The Django admin in the user's theme and colour (templates/admin/base_site.html):
 // set on <html> before the page draws, as base.html does for the site's pages.
 'use strict';

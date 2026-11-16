@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
+/* SPDX-FileCopyrightText: 2026 Flavio Visentin <flavio-activitytrack@infraconsulting.it> */
 /* Agenda timeline: opens on the working hours, zoom buttons, a click on a free slot plans a to-do. */
 (function () {
 	"use strict";

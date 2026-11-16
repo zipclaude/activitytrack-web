@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Flavio Visentin <flavio-activitytrack@infraconsulting.it>
 """
 Applying changes and listing them (docs/SYNC.md). Phones and the web use
 the same apply(), so a field edited on the web and on a phone is settled by

@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Flavio Visentin <flavio-activitytrack@infraconsulting.it>
 """
 The key the server signs with (docs/SYNC.md §12.4): the one of `[policy] key` and `cert`, else
 one made on first use under the data folder: a P-256 key and a self-signed certificate valid ten

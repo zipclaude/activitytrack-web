@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Flavio Visentin <flavio-activitytrack@infraconsulting.it>
 """
 The test runner: the test client asks for Italian, as the pages' tests have always read them in Italian.
 Without a language the server answers in English (web.language), so a test that wants another one says so

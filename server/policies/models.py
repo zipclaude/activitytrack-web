@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Flavio Visentin <flavio-activitytrack@infraconsulting.it>
 """Policies for the phones (docs/ARCHITECTURE.md §7): one per scope, merged key by key."""
 
 from django.conf import settings

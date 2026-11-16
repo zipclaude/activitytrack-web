@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
+/* SPDX-FileCopyrightText: 2026 Flavio Visentin <flavio-activitytrack@infraconsulting.it> */
 /* The offline maps pages: the estimate of an area as the form is filled in, and the progress of the builds. */
 (function () {
 	const MB = 1048576;

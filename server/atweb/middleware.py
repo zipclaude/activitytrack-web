@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Flavio Visentin <flavio-activitytrack@infraconsulting.it>
 """Content-Security-Policy of the pages (docs/SECURITY.md)."""
 
 # scripts and styles from this site only (style attributes carry the colours);

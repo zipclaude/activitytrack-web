@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Flavio Visentin <flavio-activitytrack@infraconsulting.it>
 """Master data in the browser: central ones for admins and managers, personal ones for everyone."""
 
 from django.contrib import messages

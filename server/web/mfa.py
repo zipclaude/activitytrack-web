@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Flavio Visentin <flavio-activitytrack@infraconsulting.it>
 """
 Two-step login (docs/SECURITY.md): after the password, a code from an
 authenticator app (TOTP, RFC 6238) or sent by email; recovery codes for a

@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Flavio Visentin <flavio-activitytrack@infraconsulting.it>
 """Areas an admin can add with one click: (slug, name, latitude, longitude), 100 km around."""
 
 from django.utils.translation import gettext_lazy as _

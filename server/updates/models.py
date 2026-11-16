@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Flavio Visentin <flavio-activitytrack@infraconsulting.it>
 """What an organisation's server knows about new versions (docs/SYNC.md §12.4)."""
 
 from django.conf import settings

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Flavio Visentin <flavio-activitytrack@infraconsulting.it>
 # The to-do and the absence are no wire types any more (activity model 1.0), but
 # the scope exits recorded for them stay in the table. A pull from 0, which every
 # device makes after its migration, returned them as "gone" entries of a type the

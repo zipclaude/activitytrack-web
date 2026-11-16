@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Flavio Visentin <flavio-activitytrack@infraconsulting.it>
 """
 The Home list as in the app (ui/home/HomeTabs.kt homeSections, manual §3):
 activities to do (the TODO ones) and closed ones in one list with the

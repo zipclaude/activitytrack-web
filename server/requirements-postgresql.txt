@@ -1,2 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Flavio Visentin <flavio-activitytrack@infraconsulting.it>
 # PostgreSQL instead of SQLite: psycopg 3 (the binary build needs no compiler)
 psycopg[binary]>=3.1

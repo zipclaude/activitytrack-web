@@ -62,6 +62,7 @@ The whole workflow is in
   Italian by default (`atweb/testing.py`); a test of another language sends
   `HTTP_ACCEPT_LANGUAGE`.
 - Indentation: Python follows PEP 8 (4 spaces); everything else tabs (`.editorconfig`).
+- A new file starts with the two SPDX lines of the others (`SPDX-License-Identifier`, `SPDX-FileCopyrightText`): see the README's License section.
 - **Never use npm**, not even for tools. No CDN, no bundler: plain JS files
   in `server/web/static`.
 - Ask before guessing on ambiguous requirements; answers come as numbered

@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Flavio Visentin <flavio-activitytrack@infraconsulting.it>
 """
 The displayed states of an activity (ACTIVITY-MODEL §2.2) for the pages: one
 table of icon, colour class and label shared by every page, the computation

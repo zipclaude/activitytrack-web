@@ -123,4 +123,8 @@ on SQLite and PostgreSQL.
 
 ## License
 
-GPL-3.0-or-later.
+Copyright © 2026 Flavio Visentin <flavio-activitytrack@infraconsulting.it>.
+
+ActivityTrack Web is free software under the GNU General Public License, version 3 or (at your option) any later version (`GPL-3.0-or-later`, text in [LICENSE](LICENSE)), without any warranty. Every file that can carry a comment starts with its `SPDX-License-Identifier` and `SPDX-FileCopyrightText` lines; the others (JSON, test data, images) are under the same licence.
+
+Part of the icons have the shape of Material Icons (Google, Apache License 2.0, text in [LICENSES/Apache-2.0.txt](LICENSES/Apache-2.0.txt)): `server/web/templates/web/_icons.html` names them. The offline maps are made from data © OpenStreetMap contributors (ODbL) with the Protomaps basemap.

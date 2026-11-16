@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Flavio Visentin <flavio-activitytrack@infraconsulting.it>
 """
 Looking for new versions (docs/SYNC.md §12.4): the manifest at the organisation's address is
 downloaded, checked and, if accepted, kept; its packages are mirrored when the admin wants.

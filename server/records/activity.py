@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Flavio Visentin <flavio-activitytrack@infraconsulting.it>
 """
 The activity model 1.0 (the app's docs/ACTIVITY-MODEL.md): pure rules, no
 database. The to-do is a state of the activity (an Entry), not an entity.

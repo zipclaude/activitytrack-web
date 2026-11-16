@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Flavio Visentin <flavio-activitytrack@infraconsulting.it>
 from django import template
 from django.utils.html import format_html, format_html_join
 from django.utils.safestring import mark_safe

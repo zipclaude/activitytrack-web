@@ -1,3 +1,5 @@
+{# SPDX-License-Identifier: GPL-3.0-or-later #}
+{# SPDX-FileCopyrightText: 2026 Flavio Visentin <flavio-activitytrack@infraconsulting.it> #}
 {% load i18n at %}<div class="row{% if state == "DONE" %} over{% endif %}" style="--band: {% if t.kind == 'ABSENCE' %}var(--absence){% else %}{{ t.client.color|color|default:'var(--line)' }}{% endif %}">
 	{% state_mark t %}
 	<a class="main" href="{% url 'todo_edit' t.uid %}"><b>{% if t.kind == "ABSENCE" %}{{ t.absence_kind|absence_label }}{% if t.activity %} · {{ t.activity }}{% endif %}{% else %}{{ t.activity|default:_("senza descrizione") }}{% endif %}</b>

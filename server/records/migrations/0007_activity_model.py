@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Flavio Visentin <flavio-activitytrack@infraconsulting.it>
 # Activity model 1.0 (the app's docs/ACTIVITY-MODEL.md), first of three steps:
 # the new columns, next to the old ones; 0008 moves the data, 0009 drops the
 # to-do. Three migrations, three transactions: PostgreSQL refuses to alter a

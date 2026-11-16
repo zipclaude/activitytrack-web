@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Flavio Visentin <flavio-activitytrack@infraconsulting.it>
 """What the phones are offered (docs/SYNC.md §5, docs/OFFLINE-MAPS.md): the catalog and its revision."""
 
 import hashlib

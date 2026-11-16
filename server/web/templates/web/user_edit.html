@@ -1,3 +1,5 @@
+{# SPDX-License-Identifier: GPL-3.0-or-later #}
+{# SPDX-FileCopyrightText: 2026 Flavio Visentin <flavio-activitytrack@infraconsulting.it> #}
 {% extends "web/base.html" %}{% load i18n at %}
 {% block title %}{% if u %}{{ u.get_full_name|default:u.username }}{% else %}{% translate "Nuovo utente" %}{% endif %} · ActivityTrack{% endblock %}
 {% block content %}

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Flavio Visentin <flavio-activitytrack@infraconsulting.it>
 # Wire schema 4: an activity declared complete (app issue #189: one of travel
 # only) and the description of an attachment (app issue #185). Both nullable,
 # empty on the existing rows.

@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Flavio Visentin <flavio-activitytrack@infraconsulting.it>
 """Users of the organisation, by an admin (ARCHITECTURE.md §5), and one's own password."""
 
 from django.contrib import messages

@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Flavio Visentin <flavio-activitytrack@infraconsulting.it>
 """The policy a phone gets (docs/SYNC.md §8): organisation, profile, user, merged key by key."""
 
 import base64

@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Flavio Visentin <flavio-activitytrack@infraconsulting.it>
 """The manifest's component of this server's own distribution (`web-deb13`, `web-ubuntu24.04`, …; docs/SYNC.md §12.4)."""
 
 from pathlib import Path

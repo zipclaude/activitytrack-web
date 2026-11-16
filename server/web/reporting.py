@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Flavio Visentin <flavio-activitytrack@infraconsulting.it>
 """
 The app's report rules (core/domain report/ and rounding/): an entry's time
 by calendar day, rounded per user, for the agenda and the report.
