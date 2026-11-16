@@ -12,6 +12,12 @@ ACME, BANCA, ZETA, ZETA_C, SITE, ROLE, TAG = (f"aaaaaaaa-0000-4000-8000-00000000
 CONTACT, PRESET, MATERIAL = "aaaaaaaa-0000-4000-8000-000000000008", "aaaaaaaa-0000-4000-8000-000000000009", "aaaaaaaa-0000-4000-8000-00000000000a"
 
 
+def uuid_of(text):
+    import uuid
+
+    return uuid.UUID(text)
+
+
 class CentralTests(SyncTestCase):
     def setUp(self):
         super().setUp()
@@ -102,10 +108,10 @@ class CentralTests(SyncTestCase):
         done = central.promote(self.boss)
         self.assertEqual(len(done.eligible), 4)
         self.assertEqual([central.label(r) for r, _k, _w in done.skipped if isinstance(r, Role)], ["sistemista"])
-        revs = Company.objects.filter(org=self.org).values_list("rev", flat=True)
+        revs = sorted(Company.objects.filter(org=self.org).values_list("rev", flat=True))
         again = central.promote(self.boss)
         self.assertEqual(len(again.eligible), 0)
-        self.assertEqual(sorted(Company.objects.filter(org=self.org).values_list("rev", flat=True)), sorted(revs))
+        self.assertEqual(sorted(Company.objects.filter(org=self.org).values_list("rev", flat=True)), revs)
 
     def test_one_record_whose_company_is_personal_stays_put_and_says_so(self):
         r = self.run_it(BANCA)
@@ -145,3 +151,17 @@ class CentralTests(SyncTestCase):
         self.run_it()
         self.assertNotContains(self.client.get("/anagrafiche/ruoli/"), "Rendi centrali le mie")
         self.assertNotContains(self.client.get(f"/anagrafiche/aziende/{ACME}/"), "/anagrafiche/centrali/")
+
+    def test_the_archived_stay_personal_and_say_so_when_asked_for_alone(self):
+        from web import central
+
+        Company.objects.filter(uid=ACME).update(archived=True)
+        p = central.plan(self.boss)
+        listed = {central.label(r) for r, _k in p.eligible} | {central.label(r) for r, _k, _w in p.skipped if isinstance(r, Company)}
+        self.assertNotIn("Acme", listed)
+        # its client waits for it, and the reason is the archive
+        self.assertIn("archiviata", dict((central.label(r), w) for r, _k, w in p.skipped)["Banca"])
+        (_rec, _k, why), = central.plan(self.boss, uuid_of(ACME)).skipped
+        self.assertIn("archiviata", why)
+        self.run_it(ACME)
+        self.assertEqual(self.owner(Company, ACME), self.boss.pk)

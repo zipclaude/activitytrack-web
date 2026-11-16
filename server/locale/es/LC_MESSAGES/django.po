@@ -2264,3 +2264,11 @@ msgid "Rendi centrale %(n)s voce"
 msgid_plural "Rendi centrali %(n)s voci"
 msgstr[0] "Hacer central %(n)s elemento"
 msgstr[1] "Hacer centrales %(n)s elementos"
+
+#, python-format
+msgid ""
+"«%(n)s» è archiviata: le voci archiviate"
+" restano personali"
+msgstr ""
+"«%(n)s» está archivada: los elementos ar"
+"chivados siguen siendo personales"

@@ -12,6 +12,8 @@ Nothing is copied or deleted. What cannot be promoted is left alone and said:
 - it points at a record the other users could not see (a client of a personal company, a preset or a material
   of a personal company or role): promoted only when that one is central or is promoted in the same run.
 
+Archived records are never promoted: a list leaves them out, asked for one alone the page says so.
+
 The sites and contacts of a promoted company or client follow it, as new children copy their parent's owner.
 """
 
@@ -51,15 +53,15 @@ def _keys(rec):
     return []
 
 
+def _fks(model):
+    """The names of the fields of a model that point at other master records."""
+    return [f.name for f in model._meta.concrete_fields
+            if f.is_relation and f.related_model is not None and issubclass(f.related_model, Synced)]
+
+
 def _refs(rec):
     """The master records a record points at."""
-    out = []
-    for f in rec._meta.concrete_fields:
-        if f.is_relation and f.related_model is not None and issubclass(f.related_model, Synced):
-            target = getattr(rec, f.name)
-            if target is not None:
-                out.append(target)
-    return out
+    return [t for t in (getattr(rec, name) for name in _fks(type(rec))) if t is not None]
 
 
 @dataclass
@@ -80,15 +82,21 @@ def plan(user, uid=None):
             for k in _keys(c):
                 if k[-1]:
                     taken.setdefault(k, c)
-        mine = model.objects.filter(org=user.org, owner=user, deleted=False, archived=False) if hasattr(model, "archived") \
-            else model.objects.filter(org=user.org, owner=user, deleted=False)
+        mine = model.objects.filter(org=user.org, owner=user, deleted=False).select_related(*_fks(model))
         if uid is not None:
             mine = mine.filter(uid=uid)
         for rec in mine.order_by("name" if hasattr(model, "name") else "text"):
-            why = None
-            for target in _refs(rec):
+            retired = getattr(rec, "archived", False)
+            if retired and uid is None:
+                # the archived are left personal without a word, as they are in every list
+                continue
+            why = _("«%(n)s» è archiviata: le voci archiviate restano personali") % {"n": label(rec)} if retired else None
+            for target in _refs(rec) if why is None else ():
                 if target.owner_id is not None and target.uid not in promoted:
-                    why = _("«%(n)s» è personale: va resa centrale prima, o insieme") % {"n": label(target)}
+                    if getattr(target, "archived", False):
+                        why = _("«%(n)s» è archiviata: le voci archiviate restano personali") % {"n": label(target)}
+                    else:
+                        why = _("«%(n)s» è personale: va resa centrale prima, o insieme") % {"n": label(target)}
                     break
             if why is None:
                 for k in _keys(rec):

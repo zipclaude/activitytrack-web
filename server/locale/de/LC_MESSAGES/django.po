@@ -2288,3 +2288,11 @@ msgid "Rendi centrale %(n)s voce"
 msgid_plural "Rendi centrali %(n)s voci"
 msgstr[0] "%(n)s Eintrag zentral machen"
 msgstr[1] "%(n)s Einträge zentral machen"
+
+#, python-format
+msgid ""
+"«%(n)s» è archiviata: le voci archiviate"
+" restano personali"
+msgstr ""
+"„%(n)s“ ist archiviert: archivierte Eint"
+"räge bleiben persönlich"

@@ -2245,3 +2245,11 @@ msgid "Rendi centrale %(n)s voce"
 msgid_plural "Rendi centrali %(n)s voci"
 msgstr[0] "Make %(n)s item central"
 msgstr[1] "Make %(n)s items central"
+
+#, python-format
+msgid ""
+"«%(n)s» è archiviata: le voci archiviate"
+" restano personali"
+msgstr ""
+"“%(n)s” is archived: archived items stay"
+" personal"
