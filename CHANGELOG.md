@@ -104,6 +104,10 @@ with 0.9 are in its `CHANGELOG.md`.
   (photo, voice note, receipt, file) and, when there is travel, its time and km.
 - The agenda adds an absence or an activity already done (when the policy leaves the
   times editable), besides a to-do.
+- Anagrafiche: "Rendi centrali le mie" (administrators and managers, their own personal records) shows what
+  would become central and what stays personal and why, then asks to confirm. The record keeps its uid and
+  changes owner in place, so the sync needs no change: the phones pull it again as central. Left alone: a record
+  whose name or code a central one already has, and one that points at a personal record not promoted with it.
 
 ### Behaviour
 

@@ -2226,3 +2226,65 @@ msgstr "Eintrag gespeichert."
 #, python-format
 msgid "Voce assegnata a %(name)s."
 msgstr "Eintrag zugewiesen an %(name)s."
+
+#, python-format
+msgid "«%(n)s» è personale: va resa centrale prima, o insieme"
+msgstr "„%(n)s“ ist persönlich: zuerst oder zusammen zentral machen"
+
+#, python-format
+msgid "esiste già una voce centrale con lo stesso nome o codice: «%(n)s»"
+msgstr ""
+"es gibt schon einen zentralen Eintrag mit demselben Namen oder Code: "
+"„%(n)s“"
+
+#, python-format
+msgid "%(n)d voce è diventata centrale."
+msgid_plural "%(n)d voci sono diventate centrali."
+msgstr[0] "%(n)d Eintrag ist zentral geworden."
+msgstr[1] "%(n)d Einträge sind zentral geworden."
+
+#, python-format
+msgid "%(n)d voce è rimasta personale."
+msgid_plural "%(n)d voci sono rimaste personali."
+msgstr[0] "%(n)d Eintrag ist persönlich geblieben."
+msgstr[1] "%(n)d Einträge sind persönlich geblieben."
+
+msgid "Rendi centrali le mie"
+msgstr "Meine zentral machen"
+
+msgid "Rendi centrale"
+msgstr "Zentral machen"
+
+msgid "Rendi centrali le mie anagrafiche"
+msgstr "Meine Stammdaten zentral machen"
+
+msgid ""
+"Una voce centrale la vedono tutti i dispositivi dell'organizzazione e "
+"la modificano solo amministratori e responsabili. Le sedi e i contatti "
+"di un'azienda o di un cliente la seguono. Le voci già centrali con lo "
+"stesso nome o codice non si toccano, e un cliente, una scelta rapida o "
+"un materiale diventa centrale solo se lo è anche l'azienda o il ruolo "
+"a cui si riferisce. L'operazione non si annulla."
+msgstr ""
+"Ein zentraler Eintrag ist auf allen Geräten der Organisation sichtbar "
+"und wird nur von Administratoren und Verantwortlichen geändert. Die "
+"Standorte und Kontakte einer Firma oder eines Kunden gehen mit. "
+"Bereits zentrale Einträge mit demselben Namen oder Code bleiben "
+"unberührt, und ein Kunde, eine Schnellauswahl oder ein Material wird "
+"nur zentral, wenn auch die Firma oder die Rolle, auf die er sich "
+"bezieht, zentral ist. Das lässt sich nicht rückgängig machen."
+
+msgid "Diventano centrali"
+msgstr "Werden zentral"
+
+msgid "Nessuna voce può diventare centrale."
+msgstr "Kein Eintrag kann zentral werden."
+
+msgid "Restano personali"
+msgstr "Bleiben persönlich"
+
+#, python-format
+msgid "Rendi centrale %(n)s voce"
+msgid_plural "Rendi centrali %(n)s voci"
+msgstr[0] "%(n)s Eintrag zentral machen"
+msgstr[1] "%(n)s Einträge zentral machen"

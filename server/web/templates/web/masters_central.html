@@ -1,0 +1,18 @@
+{% extends "web/base.html" %}{% load i18n at %}
+{% block title %}{% translate "Rendi centrali le mie anagrafiche" %} · ActivityTrack{% endblock %}
+{% block content %}
+<p><a class="back" href="{% url 'masters_home' %}">{% icon "back" %}{% translate "Anagrafiche" %}</a></p>
+<h1>{% translate "Rendi centrali le mie anagrafiche" %}</h1>
+<div class="card">
+	<p>{% translate "Una voce centrale la vedono tutti i dispositivi dell'organizzazione e la modificano solo amministratori e responsabili. Le sedi e i contatti di un'azienda o di un cliente la seguono. Le voci già centrali con lo stesso nome o codice non si toccano, e un cliente, una scelta rapida o un materiale diventa centrale solo se lo è anche l'azienda o il ruolo a cui si riferisce. L'operazione non si annulla." %}</p>
+</div>
+{% if plan.eligible %}
+<h2>{% translate "Diventano centrali" %}</h2>
+<table class="list">{% for r, kind in plan.eligible %}<tr><td><b>{% firstof r.name r.text %}</b></td><td class="muted">{{ kind }}</td></tr>{% endfor %}</table>
+<form method="post">{% csrf_token %}<button class="primary">{% blocktranslate count n=plan.eligible|length %}Rendi centrale {{ n }} voce{% plural %}Rendi centrali {{ n }} voci{% endblocktranslate %}</button></form>
+{% else %}<p class="muted">{% translate "Nessuna voce può diventare centrale." %}</p>{% endif %}
+{% if plan.skipped %}
+<h2>{% translate "Restano personali" %}</h2>
+<table class="list">{% for r, kind, why in plan.skipped %}<tr><td><b>{% firstof r.name r.text %}</b></td><td class="muted">{{ kind }}</td><td class="muted">{{ why }}</td></tr>{% endfor %}</table>
+{% endif %}
+{% endblock %}

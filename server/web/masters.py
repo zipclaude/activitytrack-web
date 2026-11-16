@@ -8,11 +8,11 @@ from django.db.models import Q
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.translation import gettext as _
-from django.utils.translation import gettext_lazy
+from django.utils.translation import gettext_lazy, ngettext
 
 from records.models import Client, Company, Entry, Material, Preset, Role, Tag, tag_name
 
-from . import data, ops
+from . import central, data, ops
 
 # the app's palette (Colors.kt PALETTE), 0xRRGGBB
 PALETTE = [
@@ -52,7 +52,10 @@ def index(request, kind="aziende"):
         q = q.order_by("position", "name")
     else:
         q = q.order_by("name")
-    return render(request, "web/masters.html", {"kind": kind, "kinds": KINDS, "title": title, "items": q, "can_central": user.can_edit_central})
+    return render(request, "web/masters.html", {
+        "kind": kind, "kinds": KINDS, "title": title, "items": q, "can_central": user.can_edit_central,
+        "can_promote": user.can_edit_central and q.filter(owner=user).exists(),
+    })
 
 
 def _color(p):
@@ -111,7 +114,26 @@ def edit(request, kind, uid=None):
     return render(request, "web/master_edit.html", {
         "kind": kind, "title": title, "r": rec, "model": model.__name__, "companies": data.companies(user),
         "can_central": user.can_edit_central and rec is None, "palette": PALETTE,
+        "can_promote": rec is not None and rec.owner_id == user.pk and user.can_edit_central,
     })
+
+
+@login_required
+def make_central(request, uid=None):
+    """The user's own personal master data made central: what would happen, then a confirmation (issue #70)."""
+    user = request.user
+    if not user.can_edit_central:
+        raise PermissionDenied
+    if request.method == "POST":
+        done = central.promote(user, uid)
+        n = len(done.eligible)
+        if n:
+            messages.success(request, ngettext("%(n)d voce è diventata centrale.", "%(n)d voci sono diventate centrali.", n) % {"n": n})
+        if done.skipped:
+            n = len(done.skipped)
+            messages.warning(request, ngettext("%(n)d voce è rimasta personale.", "%(n)d voci sono rimaste personali.", n) % {"n": n})
+        return redirect("masters_home")
+    return render(request, "web/masters_central.html", {"plan": central.plan(user, uid), "uid": uid})
 
 
 def _unique_tag(user, rec, name, central):

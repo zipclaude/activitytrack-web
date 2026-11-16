@@ -115,9 +115,18 @@ activity presets and consumables have an `owner`:
   the policy allows it, synced only to that user's phones, shown with a
   "personal" mark in the app and on the web.
 
-An admin can promote a personal record to central, or merge it into an
-existing central one: references move to the central record and the
-personal one is deleted (the phones receive both changes).
+An administrator or a manager can make their own personal records central
+from the web (Anagrafiche, `web/central.py`, issue #70): the record keeps its
+uid and changes owner in place under a new revision, one for each record and
+parents first, so nothing that points at it has to move; the owner's phones
+pull it again with `central: true`, the others' pull it as a new central
+record. The sites and contacts of a company or client follow it. A record is
+left alone, and the page says why, when a live central one already has its
+natural key (compared without case), or when it points at a personal record
+that is not promoted in the same run (the other users could not resolve the
+reference). It cannot be undone. Merging into an existing central record is what
+a phone's adoption does at its pull (`docs/SYNC.md` §7); the web has no merge
+command.
 
 Imports and plugins on the phone create personal records; when one matches
 a central record by natural key (company name or external code; client

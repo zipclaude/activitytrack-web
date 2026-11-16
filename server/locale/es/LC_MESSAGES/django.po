@@ -2204,3 +2204,63 @@ msgstr "Elemento guardado."
 #, python-format
 msgid "Voce assegnata a %(name)s."
 msgstr "Elemento asignado a %(name)s."
+
+#, python-format
+msgid "«%(n)s» è personale: va resa centrale prima, o insieme"
+msgstr "«%(n)s» es personal: hay que hacerlo central antes, o a la vez"
+
+#, python-format
+msgid "esiste già una voce centrale con lo stesso nome o codice: «%(n)s»"
+msgstr "ya existe un elemento central con el mismo nombre o código: «%(n)s»"
+
+#, python-format
+msgid "%(n)d voce è diventata centrale."
+msgid_plural "%(n)d voci sono diventate centrali."
+msgstr[0] "%(n)d elemento se ha vuelto central."
+msgstr[1] "%(n)d elementos se han vuelto centrales."
+
+#, python-format
+msgid "%(n)d voce è rimasta personale."
+msgid_plural "%(n)d voci sono rimaste personali."
+msgstr[0] "%(n)d elemento sigue siendo personal."
+msgstr[1] "%(n)d elementos siguen siendo personales."
+
+msgid "Rendi centrali le mie"
+msgstr "Hacer centrales los míos"
+
+msgid "Rendi centrale"
+msgstr "Hacer central"
+
+msgid "Rendi centrali le mie anagrafiche"
+msgstr "Hacer centrales mis datos maestros"
+
+msgid ""
+"Una voce centrale la vedono tutti i dispositivi dell'organizzazione e "
+"la modificano solo amministratori e responsabili. Le sedi e i contatti "
+"di un'azienda o di un cliente la seguono. Le voci già centrali con lo "
+"stesso nome o codice non si toccano, e un cliente, una scelta rapida o "
+"un materiale diventa centrale solo se lo è anche l'azienda o il ruolo "
+"a cui si riferisce. L'operazione non si annulla."
+msgstr ""
+"Un elemento central lo ven todos los dispositivos de la organización y "
+"solo lo modifican administradores y responsables. Las sedes y los "
+"contactos de una empresa o de un cliente lo siguen. Los elementos ya "
+"centrales con el mismo nombre o código no se tocan, y un cliente, una "
+"selección rápida o un material pasa a ser central solo si lo es "
+"también la empresa o el rol al que se refiere. La operación no se "
+"puede deshacer."
+
+msgid "Diventano centrali"
+msgstr "Pasan a ser centrales"
+
+msgid "Nessuna voce può diventare centrale."
+msgstr "Ningún elemento puede pasar a ser central."
+
+msgid "Restano personali"
+msgstr "Siguen siendo personales"
+
+#, python-format
+msgid "Rendi centrale %(n)s voce"
+msgid_plural "Rendi centrali %(n)s voci"
+msgstr[0] "Hacer central %(n)s elemento"
+msgstr[1] "Hacer centrales %(n)s elementos"

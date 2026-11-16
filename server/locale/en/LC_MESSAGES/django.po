@@ -2186,3 +2186,62 @@ msgstr "To-do saved."
 #, python-format
 msgid "Voce assegnata a %(name)s."
 msgstr "To-do assigned to %(name)s."
+
+#, python-format
+msgid "«%(n)s» è personale: va resa centrale prima, o insieme"
+msgstr "“%(n)s” is personal: make it central first, or together"
+
+#, python-format
+msgid "esiste già una voce centrale con lo stesso nome o codice: «%(n)s»"
+msgstr "a central item with the same name or code already exists: “%(n)s”"
+
+#, python-format
+msgid "%(n)d voce è diventata centrale."
+msgid_plural "%(n)d voci sono diventate centrali."
+msgstr[0] "%(n)d item became central."
+msgstr[1] "%(n)d items became central."
+
+#, python-format
+msgid "%(n)d voce è rimasta personale."
+msgid_plural "%(n)d voci sono rimaste personali."
+msgstr[0] "%(n)d item stayed personal."
+msgstr[1] "%(n)d items stayed personal."
+
+msgid "Rendi centrali le mie"
+msgstr "Make mine central"
+
+msgid "Rendi centrale"
+msgstr "Make central"
+
+msgid "Rendi centrali le mie anagrafiche"
+msgstr "Make my master data central"
+
+msgid ""
+"Una voce centrale la vedono tutti i dispositivi dell'organizzazione e "
+"la modificano solo amministratori e responsabili. Le sedi e i contatti "
+"di un'azienda o di un cliente la seguono. Le voci già centrali con lo "
+"stesso nome o codice non si toccano, e un cliente, una scelta rapida o "
+"un materiale diventa centrale solo se lo è anche l'azienda o il ruolo "
+"a cui si riferisce. L'operazione non si annulla."
+msgstr ""
+"A central item is seen by every device of the organisation and edited "
+"only by administrators and managers. The sites and contacts of a "
+"company or client go with it. Items that are already central with the "
+"same name or code are left alone, and a client, quick pick or material "
+"becomes central only if the company or role it refers to is central "
+"too. This cannot be undone."
+
+msgid "Diventano centrali"
+msgstr "Becoming central"
+
+msgid "Nessuna voce può diventare centrale."
+msgstr "No item can become central."
+
+msgid "Restano personali"
+msgstr "Staying personal"
+
+#, python-format
+msgid "Rendi centrale %(n)s voce"
+msgid_plural "Rendi centrali %(n)s voci"
+msgstr[0] "Make %(n)s item central"
+msgstr[1] "Make %(n)s items central"
