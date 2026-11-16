@@ -184,6 +184,33 @@ class PolicyTests(PolicyBase):
         self.assertNotIn("settings", p)
         self.assertEqual(p["version"], "4")
 
+    def test_the_migration_maps_the_dropped_swipes_to_stop(self):
+        """The app's 1.0 has no suspend swipe: it reads its own old choices as STOP and refuses them in a policy."""
+        import importlib
+
+        from django.apps import apps
+
+        org = Policy.objects.create(org=self.org, revision=4, data={
+            "features": {"travel": False},
+            "settings": {"gestureEntryToStart": {"value": "STOP_OR_SUSPEND", "locked": True}, "gestureEntryToEnd": "SUSPEND", "kmFactor": 1.3}})
+        users = Policy.objects.create(org=self.org, profile=Profile.USER, revision=2, data={"settings": {"gestureEntryToEnd": "PAUSE_RESUME"}})
+        # what an import may have left: the migration passes over it
+        odd = Policy.objects.create(org=self.org, user=self.bob, revision=1, data={"settings": ["SUSPEND"]})
+        importlib.import_module("policies.migrations.0003_dropped_gesture_values").map_dropped_values(apps, None)
+        org.refresh_from_db()
+        self.assertEqual({"gestureEntryToStart": {"value": "STOP", "locked": True}, "gestureEntryToEnd": "STOP", "kmFactor": 1.3}, org.data["settings"])
+        self.assertEqual({"travel": False}, org.data["features"])
+        self.assertEqual(5, org.revision, "the phones must see a new version")
+        users.refresh_from_db()
+        odd.refresh_from_db()
+        self.assertEqual((2, {"settings": {"gestureEntryToEnd": "PAUSE_RESUME"}}), (users.revision, users.data))
+        self.assertEqual((1, {"settings": ["SUSPEND"]}), (odd.revision, odd.data))
+        # what alice's phone gets: nothing its parser refuses
+        sent = json.loads(effective(self.alice))
+        self.assertEqual("5.2", sent["version"])
+        self.assertEqual("STOP", sent["settings"]["gestureEntryToStart"]["value"])
+        self.assertEqual("PAUSE_RESUME", sent["settings"]["gestureEntryToEnd"])
+
     def test_only_admins_edit(self):
         self.client.force_login(self.bob)
         self.assertEqual(self.client.get("/policy/").status_code, 403)
