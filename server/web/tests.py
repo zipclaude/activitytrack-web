@@ -51,17 +51,6 @@ class WorkTests(TestCase):
 
         return Entry.objects.filter(owner=self.alice, deleted=False).latest("created_utc")
 
-    def test_no_template_comment_is_printed(self):
-        """Django's {# #} is one line: a longer one is printed on the page (the icons' licence note once was)."""
-        import pathlib
-        import re
-
-        for url in ("/", "/dafare/", "/anagrafiche/"):
-            self.assertNotIn("{#", self.client.get(url).content.decode(), url)
-        for path in pathlib.Path(__file__).parent.joinpath("templates").rglob("*.html"):
-            if re.search(r"\{#(?:(?!#\}).)*?\n(?:(?!#\}).)*?#\}", path.read_text(encoding="utf-8"), re.S):
-                self.fail(f"{path.name}: a {{# #}} comment over several lines, use {{% comment %}}")
-
     def test_pages_render(self):
         for url in ["/", "/attivita/", "/attivita/nuova/", "/cestino/", "/dafare/", "/dafare/nuova/", "/anagrafiche/", "/anagrafiche/clienti/", "/report/", "/dispositivi/", "/agenda/"]:
             self.assertEqual(self.client.get(url).status_code, 200, url)
@@ -1834,6 +1823,23 @@ class LayoutTests(TestCase):
         self.assertEqual(bad, [])
         css = (Path(__file__).parent / "static/web/app.css").read_text(encoding="utf-8")
         self.assertIn(".app main > .inline-form { display: flex; }", css)
+
+
+class TemplateCommentTests(TestCase):
+    """Django's {# #} is one line: a longer one is printed on the page (the icons' licence note once was)."""
+
+    def test_no_comment_is_printed_on_a_page(self):
+        org = Organization.objects.create(name="Infra")
+        self.client.force_login(User.objects.create_user("alice", password="x-x-x-x-x-x", org=org))
+        for url in ("/", "/dafare/", "/anagrafiche/"):
+            self.assertNotIn("{#", self.client.get(url).content.decode(), url)
+
+    def test_no_template_has_a_comment_over_several_lines(self):
+        from pathlib import Path
+
+        for path in Path(__file__).parent.joinpath("templates").rglob("*.html"):
+            if re.search(r"\{#(?:(?!#\}).)*?\n(?:(?!#\}).)*?#\}", path.read_text(encoding="utf-8"), re.S):
+                self.fail(f"{path.name}: a {{# #}} comment over several lines, use {{% comment %}}")
 
 
 class MenuTreeTests(WorkTests):
