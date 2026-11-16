@@ -51,6 +51,17 @@ class WorkTests(TestCase):
 
         return Entry.objects.filter(owner=self.alice, deleted=False).latest("created_utc")
 
+    def test_no_template_comment_is_printed(self):
+        """Django's {# #} is one line: a longer one is printed on the page (the icons' licence note once was)."""
+        import pathlib
+        import re
+
+        for url in ("/", "/dafare/", "/anagrafiche/"):
+            self.assertNotIn("{#", self.client.get(url).content.decode(), url)
+        for path in pathlib.Path(__file__).parent.joinpath("templates").rglob("*.html"):
+            for m in re.finditer(r"\{#(?:(?!#\}).)*?\n(?:(?!#\}).)*?#\}", path.read_text(), re.S):
+                self.fail(f"{path.name}: a {{# #}} comment over several lines, use {{% comment %}}")
+
     def test_pages_render(self):
         for url in ["/", "/attivita/", "/attivita/nuova/", "/cestino/", "/dafare/", "/dafare/nuova/", "/anagrafiche/", "/anagrafiche/clienti/", "/report/", "/dispositivi/", "/agenda/"]:
             self.assertEqual(self.client.get(url).status_code, 200, url)
