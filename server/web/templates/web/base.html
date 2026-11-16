@@ -25,9 +25,9 @@
 		{% if user.syncs or user.can_edit_central %}<a class="{% nav_on 'agenda' %}" href="{% url 'agenda' %}">{% icon "agenda" %}{% translate "Agenda" %}</a>{% endif %}
 		<details class="branch"{% nav_on 'report' 'report_detail' as on_report %}{% if on_report %} open{% endif %}>
 			<summary class="{{ on_report }}">{% icon "report" %}{% translate "Report" %}</summary>
-			<div class="items">
-				<a class="{% nav_on 'report' %}" href="{% url 'report' %}">{% translate "Riepilogativo" %}</a>
-				<a class="{% nav_on 'report_detail' %}" href="{% url 'report_detail' %}">{% translate "Dettaglio attività" %}</a>
+			<div class="items">{% if on_report and f %}{% query f f='' col='' sort='' dir='' rows='' as report_q %}{% endif %}
+				<a class="{% nav_on 'report' %}" href="{% url 'report' %}{% if report_q %}?{{ report_q }}{% endif %}">{% translate "Riepilogativo" %}</a>
+				<a class="{% nav_on 'report_detail' %}" href="{% url 'report_detail' %}{% if report_q %}?{{ report_q }}{% endif %}">{% translate "Dettaglio attività" %}</a>
 			</div>
 		</details>
 		{% if user.syncs %}

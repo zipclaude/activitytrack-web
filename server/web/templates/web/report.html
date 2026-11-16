@@ -4,7 +4,7 @@
 {% block title %}{{ page_title }} · ActivityTrack{% endblock %}
 {% block content %}
 <h1>{% translate "Report" %}</h1>
-<p class="tabs no-print"><a href="{% url 'report' %}?{% query f f='' col='' sort='' dir='' rows='' %}" class="{% if mode == 'summary' %}on{% endif %}">{% translate "Riepilogativo" %}</a>
+<p class="tabs submenu no-print"><a href="{% url 'report' %}?{% query f f='' col='' sort='' dir='' rows='' %}" class="{% if mode == 'summary' %}on{% endif %}">{% translate "Riepilogativo" %}</a>
 	<a href="{% url 'report_detail' %}?{% query f f='' col='' sort='' dir='' rows='' %}" class="{% if mode == 'detail' %}on{% endif %}">{% translate "Dettaglio attività" %}</a></p>
 {% if reader %}<p class="muted no-print">{% translate "Le attività chiuse delle aziende assegnate a questo account." %}</p>{% endif %}
 <div class="print-head"><h2>{{ title }}{% if rows == "segment" %} · {% translate "Una riga per tratto" %}{% endif %}</h2>

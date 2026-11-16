@@ -4,7 +4,7 @@
 {% block title %}{{ title }} · ActivityTrack{% endblock %}
 {% block content %}
 <h1>{% translate "Anagrafiche" %}</h1>
-<p class="tabs">{% for k, v in kinds.items %}<a href="{% url 'masters' k %}" class="{% if k == kind %}on{% endif %}">{{ v.2 }}</a>{% endfor %}</p>
+<p class="tabs submenu">{% for k, v in kinds.items %}<a href="{% url 'masters' k %}" class="{% if k == kind %}on{% endif %}">{{ v.2 }}</a>{% endfor %}</p>
 <div class="head"><h2>{{ title }}</h2><div class="actions">{% if can_promote %}<a class="button" href="{% url 'masters_central' %}">{% icon "folder" %}{% translate "Rendi centrali le mie" %}</a>{% endif %}<a class="button primary" href="{% url 'master_new' kind %}">{% icon "add" %}{% translate "Nuova" %}</a></div></div>
 {% for r in items %}
 <a class="row" href="{% url 'master_edit' kind r.uid %}" style="--band: {{ r.color|color|default:'var(--line)' }}">

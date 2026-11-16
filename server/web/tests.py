@@ -1890,11 +1890,15 @@ class ReportTableTests(WorkTests):
         found = re.findall(r"(Alfa|Beta|=Gamma)</a>", page)
         return found
 
-    def test_the_tabs_keep_the_filters_and_not_the_columns_of_the_other_report(self):
+    def test_the_menu_and_the_tabs_keep_the_filters_and_not_the_columns_of_the_other_report(self):
+        """The tabs are the menu of the narrow screen, which has no side menu (issue #69)."""
         page = self.client.get(f"/report/dettaglio/?{self.RANGE}&f=1&col=date&col=work&sort=work&dir=desc&rows=segment")
-        tabs = re.search(r'<p class="tabs no-print">(.*?)</p>', page.content.decode(), re.S).group(1)
+        page = page.content.decode()
+        tabs = re.search(r'<p class="tabs submenu no-print">(.*?)</p>', page, re.S).group(1)
         links = [html.unescape(h) for h in re.findall(r'href="([^"]*)"', tabs)]
         self.assertEqual(len(links), 2)
+        menu = [html.unescape(h) for h in re.findall(r'<a class="[^"]*" href="(/report/[^"]*)">', page.split("</aside>")[0])]
+        self.assertEqual(menu, links)
         for link in links:
             self.assertIn("from=2026-10-01", link)
             for carried in ("col=", "sort=", "dir=", "rows=", "f=1"):

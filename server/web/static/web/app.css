@@ -213,6 +213,8 @@ tr.dim { opacity: .55; }
 .tabs { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0 16px; }
 .tabs a { text-decoration: none; padding: 6px 16px; border-radius: 8px; border: 1px solid var(--line); color: var(--muted); font-weight: 500; font-size: 14px; }
 .tabs a.on { background: var(--secondary-c); color: var(--on-secondary-c); border-color: transparent; }
+/* the entries of a branch of the side menu, for the narrow screen that has no side menu (issue #69) */
+@media (min-width: 841px) { .tabs.submenu { display: none; } }
 .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 20px; overflow: hidden; width: fit-content; }
 .seg label, .seg a { display: inline-flex; flex-direction: row; align-items: center; margin: 0; padding: 0 16px; height: 38px; gap: 8px; color: var(--text); font-size: 14px; font-weight: 500; text-decoration: none; }
 .seg > * + * { border-left: 1px solid var(--line); }
