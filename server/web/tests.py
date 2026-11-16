@@ -1880,8 +1880,9 @@ class ReportTableTests(WorkTests):
         self.assertEqual(self.names(base + "&sort=work&dir=asc"), ["Beta", "=Gamma", "Alfa"])
         self.assertEqual(self.names(base + "&sort=work&dir=desc"), ["Alfa", "=Gamma", "Beta"])
         self.assertEqual(self.names(base + "&sort=activity&dir=asc"), ["=Gamma", "Alfa", "Beta"])
-        # a column that is not one is no sort
-        self.assertEqual(self.names(base + "&sort=nonsense&dir=desc"), ["Beta", "Alfa", "=Gamma"])
+        # a column that is not one changes nothing: the last sort stays, until the columns are reset
+        self.assertEqual(self.names(base + "&sort=nonsense&dir=desc"), ["=Gamma", "Alfa", "Beta"])
+        self.assertEqual(self.names(base + "&f=1"), ["Beta", "Alfa", "=Gamma"])
         page = self.client.get(base + "&sort=work&dir=desc").content.decode()
         self.assertIn('aria-sort="descending"', page)
         self.assertIn('aria-sort="none"', page)
@@ -1999,6 +2000,44 @@ class ReportTableTests(WorkTests):
         r = self.client.get(f"/report/dettaglio/?{self.RANGE}&rows=segment")
         self.assertEqual([row[2]["text"] for row in r.context["t"]["rows"]], ["assenza"])
         self.assertContains(r, "Ferie")
+
+    def test_the_choices_stay_with_the_user_not_with_the_session(self):
+        self.three()
+        base = f"/report/dettaglio/?{self.RANGE}"
+        self.client.get(base + "&rows=segment&f=1&col=kind&col=duration&col=zzz&sort=duration&dir=desc")
+        self.client.get(base + "&rows=activity&f=1&col=date&col=activity")
+        self.client.get(f"/report/?{self.RANGE}&sort=work&dir=desc")
+        self.alice.refresh_from_db()
+        self.assertEqual(self.alice.report_prefs, {"rows": "activity", "tables": {
+            "detail-segment": {"cols": ["kind", "duration"], "sort": "duration", "dir": "desc"},
+            "detail": {"cols": ["date", "activity"]}, "summary": {"sort": "work", "dir": "desc"}}})
+        # another login, another browser: the same report
+        self.client.logout()
+        self.client.force_login(self.alice)
+        self.assertEqual(self.heads(base), ["Data", "Attività"])
+        r = self.client.get(base + "&rows=segment")
+        self.assertEqual([h["label"] for h in r.context["t"]["head"]], ["Tratto", "Durata"])
+        self.assertEqual((r.context["sorted"], r.context["direction"]), ("duration", "desc"))
+        # "Colonne predefinite" forgets the table's choice, sort included, and only that table's
+        self.client.get(base + "&rows=segment&f=1")
+        self.alice.refresh_from_db()
+        self.assertNotIn("detail-segment", self.alice.report_prefs["tables"])
+        self.assertIn("detail", self.alice.report_prefs["tables"])
+        # somebody else has their own
+        self.client.force_login(self.boss)
+        self.assertIn("Cliente", self.heads(base))
+
+    def test_stored_preferences_that_make_no_sense_are_ignored(self):
+        self.three()
+        for bad in ([], "x", {"tables": []}, {"rows": 5, "tables": {"detail": "x", "summary": {"cols": "abc", "sort": 3}}},
+                    {"tables": {"detail": {"cols": ["gone", 7, "date"], "sort": "gone", "dir": "up"}}}):
+            User.objects.filter(pk=self.alice.pk).update(report_prefs=bad)
+            for url in ("/report/", "/report/dettaglio/"):
+                self.assertEqual(self.client.get(f"{url}?{self.RANGE}").status_code, 200, bad)
+        # of the last one the known column is kept, the rest dropped
+        self.assertEqual(self.heads(f"/report/dettaglio/?{self.RANGE}"), ["Data"])
+        self.alice.refresh_from_db()
+        self.assertEqual(self.alice.report_prefs["tables"]["detail"], {"cols": ["date"]})
 
     def rows(self, fmt, query=""):
         r = self.client.get(f"/report/esporta/detail.{fmt}?{self.RANGE}{query}")

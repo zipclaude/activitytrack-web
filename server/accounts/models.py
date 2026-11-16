@@ -63,6 +63,10 @@ class User(AbstractUser):
     time_format = models.CharField(_("formato degli orari"), max_length=2, choices=TIME_FORMATS, default="24")
     theme = models.CharField(_("tema"), max_length=8, choices=THEMES, default="system")
     accent = models.CharField(_("colore del tema"), max_length=8, choices=ACCENTS, default="green")
+    # the reports as the user left them (web/tables.py): {"rows": "activity" | "segment",
+    # "tables": {report: {"cols": [column keys], "sort": key, "dir": "asc" | "desc"}}}; read against the known
+    # columns, so what is unknown is dropped
+    report_prefs = models.JSONField(default=dict, blank=True)
 
     objects = UserManager()
 

@@ -293,12 +293,11 @@ def _segment_columns(ctx):
 
 def rows_mode(request):
     """activity or segment: the request's ?rows=, else the last one chosen, else by activity."""
-    asked = request.GET.get("rows")
+    asked, kept = request.GET.get("rows"), tables.prefs(request.user)
     if asked in (BY_ACTIVITY, BY_SEGMENT):
-        request.session["report_rows"] = asked
+        tables.store(request.user, {**kept, "rows": asked})
         return asked
-    kept = request.session.get("report_rows")
-    return kept if kept in (BY_ACTIVITY, BY_SEGMENT) else BY_ACTIVITY
+    return kept["rows"] if kept.get("rows") in (BY_ACTIVITY, BY_SEGMENT) else BY_ACTIVITY
 
 
 def _summary_columns(ctx):

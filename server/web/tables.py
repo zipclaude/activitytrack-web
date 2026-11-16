@@ -3,8 +3,8 @@
 The tables of the reports (issues #62, #63): columns that can be sorted and chosen, in the page, in the print
 and in the exports. A table is rows (dicts of what the report knows) and columns; a column knows how to show a
 row's value in the page (a cell), how to sort it and which plain values it exports. The sort, the direction and
-the visible columns are in the URL (?sort=work&dir=desc&col=date&col=work…), and the columns are also kept in
-the session for the next time (as the Home's filters are).
+the visible columns are in the URL (?sort=work&dir=desc&col=date&col=work…) and are kept with the user
+(User.report_prefs), per report and row mode, for the next time.
 """
 
 import csv
@@ -54,27 +54,47 @@ class Table:
         return [c for c in self.columns if c.key in self.chosen]
 
 
-def _remembered(request):
-    return request.session.get("report_columns", {})
+def prefs(user):
+    """The user's report preferences, whatever is stored: a dict with a dict of tables."""
+    kept = user.report_prefs if isinstance(user.report_prefs, dict) else {}
+    tables_ = kept.get("tables") if isinstance(kept.get("tables"), dict) else {}
+    return {**kept, "tables": {k: v for k, v in tables_.items() if isinstance(v, dict)}}
+
+
+def store(user, new):
+    """Keeps the preferences with the user (not the session: they come back at the next login), if they changed."""
+    if new != user.report_prefs:
+        user.report_prefs = new
+        user.save(update_fields=["report_prefs"])
+
+
+def _strings(value):
+    return [v for v in value if isinstance(v, str)] if isinstance(value, list) else []
 
 
 def choose(request, name, columns, defaults=None):
-    """The visible columns: the form's (?f=1&col=…), else the last chosen for [name], else the default ones."""
+    """
+    (visible column keys, sort key, direction) of the table [name]: the request's (?f=1&col=…, ?sort=&dir=),
+    else what the user chose last, else the default columns unsorted. A choice is kept for the user, per table;
+    ?f=1 without columns ("Colonne predefinite") forgets it, sort included. Unknown columns are dropped.
+    """
     keys = [c.key for c in columns]
     default = [c.key for c in columns if (c.key in defaults if defaults is not None else c.default)]
-    g = request.GET
+    g, all_ = request.GET, prefs(request.user)
+    mine = dict(all_["tables"].get(name, {}))
     if g.get("f"):
-        asked = [k for k in g.getlist("col") if k in keys]
-        # no column is no choice: the default ones
-        saved = _remembered(request)
-        if asked:
-            saved[name] = asked
-        else:
-            saved.pop(name, None)
-        request.session["report_columns"] = saved
-        return [k for k in keys if k in asked] or default
-    kept = [k for k in _remembered(request).get(name, []) if k in keys]
-    return [k for k in keys if k in kept] or default
+        asked = [k for k in keys if k in g.getlist("col")]
+        mine = {**mine, "cols": asked} if asked else {}
+    if g.get("sort") in keys:
+        mine["sort"], mine["dir"] = g["sort"], "desc" if g.get("dir") == "desc" else "asc"
+    cols = [k for k in keys if k in _strings(mine.get("cols"))]
+    sort = mine.get("sort") if mine.get("sort") in keys else ""
+    clean = {"cols": cols} if cols else {}
+    if sort:
+        clean.update(sort=sort, dir="desc" if mine.get("dir") == "desc" else "asc")
+    all_["tables"] = {k: v for k, v in {**all_["tables"], name: clean}.items() if v}
+    store(request.user, all_)
+    return cols or default, sort, clean.get("dir", "asc")
 
 
 def order(rows, columns, key, direction):
@@ -88,10 +108,7 @@ def order(rows, columns, key, direction):
 
 
 def build(request, name, columns, rows, defaults=None):
-    g = request.GET
-    sort = g.get("sort") if g.get("sort") in {c.key for c in columns} else ""
-    direction = "desc" if g.get("dir") == "desc" else "asc"
-    chosen = choose(request, name, columns, defaults)
+    chosen, sort, direction = choose(request, name, columns, defaults)
     visible = [c for c in columns if c.key in chosen]
     return Table(name, columns, order(rows, visible, sort, direction), sort, direction, chosen)
 
