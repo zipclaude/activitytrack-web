@@ -58,6 +58,13 @@ def choose(request):
 def middleware(get_response):
     """After the authentication: Django's LocaleMiddleware has already chosen one, without the policy."""
     def handle(request):
+        user = getattr(request, "user", None)
+        if user is not None and user.is_authenticated:
+            # the pages ask the policy several times (language, features, times): one read for the request.
+            # Only this request's own user object carries it, so nothing outlives the request
+            from policies.effective import merged
+
+            user._request_policy = merged(user)
         code = choose(request)
         translation.activate(code)
         request.LANGUAGE_CODE = code

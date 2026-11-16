@@ -659,6 +659,37 @@ class AgendaTests(WorkTests):
         self.assertLessEqual(today["done_end"], timezone_now_text())
         self.assertLessEqual(today["done_start"], today["done_end"])
 
+    def test_nothing_is_already_done_on_a_day_to_come(self):
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        today = timezone.localdate()
+        self.assertContains(self.client.get(f"/agenda/?view=day&date={today}"), "when=past")
+        future = self.client.get(f"/agenda/?view=day&date={today + timedelta(days=1)}")
+        self.assertNotContains(future, "when=past")
+        self.assertContains(future, "kind=ABSENCE")
+
+    def test_the_form_opened_on_a_past_activity_shows_its_times_without_a_script(self):
+        slot = "when=past&start=2026-10-27T09:00&end=2026-10-27T10:00"
+        form = self.client.get(f"/attivita/nuova/?{slot}").content.decode()
+        self.assertIn('<div class="when-started when-past">', form)
+        self.assertIn('<div class="when-past">', form)
+        self.assertIn('<button class="primary">Registra</button>', form)
+        plain = self.client.get("/attivita/nuova/").content.decode()
+        self.assertIn('<div class="when-started when-past" hidden>', plain)
+        self.assertIn('<button class="primary">Avvia</button>', plain)
+
+    def test_a_page_reads_the_policy_once(self):
+        from unittest import mock
+
+        from policies import effective
+
+        with mock.patch.object(effective, "layers", wraps=effective.layers) as layers:
+            self.assertEqual(self.client.get("/").status_code, 200)
+        # the language middleware reads it; the Home asks again (to-dos, travel) and gets the same
+        self.assertEqual(layers.call_count, 1)
+
     def test_the_agenda_offers_only_what_the_policy_and_the_person_allow(self):
         from policies.models import Policy
 
@@ -2040,6 +2071,16 @@ class ReportTableTests(WorkTests):
         self.assertEqual(self.heads(f"/report/dettaglio/?{self.RANGE}"), ["Data"])
         self.alice.refresh_from_db()
         self.assertEqual(self.alice.report_prefs["tables"]["detail"], {"cols": ["date"]})
+
+    def test_an_empty_report_has_no_footer(self):
+        for url in ("/report/", "/report/dettaglio/", "/report/dettaglio/?rows=segment"):
+            sep = "&" if "?" in url else "?"
+            r = self.client.get(f"{url}{sep}from=2026-09-01&to=2026-09-30")
+            self.assertIsNone(r.context["t"]["foot"], url)
+            self.assertNotContains(r, "<tfoot>")
+            self.assertNotContains(r, "Totale")
+        self.three()
+        self.assertContains(self.client.get(f"/report/?{self.RANGE}"), "<tfoot>")
 
     def rows(self, fmt, query=""):
         r = self.client.get(f"/report/esporta/detail.{fmt}?{self.RANGE}{query}")

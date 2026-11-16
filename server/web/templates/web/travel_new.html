@@ -12,8 +12,8 @@
 		<label><input type="radio" name="when" value="past" {% if when == "past" %}checked{% endif %}> {% translate "Passata" %}</label>{% endif %}
 	</div>
 	{% include "web/_entry_fields.html" with e=None %}
-	<div class="when-started when-past" hidden><label>{% translate "Inizio" %}<input type="datetime-local" name="start" value="{{ v.start }}"></label></div>
-	<div class="when-past" hidden><label>{% translate "Fine" %}<input type="datetime-local" name="end" value="{{ v.end }}"></label></div>
-	<button class="primary">{% translate "Avvia" %}</button>
+	<div class="when-started when-past"{% if when == "now" %} hidden{% endif %}><label>{% translate "Inizio" %}<input type="datetime-local" name="start" value="{{ v.start }}"></label></div>
+	<div class="when-past"{% if when != "past" %} hidden{% endif %}><label>{% translate "Fine" %}<input type="datetime-local" name="end" value="{{ v.end }}"></label></div>
+	<button class="primary">{% if when == "past" %}{% translate "Registra" %}{% else %}{% translate "Avvia" %}{% endif %}</button>
 </form>
 {% endblock %}

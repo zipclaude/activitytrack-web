@@ -243,7 +243,8 @@ def agenda(request):
     own = person == user and user.syncs
     done_start, done_end = _slot(anchor, today, now, tz)
     return render(request, "web/agenda.html", {
-        "can_absence": own, "can_done": own and not data.owner_times_fixed_for(user),
+        # nothing is "already done" on a day to come
+        "can_absence": own, "can_done": own and anchor <= today and not data.owner_times_fixed_for(user),
         "done_start": done_start, "done_end": done_end,
         "view": view, "anchor": anchor, "since": since, "until": until, "columns": columns,
         "weeks": [columns[i:i + 7] for i in range(0, len(columns), 7)] if view == "month" else None,

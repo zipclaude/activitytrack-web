@@ -40,7 +40,10 @@ def layers(user):
 
 
 def merged(user):
-    """The merged policy body of the user's scopes ({} without any)."""
+    """The merged policy body of the user's scopes ({} without any); read once for a request's user (web.language)."""
+    kept = getattr(user, "_request_policy", None)
+    if kept is not None:
+        return kept
     out = {}
     for p in layers(user):
         out = merge(out, p.data)

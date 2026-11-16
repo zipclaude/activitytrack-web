@@ -128,7 +128,9 @@ def page(request, table):
                      "aria": ("ascending" if table.direction == "asc" else "descending") if mine else "none"})
     rows = [[c.show(r) for c in table.visible] for r in table.rows]
     foot = [c.total(table.rows) if c.total else None for c in table.visible]
-    return {"head": head, "rows": rows, "foot": foot if any(foot) else None,
+    # no footer without something to say: an empty cell is a dict, and a dict is true
+    said = any(c and (c["text"] or c["sub"]) for c in foot)
+    return {"head": head, "rows": rows, "foot": foot if rows and said else None,
             "numeric": [i for i, c in enumerate(table.visible) if c.right]}
 
 

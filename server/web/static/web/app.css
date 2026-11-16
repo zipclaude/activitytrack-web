@@ -438,6 +438,11 @@ label.pk-exact-l { margin: 0; flex-direction: row; align-items: center; gap: 8px
 
 /* the reports: sortable head, right-aligned numbers, the print */
 table.report th.num, table.report td.num { text-align: right; }
+/* many columns: texts wrap and the cells are tighter, so the table fits its card; if it still does not, it scrolls
+   inside the card (.card:has(> table.totals)) and never under it */
+table.report th, table.report td { padding: 10px 8px; }
+table.report td:not(.num), table.report th:not(.num) { white-space: normal; }
+table.report td:first-child, table.report td .pill { white-space: nowrap; }
 table.report th a { color: inherit; text-decoration: none; display: inline-flex; gap: 4px; align-items: center; }
 table.report th a:hover { color: var(--text); }
 table.report th[aria-sort=ascending] a, table.report th[aria-sort=descending] a { color: var(--accent); }
