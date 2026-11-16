@@ -77,11 +77,11 @@ After an update of the code: `activitytrack-web-manage migrate`,
 service.
 
 Updating to 1.0.0-beta-3 (a beta of 1.0): nothing to do besides what the package does; the data is migrated
-automatically by `migrate`. The sync wire schema is now 3: **the server and every device must be on 1.0**, older
+automatically by `migrate`. The sync wire schema is now 4: **the server and every device must be on the same pre-release of 1.0**, older
 apps are told to update before they can sync, and backups made by older versions can still be restored.
 The data migration cannot be undone (`migrate` refuses to go back to 0.9): the way back is the backup taken before the
 upgrade, so make one first.
-Asking for it anyway (`migrate records 0006`) undoes `records` 0010 and 0009 (the old, empty to-do and absence
+Asking for it anyway (`migrate records 0006`) undoes `records` 0011, 0010 and 0009 (the old, empty to-do and absence
 tables come back) and then stops with `IrreversibleError` at 0008; no record is lost, but the database is left
 half-way. Run `activitytrack-web-manage migrate` again to restore the 1.0 state.
 
