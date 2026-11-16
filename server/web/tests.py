@@ -757,7 +757,7 @@ class HomeListTests(WorkTests):
         page = self.client.get("/").content.decode()
         self.assertIn("In ritardo", page)
         self.assertIn("Scaduta", page)
-        self.assertIn("Dettagli mancanti", page)
+        self.assertIn("Incompleta", page)
         self.assertNotIn("Domani", page)
         self.assertIn("Senza data", page)
         self.assertNotIn("Chiusa ora", page)
@@ -1119,7 +1119,7 @@ class HomeListTests(WorkTests):
         from records.models import Entry
 
         page = self.client.get("/dafare/nuova/").content.decode()
-        for n, name in enumerate(("Nessuna", "Bassa", "Media", "Alta", "Urgente", "Emergenza")):
+        for n, name in enumerate(("Nessuna", "Bassa", "Media", "Alta", "Urgenza", "Emergenza")):
             self.assertIn(
                 f'<option value="{n}" {"selected" if n == 0 else ""}>{name}</option>', page
             )

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ActivityTrack Web\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-15 14:55+0100\n"
+"POT-Creation-Date: 2026-11-16 07:32+0100\n"
 "PO-Revision-Date: 2026-11-05 22:00+0100\n"
 "Last-Translator: ActivityTrack\n"
 "Language-Team: English\n"
@@ -127,7 +127,7 @@ msgid "modello"
 msgstr "model"
 
 msgid "tipo"
-msgstr "type"
+msgstr "kind"
 
 msgid "versione app"
 msgstr "app version"
@@ -314,7 +314,7 @@ msgid "Zoom"
 msgstr "Zoom"
 
 msgid "Stato"
-msgstr "Status"
+msgstr "State"
 
 msgid "Peso"
 msgstr "Size"
@@ -575,7 +575,7 @@ msgid "Dati"
 msgstr "Data"
 
 msgid "Sincronizzazione"
-msgstr "Synchronisation"
+msgstr "Sync"
 
 msgid "Aggiornamenti"
 msgstr "Updates"
@@ -1042,7 +1042,7 @@ msgid "Eliminata"
 msgstr "Deleted"
 
 msgid "In ritardo"
-msgstr "Overdue"
+msgstr "Late"
 
 msgid "Pianificata"
 msgstr "Planned"
@@ -1051,8 +1051,17 @@ msgctxt "stato"
 msgid "Da fare"
 msgstr "To do"
 
+msgctxt "stato"
+msgid "Lavoro"
+msgstr "Working"
+
+msgctxt "stato"
+msgid "Viaggio"
+msgstr "Travelling"
+
+msgctxt "stato"
 msgid "Pausa"
-msgstr "Pause"
+msgstr "Paused"
 
 msgid "Sospesa"
 msgstr "Suspended"
@@ -1084,7 +1093,7 @@ msgstr "Medium"
 msgid "Alta"
 msgstr "High"
 
-msgid "Urgente"
+msgid "Urgenza"
 msgstr "Urgent"
 
 msgid "Emergenza"
@@ -1092,6 +1101,9 @@ msgstr "Emergency"
 
 msgid "Avvia lavoro"
 msgstr "Start work"
+
+msgid "Pausa"
+msgstr "Pause"
 
 msgid "Riprendi"
 msgstr "Resume"
@@ -1289,7 +1301,7 @@ msgid ""
 msgstr "To check: after a sync two periods overlap. Correct the times."
 
 msgid "Hai completato l'attività lavorativa?"
-msgstr "Have you finished the work activity?"
+msgstr "Have you completed the work activity?"
 
 msgid ""
 "Sì: l'attività si chiude e parte un viaggio senza attività. No: il viaggio "
@@ -1311,7 +1323,7 @@ msgid "L'attività ha un viaggio di andata: puoi avviare il ritorno."
 msgstr "The activity has an outbound trip: you can start the return."
 
 msgid "Avvia viaggio di ritorno"
-msgstr "Start the return trip"
+msgstr "Start return trip"
 
 msgid "Termina l'attività"
 msgstr "End the activity"
@@ -1335,7 +1347,7 @@ msgid "Orari"
 msgstr "Times"
 
 msgid "Tipo"
-msgstr "Type"
+msgstr "Kind"
 
 msgid "in corso"
 msgstr "running"
@@ -1410,9 +1422,6 @@ msgstr "7 days"
 msgid "30 gg"
 msgstr "30 days"
 
-msgid "Dettagli mancanti"
-msgstr "Details missing"
-
 msgid "Fatte"
 msgstr "Done"
 
@@ -1432,7 +1441,7 @@ msgid "Giorni precedenti"
 msgstr "Earlier"
 
 msgid "Senza data"
-msgstr "No date"
+msgstr "Without a date"
 
 msgid "Niente da mostrare con questi filtri."
 msgstr "Nothing to show with these filters."

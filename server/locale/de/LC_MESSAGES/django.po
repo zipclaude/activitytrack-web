@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ActivityTrack Web\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-15 14:55+0100\n"
+"POT-Creation-Date: 2026-11-16 07:32+0100\n"
 "PO-Revision-Date: 2026-11-15 12:00+0100\n"
 "Last-Translator: ActivityTrack\n"
 "Language-Team: German\n"
@@ -124,7 +124,7 @@ msgid "modello"
 msgstr "Modell"
 
 msgid "tipo"
-msgstr "Typ"
+msgstr "Art"
 
 msgid "versione app"
 msgstr "App-Version"
@@ -1056,7 +1056,7 @@ msgid "Eliminata"
 msgstr "Gelöscht"
 
 msgid "In ritardo"
-msgstr "Überfällig"
+msgstr "Verspätet"
 
 msgid "Pianificata"
 msgstr "Geplant"
@@ -1065,6 +1065,15 @@ msgctxt "stato"
 msgid "Da fare"
 msgstr "Zu erledigen"
 
+msgctxt "stato"
+msgid "Lavoro"
+msgstr "Arbeit"
+
+msgctxt "stato"
+msgid "Viaggio"
+msgstr "Reise"
+
+msgctxt "stato"
 msgid "Pausa"
 msgstr "Pause"
 
@@ -1098,7 +1107,7 @@ msgstr "Mittel"
 msgid "Alta"
 msgstr "Hoch"
 
-msgid "Urgente"
+msgid "Urgenza"
 msgstr "Dringend"
 
 msgid "Emergenza"
@@ -1106,6 +1115,9 @@ msgstr "Notfall"
 
 msgid "Avvia lavoro"
 msgstr "Arbeit starten"
+
+msgid "Pausa"
+msgstr "Pause"
 
 msgid "Riprendi"
 msgstr "Fortsetzen"
@@ -1355,7 +1367,7 @@ msgid "Orari"
 msgstr "Zeiten"
 
 msgid "Tipo"
-msgstr "Typ"
+msgstr "Art"
 
 msgid "in corso"
 msgstr "läuft"
@@ -1429,9 +1441,6 @@ msgstr "7 Tage"
 
 msgid "30 gg"
 msgstr "30 Tage"
-
-msgid "Dettagli mancanti"
-msgstr "Angaben fehlen"
 
 msgid "Fatte"
 msgstr "Erledigt"

@@ -487,3 +487,29 @@ class PolicyLanguageTest(TestCase):
         # saving the editor replaces the bad value
         self.assertEqual(self.client.post("/policy/org/", {"language": "it"}).status_code, 302)
         self.assertEqual(Policy.objects.get(org=self.org, profile="", user__isnull=True).data["ui"], {"language": "it"})
+
+
+class AppNamesTest(SimpleTestCase):
+    """One name for one thing across the products: the Android app's strings are the reference."""
+
+    def test_states_groups_and_priorities_are_named_as_in_the_app(self):
+        from django.utils.translation import gettext, override
+
+        from records import activity as A
+        from web import states
+
+        # state_late, state_incomplete, state_work, state_travel, state_pause, home_no_date, priority_urgent
+        expected = {
+            "it": ("In ritardo", "Incompleta", "Lavoro", "Viaggio", "Pausa", "Senza data", "Urgenza"),
+            "en": ("Late", "Incomplete", "Working", "Travelling", "Paused", "Without a date", "Urgent"),
+            "de": ("Verspätet", "Unvollständig", "Arbeit", "Reise", "Pause", "Ohne Datum", "Dringend"),
+            "es": ("Con retraso", "Incompleta", "Trabajo", "Viaje", "Pausa", "Sin fecha", "Urgente"),
+        }
+        for code, names in expected.items():
+            with override(code):
+                shown = tuple(str(states.UI[s][1]) for s in (A.LATE, A.INCOMPLETE, A.WORK, A.TRAVEL, A.PAUSE))
+                self.assertEqual(shown + (gettext("Senza data"), str(dict(states.PRIORITIES)[4])), names, code)
+        # the group of the Home and its filter entry are the state's name, not "Dettagli mancanti"
+        home = (SERVER / "web/templates/web/home.html").read_text(encoding="utf-8")
+        self.assertNotIn("Dettagli mancanti", home)
+        self.assertEqual(home.count('{% translate "Incompleta" %}'), 2)

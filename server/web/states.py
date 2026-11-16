@@ -21,9 +21,9 @@ UI = {
     A.LATE: ("alert", _("In ritardo")),
     A.PLANNED: ("clock", _("Pianificata")),
     A.TODO: ("checkbox", pgettext_lazy("stato", "Da fare")),
-    A.WORK: ("play", _("Lavoro")),
-    A.TRAVEL: ("travel", _("Viaggio")),
-    A.PAUSE: ("pause", _("Pausa")),
+    A.WORK: ("play", pgettext_lazy("stato", "Lavoro")),
+    A.TRAVEL: ("travel", pgettext_lazy("stato", "Viaggio")),
+    A.PAUSE: ("pause", pgettext_lazy("stato", "Pausa")),
     A.SUSPENDED: ("suspend", _("Sospesa")),
     A.DONE: ("done", _("Fatta")),
     A.INCOMPLETE: ("stop", _("Incompleta")),
@@ -34,7 +34,7 @@ ABSENCE_LABELS = {
 }
 
 PRIORITIES = (
-    (0, _("Nessuna")), (1, _("Bassa")), (2, _("Media")), (3, _("Alta")), (4, _("Urgente")), (5, _("Emergenza")),
+    (0, _("Nessuna")), (1, _("Bassa")), (2, _("Media")), (3, _("Alta")), (4, _("Urgenza")), (5, _("Emergenza")),
 )
 
 # the states in which an activity is "to do" (planned or not, late or not)

@@ -100,6 +100,9 @@ with 0.9 are in its `CHANGELOG.md`.
 
 ### Behaviour
 
+- Names as in the app: the Home's group and filter entry "Dettagli mancanti" are "Incompleta" (the state's
+  name), the priority "Urgente" is "Urgenza", and the translations of the states and groups follow the app's
+  (Late, Working, Travelling, Paused, Without a date, State, Kind…).
 - A trip started from the web is never anonymous: the Home's Viaggio opens a form that asks for the person,
   the company and the client, all three required (a client goes with its own company; a linked to-do brings
   its company and client; the description is optional), checked on the server against

@@ -22,7 +22,7 @@
 	<input type="hidden" name="f" value="1">
 	<label>{% translate "Periodo" %}<select name="period">{% for w in windows %}<option value="{{ w }}" {% if w == f.period %}selected{% endif %}>{% if w == -1 %}{% translate "Oggi" %}{% elif w == 0 %}{% translate "Tutti" %}{% elif w == 24 %}24 h{% elif w == 72 %}{% translate "3 gg" %}{% elif w == 168 %}{% translate "7 gg" %}{% else %}{% translate "30 gg" %}{% endif %}</option>{% endfor %}</select></label>
 	<details class="dropdown{% if show_changed %} changed{% endif %}"><summary class="button">{% translate "Stato" %} ▾</summary><div class="menu">
-		{% for s in offered %}<label class="check"><input type="checkbox" name="show" value="{{ s }}" {% if s in show %}checked{% endif %}> {% if s == "todo" %}{% translate "Da fare" %}{% elif s == "missing" %}{% translate "Dettagli mancanti" %}{% else %}{% translate "Fatte" %}{% endif %}</label>{% endfor %}
+		{% for s in offered %}<label class="check"><input type="checkbox" name="show" value="{{ s }}" {% if s in show %}checked{% endif %}> {% if s == "todo" %}{% translate "Da fare" %}{% elif s == "missing" %}{% translate "Incompleta" %}{% else %}{% translate "Fatte" %}{% endif %}</label>{% endfor %}
 		<hr>{% if todos_on %}<a href="{{ only_todo }}">{% translate "Solo da fare" %}</a>{% endif %}<a href="{{ only_done }}">{% translate "Solo fatte" %}</a><a href="{{ show_all }}">{% translate "Tutti" %}</a>
 	</div></details>
 	<label>{% translate "Azienda" %}<select name="company" class="{% if company %}changed{% endif %}"><option value="">{% translate "Tutte le aziende" %}</option>{% for c in companies %}<option value="{{ c.uid }}" {% if company == c %}selected{% endif %}>{{ c.name }}</option>{% endfor %}</select></label>
@@ -30,7 +30,7 @@
 	<noscript><button>{% translate "Filtra" %}</button></noscript>
 </form>
 {% for name, items in sections %}
-<h3 class="sec{% if name == 'overdue' or name == 'missing' %} late{% endif %}">{% if name == "overdue" %}{% translate "In ritardo" %}{% elif name == "missing" %}{% translate "Dettagli mancanti" %}{% elif name == "today" %}{% translate "Oggi" %}{% elif name == "next" %}{% translate "Prossimi giorni" %}{% elif name == "earlier" %}{% translate "Giorni precedenti" %}{% else %}{% translate "Senza data" %}{% endif %}</h3>
+<h3 class="sec{% if name == 'overdue' or name == 'missing' %} late{% endif %}">{% if name == "overdue" %}{% translate "In ritardo" %}{% elif name == "missing" %}{% translate "Incompleta" %}{% elif name == "today" %}{% translate "Oggi" %}{% elif name == "next" %}{% translate "Prossimi giorni" %}{% elif name == "earlier" %}{% translate "Giorni precedenti" %}{% else %}{% translate "Senza data" %}{% endif %}</h3>
 {% for kind, obj, extra, r in items %}{% include "web/_home_row.html" %}{% endfor %}
 {% empty %}<p class="muted">{% translate "Niente da mostrare con questi filtri." %}</p>
 {% endfor %}

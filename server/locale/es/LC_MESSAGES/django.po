@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ActivityTrack Web\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-15 14:55+0100\n"
+"POT-Creation-Date: 2026-11-16 07:32+0100\n"
 "PO-Revision-Date: 2026-11-15 12:00+0100\n"
 "Last-Translator: ActivityTrack\n"
 "Language-Team: Spanish\n"
@@ -1043,7 +1043,7 @@ msgid "Eliminata"
 msgstr "Eliminada"
 
 msgid "In ritardo"
-msgstr "Atrasada"
+msgstr "Con retraso"
 
 msgid "Pianificata"
 msgstr "Planificada"
@@ -1052,6 +1052,15 @@ msgctxt "stato"
 msgid "Da fare"
 msgstr "Por hacer"
 
+msgctxt "stato"
+msgid "Lavoro"
+msgstr "Trabajo"
+
+msgctxt "stato"
+msgid "Viaggio"
+msgstr "Viaje"
+
+msgctxt "stato"
 msgid "Pausa"
 msgstr "Pausa"
 
@@ -1085,7 +1094,7 @@ msgstr "Media"
 msgid "Alta"
 msgstr "Alta"
 
-msgid "Urgente"
+msgid "Urgenza"
 msgstr "Urgente"
 
 msgid "Emergenza"
@@ -1093,6 +1102,9 @@ msgstr "Emergencia"
 
 msgid "Avvia lavoro"
 msgstr "Iniciar trabajo"
+
+msgid "Pausa"
+msgstr "Pausa"
 
 msgid "Riprendi"
 msgstr "Reanudar"
@@ -1315,7 +1327,7 @@ msgid "L'attività ha un viaggio di andata: puoi avviare il ritorno."
 msgstr "La actividad tiene un viaje de ida: puedes iniciar la vuelta."
 
 msgid "Avvia viaggio di ritorno"
-msgstr "Iniciar el viaje de vuelta"
+msgstr "Iniciar viaje de vuelta"
 
 msgid "Termina l'attività"
 msgstr "Terminar la actividad"
@@ -1413,9 +1425,6 @@ msgstr "7 días"
 
 msgid "30 gg"
 msgstr "30 días"
-
-msgid "Dettagli mancanti"
-msgstr "Faltan detalles"
 
 msgid "Fatte"
 msgstr "Hechas"
