@@ -8,7 +8,6 @@ the visible columns are in the URL (?sort=work&dir=desc&col=date&col=work…) an
 """
 
 import csv
-import io
 import json
 from dataclasses import dataclass, field
 from xml.etree import ElementTree as ET
@@ -143,6 +142,13 @@ def _text(value):
     return "" if value is None else str(value)
 
 
+def csv_response(filename):
+    """(response, writer) of a CSV download as every export of the web is: UTF-8 with the byte order mark, semicolon."""
+    response = HttpResponse("\ufeff", content_type="text/csv; charset=utf-8")
+    response["Content-Disposition"] = f'attachment; filename="{filename}.csv"'
+    return response, csv.writer(response, delimiter=";")
+
+
 def export(table, fmt, meta, safe):
     """
     The table as a download: CSV (semicolon, with the byte order mark spreadsheets want, free text guarded
@@ -153,13 +159,12 @@ def export(table, fmt, meta, safe):
     stamp = timezone.localtime().strftime("%Y%m%d")
     filename = f"activitytrack-{meta['report']}-{meta['from']}-{meta['to']}"
     if fmt == "csv":
-        out = io.StringIO()
-        w = csv.writer(out, delimiter=";")
+        response, w = csv_response(filename)
         w.writerow([f"{label} ({unit})" if unit else str(label) for _k, label, unit in fields])
         for r in rows:
             w.writerow([safe(_text(v)) for v in r])
-        response = HttpResponse("﻿" + out.getvalue(), content_type="text/csv; charset=utf-8")
-    elif fmt == "json":
+        return response
+    if fmt == "json":
         body = {**meta, "generated": stamp,
                 "columns": [{"key": k, "label": str(label), **({"unit": unit} if unit else {})}
                             for k, label, unit in fields],

@@ -1041,6 +1041,8 @@ class HomeListTests(WorkTests):
         csv = self.client.get("/report/csv/?from=2026-10-01&to=2026-10-31").content.decode()
         csv = csv.splitlines()
         self.assertTrue(csv[0].endswith("absence_min"))
+        # as the other exports: the byte order mark, then the same columns as ever, with semicolons
+        self.assertTrue(csv[0].startswith("\ufeffdate;user;company;client;role;activity;status;start;end;work_min;"))
         absences = [row.split(";") for row in csv if ";ABSENCE;" in row]
         self.assertEqual(
             [(r[0], r[-1]) for r in absences], [("2026-10-28", "240"), ("2026-10-29", "240")]

@@ -5,7 +5,6 @@ app's report lines rounded with each owner's rules (web/reporting.py). Both are 
 sorted and chosen (web/tables.py), exported as shown, and printed; the CSV of the entries stays as it was.
 """
 
-import csv
 from datetime import date
 
 from django.contrib.auth.decorators import login_required
@@ -443,9 +442,8 @@ def report_csv(request):
     why = _refuse(request.user, "csv", since, until)
     if why:
         return HttpResponse(why, status=403, content_type="text/plain; charset=utf-8")
-    response = HttpResponse(content_type="text/csv; charset=utf-8")
-    response["Content-Disposition"] = f'attachment; filename="activitytrack-{since}-{until}.csv"'
-    w = csv.writer(response, delimiter=";")
+    # the same writer as the tables' CSV: semicolon and the byte order mark spreadsheets want
+    response, w = tables.csv_response(f"activitytrack-{since}-{until}")
     # one row per entry and day; *_min real, *_rounded_min as reported
     w.writerow([
         "date", "user", "company", "client", "role", "activity", "status", "start", "end", "work_min", "travel_min", "pause_min",
