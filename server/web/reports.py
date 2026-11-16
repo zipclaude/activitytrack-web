@@ -122,7 +122,10 @@ def _records(lines):
 def _absence_records(days):
     """The absences of the period as rows of the detail, apart from work, travel and pause."""
     out = []
-    for x in _absences(days):
+    absences = _absences(days)
+    # the state and the activity columns read the displayed state, as for the other rows
+    states.annotate([x.entry for x in absences])
+    for x in absences:
         e = x.entry
         out.append({
             "x": x, "e": e, "day": x.day, "start": x.start, "end": x.end, "work": None, "travel": None, "pause": None,

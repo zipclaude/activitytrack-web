@@ -1899,6 +1899,24 @@ class ReportTableTests(WorkTests):
             for carried in ("col=", "sort=", "dir=", "rows=", "f=1"):
                 self.assertNotIn(carried, link)
 
+    def test_the_detail_lists_the_absences_of_the_period_with_their_kind(self):
+        from records.models import WorkSchedule
+
+        for dow in (1, 2, 3, 4, 5):
+            WorkSchedule.objects.create(org=self.org, owner=None, day_of_week=dow, start_min=9 * 60, end_min=13 * 60)
+        self.three()
+        self.client.post("/dafare/nuova/", {"kind": "ABSENCE", "absence_kind": "HOLIDAY", "plan_date": "2026-10-28",
+                                            "plan_end": "2026-10-29"})
+        for rows in ("activity", "segment"):
+            r = self.client.get(f"/report/dettaglio/?{self.RANGE}&rows={rows}")
+            self.assertEqual(r.status_code, 200, rows)
+            self.assertIn("Ferie", r.content.decode(), rows)
+        self.assertEqual(self.client.get(f"/report/esporta/detail.csv?{self.RANGE}").status_code, 200)
+        # and the Attività page names an absence by its kind, not as an activity without a client
+        page = self.client.get(f"/attivita/?{self.RANGE}").content.decode()
+        self.assertIn("<b>Ferie</b>", page)
+        self.assertEqual(page.count("Senza cliente"), 0)
+
     def test_the_detail_is_one_row_for_each_activity_and_day_with_what_is_useful(self):
         self.three()
         from records.models import Entry
