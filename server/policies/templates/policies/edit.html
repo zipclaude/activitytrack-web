@@ -52,7 +52,7 @@
 {% elif s.multiple %}
 	{% for a in s.allowed %}<label class="inline"><input type="checkbox" name="{{ k }}" value="{{ a }}" {% if v|get:k|has:a %}checked{% endif %}> {{ a }}</label>{% endfor %}
 {% elif s.allowed %}
-	<select name="{{ k }}">{% for a in s.allowed %}<option value="{{ a }}" {% if v|get:k|same:a %}selected{% endif %}>{{ a }}</option>{% endfor %}</select>
+	<select name="{{ k }}">{% with cur=v|get:k %}{% if cur != "" and not s.allowed|has:cur %}<option value="{{ cur }}" selected>{{ cur }}</option>{% endif %}{% endwith %}{% for a in s.allowed %}<option value="{{ a }}" {% if v|get:k|same:a %}selected{% endif %}>{{ a }}</option>{% endfor %}</select>
 {% elif s.kind == "STRING" %}
 	<input name="{{ k }}" value="{{ v|get:k }}" size="30">
 {% else %}

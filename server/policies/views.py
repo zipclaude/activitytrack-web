@@ -12,7 +12,7 @@ from django.utils.translation import gettext as _
 
 from accounts.models import Profile, User
 
-from .catalog import catalog, check_value
+from .catalog import catalog, check_value, setting
 from .models import Policy
 
 # a setting: not set / starting value (the user may change it) / locked / hidden
@@ -86,6 +86,20 @@ def _initial(data):
     ui = data.get("ui") if isinstance(data.get("ui"), dict) else {}
     v["language"] = ui.get("language") if isinstance(ui.get("language"), str) else ""
     return v
+
+
+def _stale(data):
+    """
+    The errors of the stored settings the catalog no longer allows (a value the app dropped, an imported policy):
+    the editor shows them instead of offering, and then saving, another value in silence.
+    """
+    errors = {}
+    for k, s in data.get("settings", {}).items():
+        spec = setting(k)
+        problem = spec and check_value(spec, s.get("value") if isinstance(s, dict) else s)
+        if problem:
+            errors[f"setting:{k}"] = problem
+    return errors
 
 
 def _parse(post):
@@ -202,7 +216,7 @@ def edit(request, scope):
             return redirect("policies:edit", scope=scope)
         values = {k: (request.POST.getlist(k) if len(request.POST.getlist(k)) > 1 else request.POST.get(k)) for k in request.POST}
     else:
-        errors, values = {}, _initial(policy.data if policy else {})
+        errors, values = _stale(policy.data if policy else {}), _initial(policy.data if policy else {})
     # the phones of the scope whose app would refuse this policy; a PC ignores the keys it does not use
     from accounts.models import Device
 

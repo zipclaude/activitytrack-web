@@ -211,6 +211,28 @@ class PolicyTests(PolicyBase):
         self.assertEqual("STOP", sent["settings"]["gestureEntryToStart"]["value"])
         self.assertEqual("PAUSE_RESUME", sent["settings"]["gestureEntryToEnd"])
 
+    def test_the_editor_shows_a_stored_value_that_is_no_longer_allowed(self):
+        Policy.objects.create(org=self.org, revision=1, data={"settings": {"gestureEntryToEnd": {"value": "JUMP", "locked": True}, "roundingWorkMin": 7, "kmFactor": 1}})
+        self.client.force_login(self.admin)
+        r = self.client.get("/policy/org/")
+        self.assertEqual(200, r.status_code)
+        self.assertEqual({"setting:gestureEntryToEnd", "setting:roundingWorkMin"}, set(r.context["errors"]))
+        self.assertContains(r, "one of PAUSE_RESUME, ")
+        # the stored value stays the chosen one: saving the form as it is is refused, not turned into the first choice
+        self.assertContains(r, '<option value="JUMP" selected>JUMP</option>', html=True)
+        self.assertContains(r, '<option value="7" selected>7</option>', html=True)
+        form = {"setting:gestureEntryToEnd:mode": "locked", "setting:gestureEntryToEnd": "JUMP"}
+        again = self.client.post("/policy/org/", form)
+        self.assertEqual(200, again.status_code)
+        self.assertContains(again, '<option value="JUMP" selected>JUMP</option>', html=True)
+        self.assertEqual(1, Policy.objects.get(org=self.org).revision)
+        # an allowed value sent back with an error elsewhere is offered once
+        again = self.client.post("/policy/org/", {**form, "setting:roundingWorkMin:mode": "value", "setting:roundingWorkMin": "30"})
+        self.assertContains(again, '<option value="30" selected>30</option>', count=1, html=True)
+        form["setting:gestureEntryToEnd"] = "STOP"
+        self.assertEqual(302, self.client.post("/policy/org/", form).status_code)
+        self.assertEqual({"gestureEntryToEnd": {"value": "STOP", "locked": True}}, Policy.objects.get(org=self.org).data["settings"])
+
     def test_only_admins_edit(self):
         self.client.force_login(self.bob)
         self.assertEqual(self.client.get("/policy/").status_code, 403)
