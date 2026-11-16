@@ -413,7 +413,8 @@ class PolicyLanguageTest(TestCase):
     def test_a_bad_language_in_the_policy_forces_english(self):
         from policies.models import Policy
 
-        for bad in ("fr", "", "xx-YY", 5):
+        # a list or a dict used to raise TypeError (unhashable) in the middleware: a 500 on every page of the user
+        for bad in ("fr", "", "xx-YY", 5, ["it"], {"it": True}, True, 1.5, [["de"], {"x": ["es"]}], {"language": "de"}):
             Policy.objects.all().delete()
             Policy.objects.create(org=self.org, data={"ui": {"language": bad}}, revision=1)
             r = self.page("de", cookie="es")
@@ -464,3 +465,25 @@ class PolicyLanguageTest(TestCase):
         for code, note in notes.items():
             with override(code):
                 self.assertEqual(gettext("Impostato dalla policy"), note)
+
+    def test_a_malformed_language_never_locks_the_administrator_out(self):
+        from policies.models import Policy
+
+        admin = User.objects.create_user("root", password="x", org=self.org, profile=Profile.ADMIN)
+        self.client.force_login(admin)
+        for bad in (["it", "en"], {"it": True}, True, 1.5):
+            Policy.objects.all().delete()
+            Policy.objects.create(org=self.org, data={"ui": {"language": bad}}, revision=1)
+            # every page, the policy editor (where it is put right) and the Django admin
+            for url in ("/", "/utenti/", "/policy/", "/policy/org/", "/admin/", "/preferenze/"):
+                self.assertEqual(self.client.get(url, HTTP_ACCEPT_LANGUAGE="it").status_code, 200, (bad, url))
+            self.assertContains(self.client.get("/preferenze/"), "Forced to English by a policy with an invalid value")
+        # a "ui" that is not an object is no language at all, and the editor opens on it too
+        for odd in (["language"], "it", 3):
+            Policy.objects.all().delete()
+            Policy.objects.create(org=self.org, data={"ui": odd}, revision=1)
+            self.assertEqual(self.client.get("/policy/org/").status_code, 200, odd)
+            self.assertContains(self.client.get("/preferenze/", HTTP_ACCEPT_LANGUAGE="de"), "Datumsformat")
+        # saving the editor replaces the bad value
+        self.assertEqual(self.client.post("/policy/org/", {"language": "it"}).status_code, 302)
+        self.assertEqual(Policy.objects.get(org=self.org, profile="", user__isnull=True).data["ui"], {"language": "it"})

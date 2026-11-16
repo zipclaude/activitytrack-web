@@ -82,7 +82,9 @@ def _initial(data):
     v["entries"] = {"todosOnly": "plannedOnly"}.get(source, source)
     v["masterData"] = data.get("masterData", {}).get("source", "")
     v["export"] = data.get("export", {}).get("formats", [])
-    v["language"] = data.get("ui", {}).get("language", "")
+    # an imported policy may have anything here: the editor must open to let the administrator put it right
+    ui = data.get("ui") if isinstance(data.get("ui"), dict) else {}
+    v["language"] = ui.get("language") if isinstance(ui.get("language"), str) else ""
     return v
 
 

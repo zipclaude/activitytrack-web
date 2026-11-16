@@ -36,7 +36,8 @@ def policy_language(user):
     if not isinstance(ui, dict) or ui.get("language") is None:
         return None, False
     code = ui["language"]
-    return (code, False) if code in dict(settings.LANGUAGES) else (FALLBACK, True)
+    # a list or a dict is not even hashable: anything that is not one of our codes, as a string, is a bad value
+    return (code, False) if isinstance(code, str) and code in dict(settings.LANGUAGES) else (FALLBACK, True)
 
 
 def choose(request):
