@@ -36,12 +36,12 @@
     {
       "key": "deleteTodos",
       "essential": false,
-      "doc": "deleting to-dos made by hand"
+      "doc": "deleting to-dos made by hand; deleting a to-do for good from the bin"
     },
     {
       "key": "deleteEntries",
       "essential": false,
-      "doc": "deleting activities"
+      "doc": "deleting activities; deleting any other activity for good from the bin"
     },
     {
       "key": "concurrentEntries",
@@ -226,6 +226,12 @@
       "key": "editableTimes",
       "kind": "BOOLEAN",
       "doc": "true/false"
+    },
+    {
+      "key": "roundStoredTimes",
+      "kind": "BOOLEAN",
+      "since": "1.0.0",
+      "doc": "true/false — 1.0.0: the action buttons store rounded times (only with `editableTimes`)"
     },
     {
       "key": "tagsFreeText",
@@ -641,9 +647,7 @@
       "kind": "STRING",
       "allowed": [
         "PAUSE_RESUME",
-        "STOP_OR_SUSPEND",
         "STOP",
-        "SUSPEND",
         "NONE"
       ],
       "doc": "text — PAUSE_RESUME, STOP_OR_SUSPEND, STOP, SUSPEND, NONE"
@@ -653,9 +657,7 @@
       "kind": "STRING",
       "allowed": [
         "PAUSE_RESUME",
-        "STOP_OR_SUSPEND",
         "STOP",
-        "SUSPEND",
         "NONE"
       ],
       "doc": "text — as above"

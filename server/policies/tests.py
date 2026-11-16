@@ -184,6 +184,37 @@ class PolicyTests(PolicyBase):
         self.assertNotIn("settings", p)
         self.assertEqual(p["version"], "4")
 
+    def test_the_catalog_is_the_one_of_the_apps_1_0(self):
+        """roundStoredTimes is offered; the suspend swipes the app dropped are refused, as its parser refuses them."""
+        from .catalog import setting, since
+
+        self.assertEqual(("BOOLEAN", "1.0.0"), (setting("roundStoredTimes")["kind"], since("settings", "roundStoredTimes")))
+        for key in ("gestureEntryToStart", "gestureEntryToEnd"):
+            self.assertEqual(["PAUSE_RESUME", "STOP", "NONE"], setting(key)["allowed"])
+        self.client.force_login(self.admin)
+        self.assertContains(self.client.get("/policy/org/"), 'name="setting:roundStoredTimes:mode"')
+        ok = self.client.post("/policy/org/", {
+            "setting:roundStoredTimes:mode": "locked", "setting:roundStoredTimes": "true",
+            "setting:gestureEntryToEnd:mode": "value", "setting:gestureEntryToEnd": "STOP"})
+        self.assertEqual(302, ok.status_code, ok.content.decode()[:300])
+        p = Policy.objects.get(org=self.org, profile="", user__isnull=True)
+        self.assertEqual({"roundStoredTimes": {"value": True, "locked": True}, "gestureEntryToEnd": "STOP"}, p.data["settings"])
+        for dropped in ("SUSPEND", "STOP_OR_SUSPEND"):
+            bad = self.client.post("/policy/org/", {"setting:gestureEntryToStart:mode": "value", "setting:gestureEntryToStart": dropped})
+            self.assertContains(bad, "one of PAUSE_RESUME, STOP, NONE")
+        self.assertEqual(1, Policy.objects.get(pk=p.pk).revision)
+
+    def test_the_migration_leaves_nothing_the_catalog_refuses(self):
+        import importlib
+
+        from .catalog import check_value, setting
+
+        m = importlib.import_module("policies.migrations.0003_dropped_gesture_values")
+        for key in m.KEYS:
+            self.assertIsNone(check_value(setting(key), m.NOW))
+            for dropped in m.DROPPED:
+                self.assertIsNotNone(check_value(setting(key), dropped))
+
     def test_the_migration_maps_the_dropped_swipes_to_stop(self):
         """The app's 1.0 has no suspend swipe: it reads its own old choices as STOP and refuses them in a policy."""
         import importlib

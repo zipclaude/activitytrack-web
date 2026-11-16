@@ -45,6 +45,13 @@ with 0.9 are in its `CHANGELOG.md`.
 - Policy: `entries.source = "todosOnly"` becomes `"plannedOnly"`; the editor reads the
   old value as an alias. The features `todos`, `ignoreTodos`, `deleteTodos` keep their
   keys and now apply to `TODO` activities.
+- Policy: the catalog is the app's 1.0 one. The setting `roundStoredTimes` is new (a
+  phone older than 1.0.0 refuses a policy with it: the editor warns). The swipes
+  `SUSPEND` and `STOP_OR_SUSPEND` of `gestureEntryToStart` and `gestureEntryToEnd` are
+  gone, as in the app, whose parser refuses them: a migration turns them into `STOP`
+  in the stored policies (what the app makes of its own old setting) and gives those
+  policies a new revision. A stored value the catalog no longer allows is shown by the
+  editor with its error, and is not saved again.
 - CSV export of the reports: absences are rows of their own (status `ABSENCE`), with
   the new column `absence_min`; the earlier columns keep their positions.
 
