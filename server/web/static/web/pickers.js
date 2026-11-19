@@ -119,7 +119,7 @@
 		this.src = src;
 		this.kind = src.type === "datetime-local" ? "datetime" : src.type;
 		this.wrap = document.createElement("span");
-		this.wrap.className = "picker";
+		this.wrap.className = "picker" + (this.kind === "datetime" ? " dt" : "");
 		this.text = document.createElement("input");
 		this.text.type = "text";
 		this.text.autocomplete = "off";

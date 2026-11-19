@@ -2255,3 +2255,9 @@ msgid ""
 msgstr ""
 "“%(n)s” is archived: archived items stay"
 " personal"
+
+msgid "pianificato"
+msgstr "planned"
+
+msgid "manuale"
+msgstr "manual"

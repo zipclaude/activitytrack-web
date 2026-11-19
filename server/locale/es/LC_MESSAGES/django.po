@@ -2274,3 +2274,9 @@ msgid ""
 msgstr ""
 "«%(n)s» está archivada: los elementos ar"
 "chivados siguen siendo personales"
+
+msgid "pianificato"
+msgstr "planificado"
+
+msgid "manuale"
+msgstr "manual"

@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # SPDX-FileCopyrightText: 2026 Flavio Visentin <flavio-activitytrack@infraconsulting.it>
 from django import template
+from django.utils import timezone
 from django.utils.html import format_html, format_html_join
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
@@ -173,3 +174,68 @@ def nav_master(context, kind):
     if match and match.view_name in ("masters_home", "masters", "master_new", "master_edit"):
         return "on" if match.kwargs.get("kind", "aziende") == kind else ""
     return ""
+
+
+SEGMENT_ICONS = {"WORK": "play", "TRAVEL": "travel", "PAUSE": "pause", "ABSENCE": "dot"}
+
+
+@register.simple_tag
+def segment_mark(s):
+    """The round mark of a segment's row: the kind's icon in its colour, as the app's SegmentBadge; dashed when only planned."""
+    return format_html(
+        '<span class="mark st st-{}{}" title="{}">{}</span>', s.kind, " planned" if s.planned else "",
+        states.UI[s.kind][1], icon(SEGMENT_ICONS.get(s.kind, "dot")))
+
+
+@register.filter
+def segment_range(s):
+    """"08:05 – 12:15" as the app's segment row: the day first when it is not today, "…" while it is open."""
+    start = timezone.localtime(s.start_utc)
+    day = "" if start.date() == timezone.localdate() else formats.date(start, "short") + " "
+    if s.end_utc is None:
+        return f"{day}{formats.time(start)} – …"
+    end = timezone.localtime(s.end_utc)
+    other = "" if end.date() == start.date() else formats.date(end, "short") + " "
+    return f"{day}{formats.time(start)} – {other}{formats.time(end)}"
+
+
+@register.filter
+def segment_duration(s):
+    """"3:15" of a closed segment, nothing while it is open."""
+    if s.end_utc is None:
+        return ""
+    minutes = int((s.end_utc - s.start_utc).total_seconds() // 60)
+    return f"{minutes // 60}:{minutes % 60:02d}"
+
+
+@register.filter
+def segment_extra(s):
+    """The small print under a segment: km, planned or manual, the note (the app's SegmentRow)."""
+    parts = []
+    km = s.km_declared if s.km_declared is not None else s.km_estimated
+    if km is not None:
+        parts.append(f"{km:.1f} km")
+    if s.planned:
+        parts.append(str(_("pianificato")))
+    elif s.source == "MANUAL" and s.kind != "ABSENCE":
+        parts.append(str(_("manuale")))
+    if s.note:
+        parts.append(s.note)
+    return " · ".join(parts)
+
+
+ATTACHMENT_ICONS = {"PHOTO": "photo", "AUDIO": "audio", "RECEIPT": "receipt"}
+
+
+@register.filter
+def attachment_icon(kind):
+    """The icon of an attachment's kind (photo, voice note, receipt; a file otherwise)."""
+    return ATTACHMENT_ICONS.get(kind, "file")
+
+
+ATTACHMENT_LABELS = {"PHOTO": _("Foto"), "AUDIO": _("Nota vocale"), "RECEIPT": _("Scontrino"), "FILE": _("File")}
+
+
+@register.filter
+def attachment_label(kind):
+    return ATTACHMENT_LABELS.get(kind, kind)

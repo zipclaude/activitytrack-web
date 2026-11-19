@@ -1,0 +1,1 @@
+{% load i18n at %}{% segment_mark s %}<span class="row-main"><b>{{ s.kind|kind|capfirst }}</b> <span class="range">{{ s|segment_range }}</span>{% with extra=s|segment_extra %}{% if extra %}<span class="sub">{{ extra }}</span>{% endif %}{% endwith %}</span><span class="row-end">{{ s|segment_duration }}</span>

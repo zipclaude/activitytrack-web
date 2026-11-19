@@ -2298,3 +2298,9 @@ msgid ""
 msgstr ""
 "„%(n)s“ ist archiviert: archivierte Eint"
 "räge bleiben persönlich"
+
+msgid "pianificato"
+msgstr "geplant"
+
+msgid "manuale"
+msgstr "manuell"

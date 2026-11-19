@@ -226,6 +226,29 @@ tr.dim { opacity: .55; }
 .inline-form input, .inline-form select { min-height: 40px; padding: 7px 10px; }
 .inline-form button { height: 40px; }
 .inline-form button.danger { padding: 0 12px; }
+/* the segments of an activity: small rows as the app's (badge, kind and times, duration); one is opened to be corrected (issue #72) */
+.srows { margin: 4px 0 8px; }
+.srow { border-bottom: 1px solid var(--line-soft); }
+.srow:last-child { border-bottom: 0; }
+.srow > summary, .srow > .srow-head { display: flex; align-items: center; gap: 14px; padding: 10px 6px; min-height: 52px; }
+.srow > summary { cursor: pointer; list-style: none; border-radius: 10px; }
+.srow > summary::-webkit-details-marker { display: none; }
+.srow > summary:hover, .srow[open] > summary { background: var(--surface-2); }
+.srow > summary::after { content: ""; flex: none; width: 7px; height: 7px; margin: 0 6px 3px 2px; border: solid var(--muted); border-width: 0 2px 2px 0; transform: rotate(45deg); }
+.srow[open] > summary::after { transform: rotate(-135deg); margin-bottom: -3px; }
+.srow .row-main { flex: 1; min-width: 0; }
+.srow .row-main b { font-weight: 500; font-size: 16px; }
+.srow .range { margin-left: 8px; font-variant-numeric: tabular-nums; }
+.srow .sub { display: block; color: var(--muted); font-size: 13px; }
+.srow .row-end { font-variant-numeric: tabular-nums; font-weight: 500; }
+.srow.dim { opacity: .65; }
+.mark.st.planned { background: transparent; color: var(--st); border: 2px dashed var(--st); }
+.seg-edit { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 6px 14px 50px; margin: 0; }
+.seg-edit.add { padding: 12px 0 0; border-top: 1px solid var(--line-soft); }
+.seg-edit input, .seg-edit select { min-height: 40px; padding: 7px 10px; }
+.seg-edit button { height: 40px; }
+.seg-edit button.danger { padding: 0 12px; }
+@media (max-width: 840px) { .seg-edit { padding-left: 6px; } }
 .danger-zone { margin: 24px 0; }
 
 /* pairing, policy */
@@ -400,6 +423,8 @@ nav.bottom .sheet .version { padding: 8px 16px 0; }
 .picker { position: relative; display: flex; align-items: center; gap: 2px; }
 .picker > input[type=text] { flex: 1; min-width: 0; font-variant-numeric: tabular-nums; }
 .inline-form .picker > input[type=text] { width: 15ch; }
+/* a date with its time ("10/11/2026 08:05", 12-hour clock "… 08:05 PM") and the button on the right */
+.inline-form .picker.dt > input[type=text], .seg-edit .picker.dt > input[type=text] { width: calc(19ch + 52px); }
 .picker > .icon-button { position: absolute; right: 4px; }
 .picker > input[type=text] { padding-right: 40px; }
 .pk-pop { position: absolute; z-index: 40; top: calc(100% + 4px); left: 0; background: var(--surface); color: var(--text); border: 1px solid var(--line-soft); border-radius: var(--radius); box-shadow: 0 8px 24px rgb(0 0 0 / .18); padding: 12px; font-size: 14px; font-weight: 400; width: max-content; max-width: calc(100vw - 16px); }
